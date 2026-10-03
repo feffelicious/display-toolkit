@@ -15,13 +15,16 @@ internal sealed partial class MainWindow : Window
 {
     private readonly MainWindowViewModel _viewModel;
     private readonly ThemeService _theme;
+    private readonly AppSettings _settings;
     private IInputElement? _focusBeforeDialog;
 
-    public MainWindow(MainWindowViewModel viewModel, ThemeService theme)
+    public MainWindow(MainWindowViewModel viewModel, ThemeService theme, AppSettings settings)
     {
         InitializeComponent();
         _viewModel = viewModel;
         _theme = theme;
+        _settings = settings;
+        RestorePlacement();
         DataContext = viewModel;
         theme.Changed += OnThemeChanged;
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
@@ -66,11 +69,57 @@ internal sealed partial class MainWindow : Window
         }
     }
 
+    protected override void OnClosing(CancelEventArgs e)
+    {
+        base.OnClosing(e);
+        var bounds = WindowState == WindowState.Normal ? new Rect(Left, Top, Width, Height) : RestoreBounds;
+        if (!bounds.IsEmpty)
+        {
+            _settings.Update(current => current with
+            {
+                MainWindowPlacement = new WindowPlacement(bounds.Left, bounds.Top, bounds.Width, bounds.Height, WindowState == WindowState.Maximized),
+            });
+        }
+    }
+
     protected override void OnClosed(EventArgs e)
     {
         _theme.Changed -= OnThemeChanged;
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         base.OnClosed(e);
+    }
+
+    /// <summary>
+    /// Opens where it was last time, if that's still on a connected screen (a monitor may have been unplugged since).
+    /// Otherwise the window keeps its default size, centered.
+    /// </summary>
+    private void RestorePlacement()
+    {
+        if (_settings.Current.MainWindowPlacement is not { } placement)
+        {
+            return;
+        }
+        var screen = new Rect(SystemParameters.VirtualScreenLeft, SystemParameters.VirtualScreenTop,
+            SystemParameters.VirtualScreenWidth, SystemParameters.VirtualScreenHeight);
+        var bounds = new Rect(placement.Left, placement.Top, Math.Max(placement.Width, MinWidth), Math.Max(placement.Height, MinHeight));
+
+        // Enough of the title bar must be visible to grab it.
+        var titleBar = new Rect(bounds.Left, bounds.Top, bounds.Width, 48);
+        titleBar.Intersect(screen);
+        if (titleBar.IsEmpty || titleBar.Width < 120)
+        {
+            return;
+        }
+
+        WindowStartupLocation = WindowStartupLocation.Manual;
+        Left = bounds.Left;
+        Top = bounds.Top;
+        Width = bounds.Width;
+        Height = bounds.Height;
+        if (placement.IsMaximized)
+        {
+            WindowState = WindowState.Maximized;
+        }
     }
 
     private void OnSettingsClick(object sender, MouseButtonEventArgs e) => _viewModel.OpenSettingsCommand.Execute(null);

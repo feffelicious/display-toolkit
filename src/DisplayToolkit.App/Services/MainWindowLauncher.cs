@@ -7,7 +7,7 @@ namespace DisplayToolkit.App.Services;
 /// Opens the main window on demand. The window is created when needed and released when closed (the app lives in the
 /// tray); its view model is kept, so it reopens where it was.
 /// </summary>
-internal sealed class MainWindowLauncher(MainWindowViewModel viewModel, ThemeService theme)
+internal sealed class MainWindowLauncher(MainWindowViewModel viewModel, ThemeService theme, AppSettings settings)
 {
     private MainWindow? _window;
 
@@ -15,7 +15,7 @@ internal sealed class MainWindowLauncher(MainWindowViewModel viewModel, ThemeSer
     {
         if (_window is null)
         {
-            _window = new MainWindow(viewModel, theme);
+            _window = new MainWindow(viewModel, theme, settings);
             _window.Closed += (_, _) => _window = null;
         }
         _window.ShowAndActivate();

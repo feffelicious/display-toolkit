@@ -15,6 +15,9 @@ public enum AppTheme
 /// <summary>A position in degrees, north and east positive.</summary>
 public sealed record SavedLocation(double Latitude, double Longitude);
 
+/// <summary>Where the main window was, in device-independent pixels (its normal size when it was maximized).</summary>
+public sealed record WindowPlacement(double Left, double Top, double Width, double Height, bool IsMaximized);
+
 /// <summary>User preferences that aren't stored elsewhere (start with Windows lives in the registry).</summary>
 /// <remarks>
 /// Properties with defaults are settable rather than init-only: the JSON source generator assigns every init-only
@@ -34,6 +37,8 @@ public sealed record AppSettingsData
 
     /// <summary>The last position Windows reported, for when it can't be asked (location turned off, offline).</summary>
     public SavedLocation? LastWindowsLocation { get; init; }
+
+    public WindowPlacement? MainWindowPlacement { get; init; }
 }
 
 /// <summary>Loads and saves <c>%AppData%\DisplayToolkit\settings.json</c>.</summary>

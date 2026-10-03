@@ -11,9 +11,16 @@
     <NoWarn>$(NoWarn);WPF0001</NoWarn>
   </PropertyGroup>
 
+  <!--
+    Releases are one self-contained DisplayToolkit.exe: nothing to install, not even .NET. Not compressed inside: the
+    release zip compresses it just as well, and an uncompressed exe uses half the memory (no unpacking at start).
+  -->
   <PropertyGroup Label="Publish">
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <DebugType Condition="'$(Configuration)' == 'Release'">embedded</DebugType>
   </PropertyGroup>
 
   <ItemGroup>

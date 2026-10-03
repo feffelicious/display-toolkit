@@ -44,6 +44,20 @@
                 AutomationProperties.Name="Show changes from shortcuts" />
     </controls:SettingsCard>
 
+    <controls:SettingsExpander Header="Back up settings" HeaderIcon="&#xE8F1;"
+                               Description="Profiles, rules, the quick settings layout and preferences, in one file. Handy for a new PC.">
+      <StackPanel>
+        <controls:SettingsCard IsNested="True" Header="Export" Description="Save everything to a file.">
+          <Button Padding="12,4" Content="Export…" Command="{Binding ExportSettingsCommand}" />
+        </controls:SettingsCard>
+        <controls:SettingsCard IsNested="True" Header="Import" Description="Replace everything with a file you exported before.">
+          <Button Padding="12,4" Content="Import…" Command="{Binding ImportSettingsCommand}" />
+        </controls:SettingsCard>
+        <TextBlock Margin="56,8,16,10" Style="{StaticResource CaptionText}" Text="{Binding TransferStatus}" TextWrapping="Wrap"
+                   Visibility="{Binding TransferStatus, Converter={StaticResource VisibleWhenNotNull}}" />
+      </StackPanel>
+    </controls:SettingsExpander>
+
     <!-- ======================================================== Location -->
     <TextBlock Style="{StaticResource SettingsGroupHeader}" Text="Location" />
 

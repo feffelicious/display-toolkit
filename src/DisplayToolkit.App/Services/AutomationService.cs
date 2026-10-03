@@ -185,6 +185,19 @@ internal sealed class AutomationService : IDisposable
         return automation with { Rules = rules };
     });
 
+    /// <summary>Reads the profiles and rules again after they were replaced (an import).</summary>
+    public void Reload()
+    {
+        if (_monitor is { } monitor)
+        {
+            Automation = _store.Get(monitor.Session.Id.Model);
+            _sunWritten = null;
+            RegisterShortcuts();
+            Configure();
+            OnStateChanged();
+        }
+    }
+
     /// <summary>The current values of the given settings on the monitor.</summary>
     public Dictionary<string, uint> CaptureCurrent(IEnumerable<string> settingIds) =>
         _monitor is { } monitor ? MonitorProfileTarget.Capture(monitor, settingIds) : [];

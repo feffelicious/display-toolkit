@@ -1,0 +1,41 @@
+name: Release
+
+# Push a tag like v0.1.0 to build, test and publish a GitHub release with the zip.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Test
+        run: |
+          dotnet build DisplayToolkit.slnx --configuration Release
+          dotnet test --solution DisplayToolkit.slnx --configuration Release --no-build
+
+      - name: Publish
+        shell: pwsh
+        run: |
+          $version = '${{ github.ref_name }}'.TrimStart('v')
+          ./build/publish.ps1 -Version $version
+
+      - name: Create release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = '${{ github.ref_name }}'
+          $zip = Get-ChildItem artifacts/*.zip | Select-Object -First 1
+          # 0.x versions and tags like v1.0.0-beta.1 are marked as pre-releases.
+          $flags = if ($tag -match '^v0\.|-') { @('--prerelease') } else { @() }
+          gh release create $tag $zip.FullName --title "Display Toolkit $tag" --generate-notes @flags

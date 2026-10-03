@@ -38,6 +38,7 @@ internal sealed partial class FlyoutViewModel : ObservableObject
         _automation = automation;
         context.Changed += (_, _) => OnMonitorChanged();
         automation.Changed += (_, _) => UpdateProfiles();
+        layouts.Replaced += (_, _) => ReloadLayout();
         OnMonitorChanged();
         UpdateProfiles();
     }
@@ -128,6 +129,17 @@ internal sealed partial class FlyoutViewModel : ObservableObject
         if (Monitor is { } monitor)
         {
             await monitor.RefreshAsync(VisibleFeatures());
+        }
+    }
+
+    /// <summary>Loads the tile layout again after it was replaced (an import).</summary>
+    private void ReloadLayout()
+    {
+        if (Monitor is { } monitor)
+        {
+            Back();
+            SetEditing(false);
+            LoadTiles(monitor, _layouts.Get(monitor.Session.Id.Model) ?? TileCatalog.DefaultLayout);
         }
     }
 

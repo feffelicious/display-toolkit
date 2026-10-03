@@ -14,9 +14,23 @@ internal sealed class AutomationStore(ILogger<AutomationStore> logger)
 
     public MonitorAutomation Get(string model) => Data.GetValueOrDefault(model) ?? MonitorAutomation.Empty;
 
+    public IReadOnlyDictionary<string, MonitorAutomation> GetAll() => Data;
+
     public void Set(string model, MonitorAutomation automation)
     {
         Data[model] = automation;
+        Save();
+    }
+
+    /// <summary>Replaces everything (an import).</summary>
+    public void SetAll(Dictionary<string, MonitorAutomation> data)
+    {
+        _data = data;
+        Save();
+    }
+
+    private void Save()
+    {
         try
         {
             File.WriteAllText(FilePath, AutomationJson.Serialize(Data));

@@ -18,12 +18,16 @@ public sealed partial class SettingsPageViewModel : MainPageViewModel
 
     private readonly AppSettings _settings;
     private readonly LocationService _location;
+    private readonly SettingsTransfer _transfer;
+    private readonly IMainWindowHost _host;
 
-    internal SettingsPageViewModel(AppSettings settings, LocationService location, MonitorViewModel? monitor)
+    internal SettingsPageViewModel(AppSettings settings, LocationService location, SettingsTransfer transfer, IMainWindowHost host, MonitorViewModel? monitor)
         : base("Settings")
     {
         _settings = settings;
         _location = location;
+        _transfer = transfer;
+        _host = host;
         Monitor = monitor;
         var manual = settings.Current.ManualLocation ?? settings.Current.LastWindowsLocation;
         Latitude = manual?.Latitude.ToString(CultureInfo.CurrentCulture) ?? string.Empty;
@@ -113,6 +117,64 @@ public sealed partial class SettingsPageViewModel : MainPageViewModel
     {
         _location.Changed -= OnLocationChanged;
         base.Close();
+    }
+
+    /// <summary>The outcome of the last export or import, shown under the buttons.</summary>
+    [ObservableProperty]
+    public partial string? TransferStatus { get; private set; }
+
+    [RelayCommand]
+    private void ExportSettings()
+    {
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "Export settings",
+            FileName = "Display Toolkit settings.json",
+            Filter = "Display Toolkit settings (*.json)|*.json",
+        };
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+        try
+        {
+            _transfer.Export(dialog.FileName);
+            TransferStatus = $"Exported to {System.IO.Path.GetFileName(dialog.FileName)}.";
+        }
+        catch (Exception exception) when (exception is System.IO.IOException or UnauthorizedAccessException)
+        {
+            TransferStatus = $"Couldn't save the file: {exception.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task ImportSettings()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog { Title = "Import settings", Filter = "Display Toolkit settings (*.json)|*.json" };
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+        var confirmed = await _host.ConfirmAsync(new ConfirmationViewModel(
+            "Replace your settings?",
+            "Profiles, rules, the quick settings layout and preferences are replaced with the ones in the file.",
+            "Replace",
+            "Export first if you might want the current ones back."));
+        if (!confirmed)
+        {
+            return;
+        }
+        try
+        {
+            TransferStatus = _transfer.Import(dialog.FileName)
+                ? "Imported."
+                : "That file isn't a Display Toolkit export.";
+            OnPropertyChanged(string.Empty); // Everything on this page may have changed.
+        }
+        catch (Exception exception) when (exception is System.IO.IOException or UnauthorizedAccessException)
+        {
+            TransferStatus = $"Couldn't read the file: {exception.Message}";
+        }
     }
 
     [RelayCommand(CanExecute = nameof(IsLocationValid))]

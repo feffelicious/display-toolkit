@@ -90,7 +90,7 @@ public partial class App : Application
 
         // Main window: the whole window once, then every page at full height.
         var mainViewModel = _host.Services.GetRequiredService<MainWindowViewModel>();
-        var window = new Views.MainWindow(mainViewModel, _host.Services.GetRequiredService<ThemeService>());
+        var window = new Views.MainWindow(mainViewModel, _host.Services.GetRequiredService<ThemeService>(), _host.Services.GetRequiredService<AppSettings>());
         window.ShowAndActivate();
         await Task.Delay(2500);
         DebugSnapshot.Save((FrameworkElement)window.Content, folder, "main-window");
@@ -182,6 +182,7 @@ public partial class App : Application
         services.AddSingleton<AutomationStore>();
         services.AddSingleton<LocationService>();
         services.AddSingleton<AutomationService>();
+        services.AddSingleton<SettingsTransfer>();
 
         return builder.Build();
     }

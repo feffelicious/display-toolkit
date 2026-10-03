@@ -15,10 +15,26 @@ internal sealed class LayoutStore(ILogger<LayoutStore> logger)
 
     public IReadOnlyList<string>? Get(string model) => Load().GetValueOrDefault(model);
 
+    public Dictionary<string, List<string>> GetAll() => Load();
+
     public void Set(string model, IReadOnlyList<string> tileIds)
     {
         var layouts = Load();
         layouts[model] = [.. tileIds];
+        Save(layouts);
+    }
+
+    /// <summary>Raised when every layout was replaced (an import).</summary>
+    public event EventHandler? Replaced;
+
+    public void ReplaceAll(Dictionary<string, List<string>> layouts)
+    {
+        Save(layouts);
+        Replaced?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void Save(Dictionary<string, List<string>> layouts)
+    {
         try
         {
             File.WriteAllText(FilePath, JsonSerializer.Serialize(layouts, LayoutJsonContext.Default.DictionaryStringListString));
