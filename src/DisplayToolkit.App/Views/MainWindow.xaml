@@ -9,9 +9,11 @@
         xmlns:automation="clr-namespace:DisplayToolkit.App.ViewModels.Automation"
         xmlns:views="clr-namespace:DisplayToolkit.App.Views"
         xmlns:pages="clr-namespace:DisplayToolkit.App.Views.Pages"
+        xmlns:services="clr-namespace:DisplayToolkit.App.Services"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance main:MainWindowViewModel}"
         Title="Display Toolkit"
+        Icon="/Assets/DisplayToolkit.ico"
         Width="1100" Height="780" MinWidth="760" MinHeight="560"
         WindowStartupLocation="CenterScreen"
         Background="Transparent">
@@ -88,7 +90,7 @@
 
     <!-- ======================================================== Title bar -->
     <StackPanel Margin="16,0,0,0" Orientation="Horizontal" VerticalAlignment="Center">
-      <TextBlock Style="{StaticResource IconText}" FontSize="16" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Text="&#xE7F4;" />
+      <Image Width="16" Height="16" Source="{x:Static services:IconArt.AppIcon}" />
       <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" FontSize="12" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="Display Toolkit" />
     </StackPanel>
 

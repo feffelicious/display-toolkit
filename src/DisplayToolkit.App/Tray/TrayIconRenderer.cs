@@ -1,17 +1,13 @@
-using System.Globalization;
-using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using DisplayToolkit.App.Native;
+using DisplayToolkit.App.Services;
 
 namespace DisplayToolkit.App.Tray;
 
-/// <summary>Draws the tray icon from a Segoe Fluent Icons glyph, so it is crisp at any DPI and matches the taskbar theme.</summary>
+/// <summary>Draws the tray icon from <see cref="IconArt"/>, so it is crisp at any DPI and matches the taskbar theme.</summary>
 internal static class TrayIconRenderer
 {
-    private const string MonitorGlyph = "";
-    private static readonly Typeface IconFont = new("Segoe Fluent Icons");
-
     /// <summary>Returns an HICON the caller must destroy with <see cref="User32.DestroyIcon"/>.</summary>
     public static nint Render(bool lightTaskbar)
     {
@@ -21,8 +17,7 @@ internal static class TrayIconRenderer
         var visual = new DrawingVisual();
         using (var context = visual.RenderOpen())
         {
-            var text = new FormattedText(MonitorGlyph, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, IconFont, size, brush, 1.0);
-            context.DrawText(text, new Point((size - text.Width) / 2, (size - text.Height) / 2));
+            IconArt.DrawSymbol(context, brush, size);
         }
 
         var bitmap = new RenderTargetBitmap(size, size, 96, 96, PixelFormats.Pbgra32);

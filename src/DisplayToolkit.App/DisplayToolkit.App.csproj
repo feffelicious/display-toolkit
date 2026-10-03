@@ -6,6 +6,8 @@
     <RootNamespace>DisplayToolkit.App</RootNamespace>
     <AssemblyName>DisplayToolkit</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Made from Services/IconArt.cs by a Debug build: run DisplayToolkit.exe with export-icon (see IconExport.cs). -->
+    <ApplicationIcon>Assets\DisplayToolkit.ico</ApplicationIcon>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- WPF0001: the Fluent ThemeMode API is marked experimental. -->
     <NoWarn>$(NoWarn);WPF0001</NoWarn>
@@ -26,6 +28,10 @@
   <ItemGroup>
     <ProjectReference Include="..\DisplayToolkit.Automation\DisplayToolkit.Automation.csproj" />
     <ProjectReference Include="..\DisplayToolkit.Core\DisplayToolkit.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\DisplayToolkit.ico" />
   </ItemGroup>
 
   <ItemGroup>

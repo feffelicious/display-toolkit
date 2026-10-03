@@ -23,6 +23,15 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+#if DEBUG
+        if (IconExport.RequestedPath(e.Args) is { } iconPath)
+        {
+            IconExport.Write(iconPath);
+            Shutdown();
+            return;
+        }
+#endif
+
         _singleInstance = new SingleInstance();
         if (!_singleInstance.IsFirst)
         {
