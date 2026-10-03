@@ -73,6 +73,7 @@ dotnet_naming_rule.private_fields.priority = 3
 dotnet_diagnostic.CA1515.severity = none   # "make types internal": not useful for a multi-project app
 dotnet_diagnostic.CA1716.severity = none   # identifiers matching keywords in other .NET languages
 dotnet_diagnostic.CA1848.severity = none   # LoggerMessage delegates: revisit if logging becomes hot
+dotnet_diagnostic.CA1873.severity = none   # cost of logging arguments: same reasoning as CA1848
 dotnet_diagnostic.CA2007.severity = none   # ConfigureAwait: this is an app, not a library
 dotnet_diagnostic.IDE0005.severity = warning # remove unnecessary usings
 

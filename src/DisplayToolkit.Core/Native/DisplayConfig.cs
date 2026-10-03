@@ -97,6 +97,28 @@ internal static unsafe partial class DisplayConfig
         public uint ConnectorInstance;
         public fixed char MonitorFriendlyDeviceName[64];
         public fixed char MonitorDevicePath[128];
+
+        public readonly string FriendlyName
+        {
+            get
+            {
+                fixed (char* name = MonitorFriendlyDeviceName)
+                {
+                    return new string(name);
+                }
+            }
+        }
+
+        public readonly string DevicePath
+        {
+            get
+            {
+                fixed (char* path = MonitorDevicePath)
+                {
+                    return new string(path);
+                }
+            }
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]

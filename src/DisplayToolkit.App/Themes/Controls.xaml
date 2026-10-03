@@ -1,0 +1,207 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:converters="clr-namespace:DisplayToolkit.App.Converters"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+  <!-- Shared styles for app-level controls. Colors come from the Fluent theme so light/dark and accent follow Windows. -->
+
+  <!-- Boxed boolean for triggers on object-typed properties such as Tag (a string "True" would never match). -->
+  <sys:Boolean x:Key="True">True</sys:Boolean>
+
+  <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+
+  <converters:NullToVisibilityConverter x:Key="VisibleWhenNotNull" />
+  <converters:NullToVisibilityConverter x:Key="VisibleWhenNull" Invert="True" />
+  <converters:BoolToVisibilityConverter x:Key="VisibleWhenTrue" />
+  <converters:BoolToVisibilityConverter x:Key="VisibleWhenFalse" Invert="True" />
+
+  <!-- ============================================================ Text -->
+
+  <Style x:Key="CaptionText" TargetType="TextBlock">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
+  <Style x:Key="BodyStrongText" TargetType="TextBlock">
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+  </Style>
+
+  <Style x:Key="IconText" TargetType="TextBlock">
+    <Setter Property="FontFamily" Value="{StaticResource IconFont}" />
+    <Setter Property="FontSize" Value="16" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <!-- ============================================================ Toggle switch (WPF has none) -->
+
+  <Style x:Key="ToggleSwitch" TargetType="CheckBox">
+    <Setter Property="OverridesDefaultStyle" Value="True" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="CheckBox">
+          <Grid Width="40" Height="20" Background="Transparent">
+            <Border x:Name="Track" CornerRadius="10" BorderThickness="1"
+                    Background="{DynamicResource ControlAltFillColorSecondaryBrush}"
+                    BorderBrush="{DynamicResource ControlStrongStrokeColorDefaultBrush}" />
+            <Ellipse x:Name="Knob" Width="12" Height="12" Margin="4,0" HorizontalAlignment="Left"
+                     Fill="{DynamicResource TextFillColorSecondaryBrush}">
+              <Ellipse.RenderTransform>
+                <TranslateTransform x:Name="KnobOffset" />
+              </Ellipse.RenderTransform>
+            </Ellipse>
+            <Border x:Name="Focus" Margin="-3" CornerRadius="13" BorderThickness="2" BorderBrush="Transparent" />
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsChecked" Value="True">
+              <Setter TargetName="Track" Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+              <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+              <Setter TargetName="Knob" Property="Fill" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+              <Trigger.EnterActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="KnobOffset" Storyboard.TargetProperty="X" To="20" Duration="0:0:0.083" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+              <Trigger.ExitActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="KnobOffset" Storyboard.TargetProperty="X" To="0" Duration="0:0:0.083" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.ExitActions>
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="Knob" Property="Width" Value="14" />
+              <Setter TargetName="Knob" Property="Height" Value="14" />
+              <Setter TargetName="Knob" Property="Margin" Value="3,0" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="Focus" Property="BorderBrush" Value="{DynamicResource FocusStrokeColorOuterBrush}" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- ============================================================ Buttons -->
+
+  <!-- Square subtle button with one glyph (back, settings). -->
+  <Style x:Key="IconButton" TargetType="Button">
+    <Setter Property="OverridesDefaultStyle" Value="True" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="Width" Value="32" />
+    <Setter Property="Height" Value="32" />
+    <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Border x:Name="Body" CornerRadius="4" Background="Transparent" BorderThickness="2" BorderBrush="Transparent">
+            <TextBlock Style="{StaticResource IconText}" HorizontalAlignment="Center" FontSize="14"
+                       Foreground="{TemplateBinding Foreground}" Text="{TemplateBinding Content}" />
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="Body" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+              <Setter TargetName="Body" Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="Body" Property="BorderBrush" Value="{DynamicResource FocusStrokeColorOuterBrush}" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- A selectable list row: name on the left, check on the right, accent pill when selected. Tag = IsSelected. -->
+  <Style x:Key="OptionRow" TargetType="Button">
+    <Setter Property="OverridesDefaultStyle" Value="True" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="Height" Value="36" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Border x:Name="Body" CornerRadius="4" Background="Transparent" BorderThickness="2" BorderBrush="Transparent">
+            <Grid>
+              <Rectangle x:Name="Pill" Width="3" Height="16" RadiusX="1.5" RadiusY="1.5" HorizontalAlignment="Left"
+                         Visibility="Collapsed" Fill="{DynamicResource AccentFillColorDefaultBrush}" />
+              <TextBlock Margin="12,0,36,0" VerticalAlignment="Center" FontSize="14" TextTrimming="CharacterEllipsis"
+                         Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{TemplateBinding Content}" />
+              <TextBlock x:Name="Check" Style="{StaticResource IconText}" Margin="0,0,10,0" HorizontalAlignment="Right" FontSize="12"
+                         Visibility="Collapsed" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Text="&#xE73E;" />
+            </Grid>
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="Body" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+            </Trigger>
+            <Trigger Property="Tag" Value="{StaticResource True}">
+              <Setter TargetName="Body" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+              <Setter TargetName="Pill" Property="Visibility" Value="Visible" />
+              <Setter TargetName="Check" Property="Visibility" Value="Visible" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+              <Setter TargetName="Body" Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="Body" Property="BorderBrush" Value="{DynamicResource FocusStrokeColorOuterBrush}" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- One cell of a segmented control (levels 1–4). Tag = IsSelected. -->
+  <Style x:Key="Segment" TargetType="Button">
+    <Setter Property="OverridesDefaultStyle" Value="True" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="Height" Value="32" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Border x:Name="Body" Margin="3,0" CornerRadius="4" BorderThickness="1"
+                  Background="{DynamicResource ControlFillColorDefaultBrush}"
+                  BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
+            <TextBlock x:Name="Label" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="14"
+                       Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{TemplateBinding Content}" />
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="Body" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+            </Trigger>
+            <Trigger Property="Tag" Value="{StaticResource True}">
+              <Setter TargetName="Body" Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+              <Setter TargetName="Body" Property="BorderBrush" Value="Transparent" />
+              <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="Body" Property="BorderBrush" Value="{DynamicResource FocusStrokeColorOuterBrush}" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- ============================================================ Info bar -->
+
+  <Style x:Key="CautionInfoBar" TargetType="Border">
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="12,10" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+  </Style>
+
+</ResourceDictionary>

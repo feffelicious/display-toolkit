@@ -1,0 +1,220 @@
+<Window x:Class="DisplayToolkit.App.Flyout.FlyoutWindow"
+        x:ClassModifier="internal"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="clr-namespace:DisplayToolkit.App.Controls"
+        xmlns:pages="clr-namespace:DisplayToolkit.App.ViewModels.Pages"
+        xmlns:services="clr-namespace:DisplayToolkit.App.Services"
+        xmlns:vm="clr-namespace:DisplayToolkit.App.ViewModels"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance vm:FlyoutViewModel}"
+        Title="Display Toolkit"
+        Width="360"
+        SizeToContent="Height"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Topmost="True"
+        Background="Transparent">
+
+  <!-- Extend the frame over the whole window so the DWM Acrylic backdrop shows through. -->
+  <WindowChrome.WindowChrome>
+    <WindowChrome GlassFrameThickness="-1" CaptionHeight="0" ResizeBorderThickness="0" UseAeroCaptionButtons="False" />
+  </WindowChrome.WindowChrome>
+
+  <Window.Resources>
+    <!-- ======================================================== Sub-pages -->
+
+    <DataTemplate DataType="{x:Type pages:OptionsPageViewModel}">
+      <ItemsControl ItemsSource="{Binding Options}" Focusable="False">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate DataType="{x:Type pages:OptionItemViewModel}">
+            <Button Style="{StaticResource OptionRow}" Margin="0,0,0,2" Content="{Binding Name}"
+                    Tag="{Binding IsSelected}" Command="{Binding SelectCommand}" />
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type pages:LevelsPageViewModel}">
+      <StackPanel>
+        <DockPanel Height="40">
+          <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding IsOn}"
+                    AutomationProperties.Name="{Binding Title}" />
+          <TextBlock VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Title}" />
+        </DockPanel>
+        <ItemsControl Margin="-3,8,-3,0" ItemsSource="{Binding Levels}" Focusable="False">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <UniformGrid Rows="1" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate DataType="{x:Type pages:OptionItemViewModel}">
+              <Button Style="{StaticResource Segment}" Content="{Binding Name}" Tag="{Binding IsSelected}" Command="{Binding SelectCommand}"
+                      AutomationProperties.Name="{Binding Name, StringFormat=Level {0}}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <TextBlock Margin="0,12,0,0" Style="{StaticResource CaptionText}" Text="{Binding Note}"
+                   Visibility="{Binding Note, Converter={StaticResource VisibleWhenNotNull}}" />
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type pages:HdrPageViewModel}">
+      <StackPanel>
+        <DockPanel Height="40">
+          <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding UseHdr}"
+                    AutomationProperties.Name="Use HDR" />
+          <TextBlock VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="Use HDR" />
+        </DockPanel>
+        <TextBlock Margin="0,4,0,0" Style="{StaticResource CaptionText}"
+                   Visibility="{Binding IsSwitching, Converter={StaticResource VisibleWhenTrue}}"
+                   Text="Switching. The screen may go dark for a moment." />
+        <ItemsControl Margin="0,8,0,0" ItemsSource="{Binding Presets}" Focusable="False"
+                      Visibility="{Binding HasPresets, Converter={StaticResource VisibleWhenTrue}}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate DataType="{x:Type pages:OptionItemViewModel}">
+              <Button Style="{StaticResource OptionRow}" Margin="0,0,0,2" Content="{Binding Name}"
+                      Tag="{Binding IsSelected}" Command="{Binding SelectCommand}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <TextBlock Margin="0,8,0,0" Style="{StaticResource CaptionText}"
+                   Visibility="{Binding UseHdr, Converter={StaticResource VisibleWhenFalse}}"
+                   Text="Turn on HDR to choose how the monitor shows HDR content." />
+      </StackPanel>
+    </DataTemplate>
+  </Window.Resources>
+
+  <Border x:Name="Root" Padding="18,16,18,20">
+    <Border.RenderTransform>
+      <TranslateTransform x:Name="RootOffset" />
+    </Border.RenderTransform>
+
+    <StackPanel>
+    <Grid>
+      <!-- ======================================================== Searching -->
+      <StackPanel x:Name="SearchingState" Visibility="Collapsed">
+        <StackPanel Orientation="Horizontal">
+          <Border Width="36" Height="36" CornerRadius="6" Background="{DynamicResource SubtleFillColorSecondaryBrush}" />
+          <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Style="{StaticResource CaptionText}" Text="Reading settings…" />
+        </StackPanel>
+        <Border Height="40" Margin="0,14,0,0" CornerRadius="6" Background="{DynamicResource SubtleFillColorSecondaryBrush}" />
+        <UniformGrid Margin="-6,20,-6,0" Columns="3">
+          <Border Height="48" Margin="6,0,6,34" CornerRadius="4" Background="{DynamicResource SubtleFillColorSecondaryBrush}" />
+          <Border Height="48" Margin="6,0,6,34" CornerRadius="4" Background="{DynamicResource SubtleFillColorSecondaryBrush}" />
+          <Border Height="48" Margin="6,0,6,34" CornerRadius="4" Background="{DynamicResource SubtleFillColorSecondaryBrush}" />
+        </UniformGrid>
+      </StackPanel>
+
+      <!-- ======================================================== No monitor / not responding -->
+      <StackPanel x:Name="EmptyState" Visibility="Collapsed" Margin="0,12,0,4">
+        <Border Width="56" Height="56" CornerRadius="8" HorizontalAlignment="Center" Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+          <TextBlock Style="{StaticResource IconText}" HorizontalAlignment="Center" FontSize="24"
+                     Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="&#xE7F4;" />
+        </Border>
+        <TextBlock x:Name="EmptyTitle" Margin="0,16,0,0" HorizontalAlignment="Center" Style="{StaticResource BodyStrongText}" Text="Can't reach the monitor" />
+        <TextBlock Margin="12,6,12,0" HorizontalAlignment="Center" TextAlignment="Center" Style="{StaticResource CaptionText}"
+                   Text="Make sure it's on and awake, and that DDC/CI is turned on in its on-screen menu." />
+        <Button Margin="0,16,0,0" HorizontalAlignment="Center" Padding="16,5" Content="Try again" Command="{Binding RetryCommand}"
+                Style="{DynamicResource AccentButtonStyle}" />
+      </StackPanel>
+
+      <!-- ======================================================== Ready -->
+      <Grid x:Name="ReadyState" Visibility="Collapsed">
+
+        <!-- Main page -->
+        <StackPanel x:Name="MainPage" Visibility="{Binding Page, Converter={StaticResource VisibleWhenNull}}">
+          <DockPanel>
+            <Border Width="36" Height="36" CornerRadius="6" Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+              <TextBlock Style="{StaticResource IconText}" HorizontalAlignment="Center" Text="&#xE7F4;"
+                         Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+            </Border>
+            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+              <TextBlock Style="{StaticResource BodyStrongText}" Text="{Binding Monitor.Name}" TextTrimming="CharacterEllipsis" />
+              <StackPanel Orientation="Horizontal">
+                <TextBlock Style="{StaticResource CaptionText}" Text="{Binding Subtitle}" />
+                <Border Margin="6,0,0,0" Padding="4,0" CornerRadius="3" VerticalAlignment="Center"
+                        Background="{DynamicResource AccentFillColorDefaultBrush}"
+                        Visibility="{Binding Monitor.IsHdrActive, Converter={StaticResource VisibleWhenTrue}}">
+                  <TextBlock FontSize="10" FontWeight="SemiBold" Text="HDR" Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+                </Border>
+              </StackPanel>
+            </StackPanel>
+          </DockPanel>
+
+          <controls:BrightnessBand x:Name="Band" Margin="0,14,0,0"
+                                   Visibility="{Binding Brightness, Converter={StaticResource VisibleWhenNotNull}}"
+                                   Value="{Binding Brightness.SliderValue, Mode=TwoWay}"
+                                   Maximum="{Binding Brightness.Maximum}"
+                                   IsPending="{Binding Brightness.IsPending}"
+                                   HasFailed="{Binding Brightness.HasFailed}" />
+
+          <ItemsControl Margin="-6,20,-6,-14" ItemsSource="{Binding Tiles}" Focusable="False">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <UniformGrid Columns="3" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemContainerStyle>
+              <Style TargetType="ContentPresenter">
+                <Setter Property="Margin" Value="6,0,6,14" />
+                <Setter Property="Visibility" Value="{Binding IsVisible, Converter={StaticResource VisibleWhenTrue}}" />
+              </Style>
+            </ItemsControl.ItemContainerStyle>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <controls:QuickTile Kind="{Binding Kind}" Glyph="{Binding Glyph}" Label="{Binding Label}"
+                                    IsOn="{Binding IsOn}" IsPending="{Binding IsPending}" HasFailed="{Binding HasFailed}"
+                                    Command="{Binding MainCommand}" SecondaryCommand="{Binding SecondaryCommand}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+
+        <!-- Sub-page -->
+        <StackPanel x:Name="SubPage" Visibility="{Binding Page, Converter={StaticResource VisibleWhenNotNull}}">
+          <DockPanel Margin="-6,-4,0,10">
+            <Button Style="{StaticResource IconButton}" Content="&#xE72B;" Command="{Binding BackCommand}" AutomationProperties.Name="Back" />
+            <TextBlock Margin="6,0,0,0" VerticalAlignment="Center" Style="{StaticResource BodyStrongText}" Text="{Binding Page.Title}" />
+          </DockPanel>
+          <ContentControl Content="{Binding Page}" Focusable="False" />
+        </StackPanel>
+      </Grid>
+
+    </Grid>
+
+    <!-- ======================================================== Info bars -->
+    <Border Style="{StaticResource CautionInfoBar}" Margin="0,16,0,0"
+            Visibility="{Binding IsConflictingAppRunning, Converter={StaticResource VisibleWhenTrue}}">
+      <DockPanel>
+        <Button DockPanel.Dock="Right" Margin="12,0,0,0" VerticalAlignment="Center" Padding="10,4" Content="Close it"
+                Command="{Binding CloseConflictingAppCommand}" />
+        <StackPanel>
+          <TextBlock Style="{StaticResource BodyStrongText}" FontSize="13" TextWrapping="Wrap" Text="ASUS DisplayWidget Center is running" />
+          <TextBlock Style="{StaticResource CaptionText}" Text="It talks to the monitor too, and the two can get in each other's way." />
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
+    <Border Style="{StaticResource CautionInfoBar}" Margin="0,16,0,0"
+            Visibility="{Binding FailedFeature, Converter={StaticResource VisibleWhenNotNull}}">
+      <DockPanel>
+        <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE711;" Command="{Binding DismissFailureCommand}"
+                AutomationProperties.Name="Dismiss" />
+        <Button DockPanel.Dock="Right" Margin="12,0,4,0" VerticalAlignment="Center" Padding="10,4" Content="Retry"
+                Command="{Binding RetryFailedWriteCommand}" />
+        <StackPanel>
+          <TextBlock Style="{StaticResource BodyStrongText}" FontSize="13" TextWrapping="Wrap">
+            <Run Text="{Binding FailedFeature.Feature.Name, Mode=OneWay}" /> didn't change
+          </TextBlock>
+          <TextBlock Style="{StaticResource CaptionText}" Text="The monitor didn't respond." />
+        </StackPanel>
+      </DockPanel>
+    </Border>
+    </StackPanel>
+  </Border>
+</Window>

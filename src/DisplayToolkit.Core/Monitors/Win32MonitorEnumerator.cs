@@ -45,18 +45,12 @@ public sealed class Win32MonitorEnumerator : IMonitorEnumerator
                 continue;
             }
 
-            unsafe
+            var model = EdidModel(target.EdidManufactureId, target.EdidProductCodeId);
+            if (!result.TryGetValue(sourceName, out var targets))
             {
-                var model = EdidModel(target.EdidManufactureId, target.EdidProductCodeId);
-                var devicePath = new string(target.MonitorDevicePath);
-                var friendlyName = new string(target.MonitorFriendlyDeviceName);
-
-                if (!result.TryGetValue(sourceName, out var targets))
-                {
-                    result[sourceName] = targets = [];
-                }
-                targets.Add(new TargetInfo(new MonitorId(model, devicePath), friendlyName));
+                result[sourceName] = targets = [];
             }
+            targets.Add(new TargetInfo(new MonitorId(model, target.DevicePath), target.FriendlyName));
         }
         return result;
     }

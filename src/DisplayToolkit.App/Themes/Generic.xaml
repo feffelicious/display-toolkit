@@ -1,0 +1,242 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="clr-namespace:DisplayToolkit.App.Controls"
+                    xmlns:tiles="clr-namespace:DisplayToolkit.App.ViewModels.Tiles">
+
+  <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+
+  <!--
+    Pending dots (band and tiles) appear only if a write is still unconfirmed after 300 ms, then pulse.
+    Two storyboards: one reveals the dot's container, the other pulses the dot itself.
+  -->
+
+  <!-- ============================================================ Brightness band -->
+
+  <Style TargetType="controls:BrightnessBand">
+    <Setter Property="Height" Value="40" />
+    <Setter Property="Minimum" Value="0" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="AutomationProperties.Name" Value="Brightness" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="controls:BrightnessBand">
+          <Grid>
+            <Grid x:Name="Body">
+              <!-- Clip the fill to the rounded track. -->
+              <Grid.OpacityMask>
+                <VisualBrush>
+                  <VisualBrush.Visual>
+                    <Border Background="Black" CornerRadius="6"
+                            Width="{Binding ActualWidth, ElementName=Body}"
+                            Height="{Binding ActualHeight, ElementName=Body}" />
+                  </VisualBrush.Visual>
+                </VisualBrush>
+              </Grid.OpacityMask>
+              <Border Background="{DynamicResource ControlFillColorSecondaryBrush}" />
+              <Border x:Name="PART_Fill" HorizontalAlignment="Left" Background="{DynamicResource AccentFillColorDefaultBrush}" />
+              <TextBlock Margin="13,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"
+                         FontFamily="{StaticResource IconFont}" FontSize="16"
+                         Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
+                         Text="{TemplateBinding Glyph}" />
+              <StackPanel Margin="0,0,14,0" HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal">
+                <Grid x:Name="PendingDot" Width="6" Height="6" Margin="0,0,8,0" Opacity="0" VerticalAlignment="Center">
+                  <Ellipse x:Name="PendingPulse" Fill="{DynamicResource AccentFillColorDefaultBrush}" />
+                </Grid>
+                <TextBlock x:Name="FailedGlyph" Margin="0,0,8,0" VerticalAlignment="Center" Visibility="Collapsed"
+                           FontFamily="{StaticResource IconFont}" FontSize="12"
+                           Foreground="{DynamicResource SystemFillColorCautionBrush}" Text="&#xE7BA;" />
+                <TextBlock FontSize="14" FontWeight="SemiBold" Typography.NumeralAlignment="Tabular"
+                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                           Text="{Binding Value, RelativeSource={RelativeSource TemplatedParent}, StringFormat={}{0:0}}" />
+              </StackPanel>
+            </Grid>
+            <Border x:Name="Stroke" CornerRadius="6" BorderThickness="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" />
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="Stroke" Property="BorderThickness" Value="2" />
+              <Setter TargetName="Stroke" Property="BorderBrush" Value="{DynamicResource FocusStrokeColorOuterBrush}" />
+            </Trigger>
+            <Trigger Property="HasFailed" Value="True">
+              <Setter TargetName="FailedGlyph" Property="Visibility" Value="Visible" />
+            </Trigger>
+            <Trigger Property="IsPending" Value="True">
+              <Trigger.EnterActions>
+                <BeginStoryboard x:Name="BandAppear">
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="PendingDot" Storyboard.TargetProperty="Opacity" To="1" BeginTime="0:0:0.3" Duration="0" />
+                  </Storyboard>
+                </BeginStoryboard>
+                <BeginStoryboard x:Name="BandPulse">
+                  <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                    <DoubleAnimation Storyboard.TargetName="PendingPulse" Storyboard.TargetProperty="Opacity"
+                                     From="1" To="0.25" BeginTime="0:0:0.3" Duration="0:0:0.6" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+              <Trigger.ExitActions>
+                <StopStoryboard BeginStoryboardName="BandAppear" />
+                <StopStoryboard BeginStoryboardName="BandPulse" />
+              </Trigger.ExitActions>
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- ============================================================ Quick tile -->
+
+  <!-- Transparent hit area with the Fluent hover/press overlay. Tag carries the corner radius. -->
+  <Style x:Key="TilePartButton" TargetType="Button">
+    <Setter Property="OverridesDefaultStyle" Value="True" />
+    <Setter Property="Focusable" Value="True" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="Tag">
+      <Setter.Value>
+        <CornerRadius>4</CornerRadius>
+      </Setter.Value>
+    </Setter>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Grid>
+            <Border x:Name="Overlay" Background="Transparent" CornerRadius="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" />
+            <Border x:Name="Focus" BorderThickness="2" BorderBrush="Transparent" CornerRadius="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" />
+            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="Overlay" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+              <Setter TargetName="Overlay" Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="Focus" Property="BorderBrush" Value="{DynamicResource FocusStrokeColorOuterBrush}" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style TargetType="controls:QuickTile">
+    <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="controls:QuickTile">
+          <StackPanel>
+            <Grid Height="48">
+              <Border x:Name="Plate" CornerRadius="4" BorderThickness="1"
+                      Background="{DynamicResource ControlFillColorDefaultBrush}"
+                      BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" />
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition x:Name="ChevronColumn" Width="0" />
+                </Grid.ColumnDefinitions>
+
+                <Button x:Name="Main" Grid.ColumnSpan="2" Style="{StaticResource TilePartButton}"
+                        Command="{TemplateBinding Command}"
+                        AutomationProperties.Name="{TemplateBinding Label}">
+                  <Grid>
+                    <TextBlock x:Name="Glyph" FontFamily="{StaticResource IconFont}" FontSize="16"
+                               Foreground="{TemplateBinding Foreground}" Text="{TemplateBinding Glyph}" />
+                    <!-- No Fluent glyph exists for HDR: outlined text instead. -->
+                    <Border x:Name="HdrGlyph" Visibility="Collapsed" Height="16" Padding="3,0" CornerRadius="3" BorderThickness="1.5"
+                            BorderBrush="{TemplateBinding Foreground}">
+                      <TextBlock VerticalAlignment="Center" FontSize="9" FontWeight="Bold" Text="HDR" Foreground="{TemplateBinding Foreground}" />
+                    </Border>
+                  </Grid>
+                </Button>
+
+                <Rectangle x:Name="Divider" Grid.Column="1" Width="1" Margin="0,10" HorizontalAlignment="Left" Visibility="Collapsed"
+                           Fill="{DynamicResource ControlStrokeColorDefaultBrush}" />
+
+                <Button x:Name="Chevron" Grid.Column="1" Visibility="Collapsed" Style="{StaticResource TilePartButton}"
+                        Command="{TemplateBinding SecondaryCommand}">
+                  <Button.Tag>
+                    <CornerRadius>0,4,4,0</CornerRadius>
+                  </Button.Tag>
+                  <TextBlock FontFamily="{StaticResource IconFont}" FontSize="12" Text="&#xE76C;" Foreground="{TemplateBinding Foreground}" />
+                </Button>
+
+                <!-- Pickers show a chevron too, but the whole tile is one button. -->
+                <TextBlock x:Name="PickerChevron" Grid.Column="1" Visibility="Collapsed" IsHitTestVisible="False"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           FontFamily="{StaticResource IconFont}" FontSize="12" Text="&#xE76C;" Foreground="{TemplateBinding Foreground}" />
+              </Grid>
+
+              <Grid x:Name="PendingDot" Width="6" Height="6" Margin="0,6,6,0" HorizontalAlignment="Right" VerticalAlignment="Top"
+                    Opacity="0" IsHitTestVisible="False">
+                <Ellipse x:Name="PendingPulse" Fill="{TemplateBinding Foreground}" />
+              </Grid>
+
+              <Border x:Name="FailedBadge" Width="20" Height="20" Margin="0,-8,-8,0" HorizontalAlignment="Right" VerticalAlignment="Top"
+                      CornerRadius="10" Visibility="Collapsed" IsHitTestVisible="False"
+                      Background="{DynamicResource SystemFillColorCautionBackgroundBrush}">
+                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="{StaticResource IconFont}" FontSize="12"
+                           Foreground="{DynamicResource SystemFillColorCautionBrush}" Text="&#xE7BA;" />
+              </Border>
+            </Grid>
+
+            <TextBlock Margin="0,6,0,0" HorizontalAlignment="Center" FontSize="12" TextTrimming="CharacterEllipsis"
+                       Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{TemplateBinding Label}" />
+          </StackPanel>
+
+          <ControlTemplate.Triggers>
+            <Trigger Property="Kind" Value="{x:Static tiles:TileKind.Split}">
+              <Setter TargetName="ChevronColumn" Property="Width" Value="30" />
+              <Setter TargetName="Main" Property="Grid.ColumnSpan" Value="1" />
+              <Setter TargetName="Main" Property="Tag">
+                <Setter.Value>
+                  <CornerRadius>4,0,0,4</CornerRadius>
+                </Setter.Value>
+              </Setter>
+              <Setter TargetName="Divider" Property="Visibility" Value="Visible" />
+              <Setter TargetName="Chevron" Property="Visibility" Value="Visible" />
+            </Trigger>
+            <Trigger Property="Kind" Value="{x:Static tiles:TileKind.Picker}">
+              <Setter TargetName="ChevronColumn" Property="Width" Value="30" />
+              <Setter TargetName="PickerChevron" Property="Visibility" Value="Visible" />
+            </Trigger>
+            <Trigger Property="Glyph" Value="HDR">
+              <Setter TargetName="Glyph" Property="Visibility" Value="Collapsed" />
+              <Setter TargetName="HdrGlyph" Property="Visibility" Value="Visible" />
+            </Trigger>
+            <Trigger Property="IsOn" Value="True">
+              <Setter TargetName="Plate" Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+              <Setter TargetName="Plate" Property="BorderBrush" Value="Transparent" />
+              <Setter TargetName="Divider" Property="Fill" Value="{DynamicResource TextOnAccentFillColorSecondaryBrush}" />
+              <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+            </Trigger>
+            <Trigger Property="HasFailed" Value="True">
+              <Setter TargetName="FailedBadge" Property="Visibility" Value="Visible" />
+            </Trigger>
+            <Trigger Property="IsPending" Value="True">
+              <Trigger.EnterActions>
+                <BeginStoryboard x:Name="TileAppear">
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="PendingDot" Storyboard.TargetProperty="Opacity" To="1" BeginTime="0:0:0.3" Duration="0" />
+                  </Storyboard>
+                </BeginStoryboard>
+                <BeginStoryboard x:Name="TilePulse">
+                  <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                    <DoubleAnimation Storyboard.TargetName="PendingPulse" Storyboard.TargetProperty="Opacity"
+                                     From="1" To="0.25" BeginTime="0:0:0.3" Duration="0:0:0.6" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+              <Trigger.ExitActions>
+                <StopStoryboard BeginStoryboardName="TileAppear" />
+                <StopStoryboard BeginStoryboardName="TilePulse" />
+              </Trigger.ExitActions>
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+</ResourceDictionary>
