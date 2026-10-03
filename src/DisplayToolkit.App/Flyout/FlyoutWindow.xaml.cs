@@ -9,7 +9,6 @@ using DisplayToolkit.App.Native;
 using DisplayToolkit.App.Services;
 using DisplayToolkit.App.ViewModels;
 using DisplayToolkit.App.ViewModels.Tiles;
-using Microsoft.Win32;
 
 namespace DisplayToolkit.App.Flyout;
 
@@ -28,6 +27,7 @@ internal sealed partial class FlyoutWindow : Window
     private const double DragThreshold = 4;
 
     private readonly FlyoutViewModel _viewModel;
+    private readonly ThemeService _theme;
     private nint _hwnd;
 
     // Edit-mode drag state.
@@ -36,11 +36,14 @@ internal sealed partial class FlyoutWindow : Window
     private Point _dragStart;
     private bool _isDragging;
 
-    public FlyoutWindow(FlyoutViewModel viewModel)
+    public FlyoutWindow(FlyoutViewModel viewModel, ThemeService theme)
     {
         InitializeComponent();
         _viewModel = viewModel;
+        _theme = theme;
         DataContext = viewModel;
+        viewModel.CloseRequested += (_, _) => HideFlyout();
+        theme.Changed += (_, _) => ApplyBackdrop();
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
         TileGrid.PreviewMouseLeftButtonDown += OnTilePointerDown;
         TileGrid.PreviewMouseMove += OnTilePointerMove;
@@ -250,7 +253,7 @@ internal sealed partial class FlyoutWindow : Window
         {
             target.BackgroundColor = Colors.Transparent;
         }
-        Dwm.SetDarkMode(_hwnd, IsDarkTheme());
+        Dwm.SetDarkMode(_hwnd, _theme.IsDark);
         Dwm.SetBackdrop(_hwnd, Dwm.Backdrop.Acrylic);
         Dwm.SetRoundCorners(_hwnd);
     }
@@ -315,9 +318,4 @@ internal sealed partial class FlyoutWindow : Window
         EmptyTitle.Text = state == MonitorDiscoveryState.NoMonitors ? "No monitor found" : "Can't reach the monitor";
     }
 
-    private static bool IsDarkTheme()
-    {
-        using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
-        return key?.GetValue("AppsUseLightTheme") is 0;
-    }
 }

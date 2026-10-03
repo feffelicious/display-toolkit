@@ -100,6 +100,22 @@ public sealed class MonitorSession : IDisposable
         return Task.WhenAll(codes.Select(ReadRegisterAsync));
     }
 
+    /// <summary>
+    /// Reads any VCP code, including ones without a catalog feature (firmware version, ASUS VCP version). For
+    /// diagnostics; returns null if the monitor doesn't answer.
+    /// </summary>
+    public Task<VcpReply?> ReadRawAsync(byte code) => _worker.Enqueue<VcpReply?>(() =>
+    {
+        try
+        {
+            return _channel.Get(code);
+        }
+        catch (DdcException)
+        {
+            return null;
+        }
+    });
+
     public async Task<FeatureValue?> ReadAsync(Feature feature)
     {
         EnsureSupported(feature);
@@ -192,7 +208,20 @@ public sealed class MonitorSession : IDisposable
             try
             {
                 var register = feature.IsPartialRegister ? _channel.Get(feature.Code).Current : 0;
-                _channel.Set(feature.Code, feature.Encode(value, register));
+                var written = feature.Encode(value, register);
+                _channel.Set(feature.Code, written);
+
+                if (feature.Settling == WriteSettling.Unverified)
+                {
+                    uint maximum;
+                    lock (_stateGate)
+                    {
+                        maximum = _confirmed.GetValueOrDefault(feature.Id)?.Maximum ?? 0;
+                    }
+                    var assumed = new VcpReply(written, maximum);
+                    Publish(feature.Code, assumed, (feature, sequence));
+                    return new FeatureValue(feature, value, feature.DecodeMaximum(assumed), FeatureStatus.Confirmed);
+                }
 
                 if (Verify(feature, value) is { } reply)
                 {

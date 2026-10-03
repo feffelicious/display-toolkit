@@ -1,0 +1,185 @@
+<Window x:Class="DisplayToolkit.App.Views.MainWindow"
+        x:ClassModifier="internal"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="clr-namespace:DisplayToolkit.App.Controls"
+        xmlns:main="clr-namespace:DisplayToolkit.App.ViewModels.Main"
+        xmlns:pages="clr-namespace:DisplayToolkit.App.Views.Pages"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance main:MainWindowViewModel}"
+        Title="Display Toolkit"
+        Width="1100" Height="780" MinWidth="760" MinHeight="560"
+        WindowStartupLocation="CenterScreen"
+        Background="Transparent">
+
+  <!-- Extend the frame over the window so Mica shows through; keep the system caption buttons. -->
+  <WindowChrome.WindowChrome>
+    <WindowChrome GlassFrameThickness="-1" CaptionHeight="48" ResizeBorderThickness="6" UseAeroCaptionButtons="True" />
+  </WindowChrome.WindowChrome>
+
+  <Window.Resources>
+    <DataTemplate DataType="{x:Type main:DisplayPageViewModel}"><pages:DisplayPage /></DataTemplate>
+    <DataTemplate DataType="{x:Type main:SixAxisPageViewModel}"><pages:SixAxisPage /></DataTemplate>
+    <DataTemplate DataType="{x:Type main:MonitorInfoPageViewModel}"><pages:MonitorInfoPage /></DataTemplate>
+    <DataTemplate DataType="{x:Type main:OledCarePageViewModel}"><pages:OledCarePage /></DataTemplate>
+    <DataTemplate DataType="{x:Type main:GamePlusPageViewModel}"><pages:GamePlusPage /></DataTemplate>
+    <DataTemplate DataType="{x:Type main:SettingsPageViewModel}"><pages:SettingsPage /></DataTemplate>
+
+    <!-- Navigation entry: glyph and title, subtle fill and an accent pill when selected (Windows Settings style). -->
+    <ControlTemplate x:Key="NavEntryTemplate" TargetType="ContentControl">
+      <Grid Height="36" Margin="0,1" Background="Transparent">
+        <Border x:Name="Body" CornerRadius="4" Background="Transparent" />
+        <Rectangle x:Name="Pill" Width="3" Height="16" RadiusX="1.5" RadiusY="1.5" HorizontalAlignment="Left" Visibility="Collapsed"
+                   Fill="{DynamicResource AccentFillColorDefaultBrush}" />
+        <ContentPresenter Margin="16,0" VerticalAlignment="Center" />
+      </Grid>
+      <ControlTemplate.Triggers>
+        <Trigger Property="IsMouseOver" Value="True">
+          <Setter TargetName="Body" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+        </Trigger>
+        <Trigger Property="Tag" Value="{StaticResource True}">
+          <Setter TargetName="Body" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+          <Setter TargetName="Pill" Property="Visibility" Value="Visible" />
+        </Trigger>
+      </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <DataTemplate x:Key="NavEntryContent" DataType="{x:Type main:NavItem}">
+      <StackPanel Orientation="Horizontal">
+        <TextBlock Style="{StaticResource IconText}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Glyph}" />
+        <TextBlock Margin="16,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Title}" />
+      </StackPanel>
+    </DataTemplate>
+
+    <Style x:Key="NavListItem" TargetType="ListBoxItem">
+      <Setter Property="OverridesDefaultStyle" Value="True" />
+      <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+      <Setter Property="controls:FocusRing.IsEnabled" Value="True" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ListBoxItem">
+            <Grid>
+              <ContentControl Template="{StaticResource NavEntryTemplate}" Tag="{TemplateBinding IsSelected}"
+                              Content="{TemplateBinding Content}" ContentTemplate="{StaticResource NavEntryContent}" Focusable="False" />
+              <controls:FocusRingVisual x:Name="Ring" Margin="0,1" Visibility="Collapsed" />
+            </Grid>
+            <ControlTemplate.Triggers>
+              <Trigger Property="controls:FocusRing.IsVisible" Value="True">
+                <Setter TargetName="Ring" Property="Visibility" Value="Visible" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+  </Window.Resources>
+
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="48" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+
+    <!-- ======================================================== Title bar -->
+    <StackPanel Margin="16,0,0,0" Orientation="Horizontal" VerticalAlignment="Center">
+      <TextBlock Style="{StaticResource IconText}" FontSize="16" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Text="&#xE7F4;" />
+      <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" FontSize="12" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="Display Toolkit" />
+    </StackPanel>
+
+    <Grid Grid.Row="1">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="280" />
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
+
+      <!-- ======================================================== Navigation pane -->
+      <DockPanel Margin="8,0,8,12">
+        <ContentControl DockPanel.Dock="Bottom" Template="{StaticResource NavEntryTemplate}" Tag="{Binding IsSettingsSelected}"
+                        Content="{Binding SettingsItem}" ContentTemplate="{StaticResource NavEntryContent}" Focusable="False"
+                        MouseLeftButtonUp="OnSettingsClick" Cursor="Hand" AutomationProperties.Name="Settings" />
+
+        <!-- Monitor card -->
+        <StackPanel DockPanel.Dock="Top" Margin="8,4,8,16" Orientation="Horizontal"
+                    Visibility="{Binding Monitor, Converter={StaticResource VisibleWhenNotNull}}">
+          <Border Width="40" Height="40" CornerRadius="6" Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+            <TextBlock Style="{StaticResource IconText}" HorizontalAlignment="Center" FontSize="20"
+                       Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="&#xE7F4;" />
+          </Border>
+          <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+            <TextBlock Style="{StaticResource BodyStrongText}" Text="{Binding Monitor.Name}" />
+            <TextBlock Style="{StaticResource CaptionText}" Text="{Binding Monitor.Link}" />
+          </StackPanel>
+        </StackPanel>
+
+        <StackPanel DockPanel.Dock="Top" Margin="8,4,8,16" Visibility="{Binding Monitor, Converter={StaticResource VisibleWhenNull}}">
+          <TextBlock Style="{StaticResource BodyStrongText}" Text="No monitor" />
+          <TextBlock Style="{StaticResource CaptionText}" Text="Turn the monitor on, or check that DDC/CI is on in its menu." />
+          <Button Margin="0,8,0,0" HorizontalAlignment="Left" Padding="12,4" Content="Try again" Command="{Binding RetryCommand}" />
+        </StackPanel>
+
+        <ListBox ItemsSource="{Binding NavItems}" SelectedItem="{Binding SelectedNavItem, Mode=TwoWay}"
+                 ItemContainerStyle="{StaticResource NavListItem}" Background="Transparent" BorderThickness="0"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
+      </DockPanel>
+
+      <!-- ======================================================== Content -->
+      <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+        <StackPanel x:Name="PageHost" MaxWidth="1000" Margin="28,0,40,40">
+          <!-- Breadcrumb for sub-pages: "Display › Six-axis color" with the parent clickable. -->
+          <StackPanel Margin="0,0,0,24" Orientation="Horizontal">
+            <Button Padding="0" BorderThickness="0" Background="Transparent" Cursor="Hand" Command="{Binding GoToParentCommand}"
+                    Visibility="{Binding Page.Parent, Converter={StaticResource VisibleWhenNotNull}}">
+              <Button.Template>
+                <ControlTemplate TargetType="Button">
+                  <TextBlock x:Name="Label" Style="{StaticResource PageTitle}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                             Text="{Binding Page.Parent.Title}" />
+                  <ControlTemplate.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                      <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                    </Trigger>
+                  </ControlTemplate.Triggers>
+                </ControlTemplate>
+              </Button.Template>
+            </Button>
+            <TextBlock Margin="12,0" VerticalAlignment="Center" Style="{StaticResource IconText}" FontSize="14"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="&#xE76C;"
+                       Visibility="{Binding Page.Parent, Converter={StaticResource VisibleWhenNotNull}}" />
+            <TextBlock Style="{StaticResource PageTitle}" Text="{Binding Page.Title}" />
+          </StackPanel>
+
+          <ContentControl Content="{Binding Page}" Focusable="False" />
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+
+    <!-- ======================================================== Confirmation dialog -->
+    <Grid Grid.RowSpan="2" Visibility="{Binding Confirmation, Converter={StaticResource VisibleWhenNotNull}}">
+      <Rectangle Fill="{DynamicResource SmokeFillColorDefaultBrush}" />
+      <Border Width="480" HorizontalAlignment="Center" VerticalAlignment="Center" CornerRadius="8" BorderThickness="1"
+              Background="{DynamicResource SolidBackgroundFillColorBaseBrush}" BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}">
+        <Border.Effect>
+          <DropShadowEffect BlurRadius="40" ShadowDepth="12" Opacity="0.25" />
+        </Border.Effect>
+        <StackPanel>
+          <StackPanel Margin="24">
+            <TextBlock FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Confirmation.Title}" />
+            <TextBlock Margin="0,12,0,0" FontSize="14" TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                       Text="{Binding Confirmation.Message}" />
+            <TextBlock Margin="0,8,0,0" Style="{StaticResource CaptionText}" Text="{Binding Confirmation.Detail}"
+                       Visibility="{Binding Confirmation.Detail, Converter={StaticResource VisibleWhenNotNull}}" />
+          </StackPanel>
+          <Border Padding="24" CornerRadius="0,0,8,8" Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}">
+            <UniformGrid Columns="2">
+              <Button Margin="0,0,4,0" Content="{Binding Confirmation.PrimaryText}" Command="{Binding ConfirmPrimaryCommand}"
+                      Style="{DynamicResource AccentButtonStyle}" HorizontalAlignment="Stretch" />
+              <Button x:Name="CancelButton" Margin="4,0,0,0" Content="Cancel" Command="{Binding ConfirmCancelCommand}" IsCancel="True"
+                      HorizontalAlignment="Stretch" />
+            </UniformGrid>
+          </Border>
+        </StackPanel>
+      </Border>
+    </Grid>
+  </Grid>
+</Window>

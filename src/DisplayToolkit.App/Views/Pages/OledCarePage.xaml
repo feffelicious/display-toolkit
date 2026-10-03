@@ -1,0 +1,115 @@
+<UserControl x:Class="DisplayToolkit.App.Views.Pages.OledCarePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="clr-namespace:DisplayToolkit.App.Controls"
+             xmlns:main="clr-namespace:DisplayToolkit.App.ViewModels.Main"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance main:OledCarePageViewModel}">
+  <StackPanel>
+
+    <!-- ======================================================== Pixel cleaning -->
+    <Border Padding="20" CornerRadius="8" BorderThickness="1"
+            Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+            Visibility="{Binding PixelCleaning, Converter={StaticResource VisibleWhenNotNull}}">
+      <StackPanel>
+        <DockPanel>
+          <Button DockPanel.Dock="Right" VerticalAlignment="Center" Padding="16,6" Content="Run pixel cleaning"
+                  Command="{Binding RunPixelCleaningCommand}"
+                  Visibility="{Binding IsCleaning, Converter={StaticResource VisibleWhenFalse}}" />
+          <Border Width="48" Height="48" CornerRadius="8" Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+            <TextBlock Style="{StaticResource IconText}" HorizontalAlignment="Center" FontSize="24"
+                       Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Text="&#xF4A5;" />
+          </Border>
+          <StackPanel Margin="16,0,16,0" VerticalAlignment="Center">
+            <TextBlock FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="Pixel cleaning" />
+            <TextBlock Style="{StaticResource CaptionText}"
+                       Text="Refreshes the panel to reduce temporary image retention. The screen goes dark for about 6 minutes." />
+          </StackPanel>
+        </DockPanel>
+
+        <StackPanel Margin="64,16,0,0" Visibility="{Binding IsCleaning, Converter={StaticResource VisibleWhenTrue}}">
+          <TextBlock Style="{StaticResource CaptionText}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding CleaningRemaining}" />
+          <ProgressBar Margin="0,8,0,0" Height="4" Minimum="0" Maximum="1" Value="{Binding CleaningProgress, Mode=OneWay}" />
+        </StackPanel>
+
+        <DockPanel Margin="64,16,0,0" Visibility="{Binding PixelCleaningReminder, Converter={StaticResource VisibleWhenNotNull}}">
+          <ComboBox DockPanel.Dock="Right" MinWidth="160" ItemsSource="{Binding PixelCleaningReminder.Options}" DisplayMemberPath="Name"
+                    SelectedItem="{Binding PixelCleaningReminder.SelectedOption, Mode=TwoWay}" AutomationProperties.Name="Remind me after" />
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="Remind me after" />
+            <TextBlock Style="{StaticResource CaptionText}" Text="The monitor shows a reminder after this much use." />
+          </StackPanel>
+        </DockPanel>
+      </StackPanel>
+    </Border>
+
+    <!-- ======================================================== Panel protection -->
+    <TextBlock Style="{StaticResource SettingsGroupHeader}" Text="Panel protection" />
+
+    <controls:SettingsCard Header="Screen dimming" Description="Dims the screen when the picture hasn't changed for a while."
+                           Visibility="{Binding ScreenDimming, Converter={StaticResource VisibleWhenNotNull}}">
+      <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding ScreenDimming.Toggled, Mode=TwoWay}" AutomationProperties.Name="Screen dimming" />
+    </controls:SettingsCard>
+    <controls:SettingsCard Header="Logo detection" Description="Lowers the brightness of logos that stay in one place."
+                           Visibility="{Binding LogoDetection, Converter={StaticResource VisibleWhenNotNull}}">
+      <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding LogoDetection.Toggled, Mode=TwoWay}" AutomationProperties.Name="Logo detection" />
+    </controls:SettingsCard>
+    <controls:SettingsCard Header="Taskbar detection" Description="Lowers the brightness around the taskbar."
+                           Visibility="{Binding TaskbarDetection, Converter={StaticResource VisibleWhenNotNull}}">
+      <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding TaskbarDetection.Toggled, Mode=TwoWay}" AutomationProperties.Name="Taskbar detection" />
+    </controls:SettingsCard>
+    <controls:SettingsCard Header="Boundary detection" Description="Lowers the brightness of static window edges."
+                           Visibility="{Binding BoundaryDetection, Converter={StaticResource VisibleWhenNotNull}}">
+      <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding BoundaryDetection.Toggled, Mode=TwoWay}" AutomationProperties.Name="Boundary detection" />
+    </controls:SettingsCard>
+    <controls:SettingsCard Header="Outer dimming" Description="Dims the area around a bright spot."
+                           Visibility="{Binding OuterDimming, Converter={StaticResource VisibleWhenNotNull}}">
+      <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding OuterDimming.Toggled, Mode=TwoWay}" AutomationProperties.Name="Outer dimming" />
+    </controls:SettingsCard>
+    <controls:SettingsCard Header="Global dimming" Description="Adjusts overall brightness to protect the panel."
+                           Visibility="{Binding GlobalDimming, Converter={StaticResource VisibleWhenNotNull}}">
+      <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding GlobalDimming.Toggled, Mode=TwoWay}" AutomationProperties.Name="Global dimming" />
+    </controls:SettingsCard>
+    <controls:SettingsCard Header="Uniform brightness" Description="Keeps brightness steady as the picture changes."
+                           Visibility="{Binding UniformBrightness, Converter={StaticResource VisibleWhenNotNull}}">
+      <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding UniformBrightness.Toggled, Mode=TwoWay}" AutomationProperties.Name="Uniform brightness" />
+    </controls:SettingsCard>
+    <controls:SettingsCard Header="Anti-flicker" Description="Reduces flicker in dark scenes. The monitor switches to an HDR mode while it's on."
+                           Visibility="{Binding AntiFlicker, Converter={StaticResource VisibleWhenNotNull}}">
+      <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding AntiFlicker.Toggled, Mode=TwoWay}" AutomationProperties.Name="Anti-flicker" />
+    </controls:SettingsCard>
+    <controls:SettingsCard Header="Screen move" Description="Shifts the picture slightly over time to prevent image retention."
+                           Visibility="{Binding ScreenMove, Converter={StaticResource VisibleWhenNotNull}}">
+      <ItemsControl Width="320" Style="{StaticResource SegmentedChoices}" ItemsSource="{Binding ScreenMove.Choices}" />
+    </controls:SettingsCard>
+
+    <!-- ======================================================== Proximity sensor -->
+    <TextBlock Style="{StaticResource SettingsGroupHeader}" Text="Proximity sensor"
+               Visibility="{Binding ProximityDistance, Converter={StaticResource VisibleWhenNotNull}}" />
+
+    <controls:SettingsExpander Header="Turn the screen off when I leave" HeaderIcon="&#xE95A;"
+                               Description="Uses the monitor's sensor to notice when nobody is in front of it."
+                               Visibility="{Binding ProximityDistance, Converter={StaticResource VisibleWhenNotNull}}">
+      <controls:SettingsExpander.HeaderContent>
+        <ComboBox MinWidth="160" ItemsSource="{Binding ProximityDistance.Options}" DisplayMemberPath="Name"
+                  SelectedItem="{Binding ProximityDistance.SelectedOption, Mode=TwoWay}" AutomationProperties.Name="Detection distance" />
+      </controls:SettingsExpander.HeaderContent>
+      <StackPanel IsEnabled="{Binding IsProximityOn}">
+        <controls:SettingsCard IsNested="True" Header="Turn off after" Visibility="{Binding ProximityScreenOff, Converter={StaticResource VisibleWhenNotNull}}">
+          <ComboBox MinWidth="160" ItemsSource="{Binding ProximityScreenOff.Options}" DisplayMemberPath="Name"
+                    SelectedItem="{Binding ProximityScreenOff.SelectedOption, Mode=TwoWay}" AutomationProperties.Name="Turn off after" />
+        </controls:SettingsCard>
+        <controls:SettingsCard IsNested="True" Header="Sensitivity" Visibility="{Binding ProximitySensitivity, Converter={StaticResource VisibleWhenNotNull}}">
+          <StackPanel Orientation="Horizontal">
+            <Slider Width="200" VerticalAlignment="Center" Minimum="0" Maximum="{Binding ProximitySensitivity.Maximum}" IsMoveToPointEnabled="True"
+                    IsSnapToTickEnabled="True" TickFrequency="1" Value="{Binding ProximitySensitivity.SliderValue, Mode=TwoWay}" AutomationProperties.Name="Sensitivity" />
+            <TextBlock Width="36" VerticalAlignment="Center" TextAlignment="Right" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                       Text="{Binding ProximitySensitivity.Value}" />
+          </StackPanel>
+        </controls:SettingsCard>
+      </StackPanel>
+    </controls:SettingsExpander>
+  </StackPanel>
+</UserControl>

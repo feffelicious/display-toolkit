@@ -11,7 +11,8 @@ using Microsoft.Extensions.Logging;
 namespace DisplayToolkit.App.Tray;
 
 /// <summary>Connects the tray icon to the flyout and the context menu, and display changes to monitor rescans.</summary>
-internal sealed class TrayController(MonitorService monitors, FlyoutWindow flyout, FlyoutViewModel flyoutViewModel, ILogger<TrayController> logger)
+internal sealed class TrayController(
+    MonitorService monitors, FlyoutWindow flyout, FlyoutViewModel flyoutViewModel, MainWindowLauncher mainWindow, ILogger<TrayController> logger)
     : IDisposable
 {
     /// <summary>
@@ -86,13 +87,16 @@ internal sealed class TrayController(MonitorService monitors, FlyoutWindow flyou
 
     private ContextMenu CreateMenu()
     {
-        var quickSettings = new MenuItem { Header = "Quick settings" };
+        var open = new MenuItem { Header = "Open Display Toolkit", FontWeight = FontWeights.SemiBold };
+        open.Click += (_, _) => mainWindow.Show();
+
+        var quickSettings = new MenuItem { Header = "Quick settings", InputGestureText = "Ctrl+Alt+D" };
         quickSettings.Click += (_, _) => flyout.ShowFlyout();
 
         var exit = new MenuItem { Header = "Exit" };
         exit.Click += (_, _) => Application.Current.Shutdown();
 
-        return new ContextMenu { Items = { quickSettings, new Separator(), exit } };
+        return new ContextMenu { Items = { open, quickSettings, new Separator(), exit } };
     }
 
     private void UpdateTooltip()

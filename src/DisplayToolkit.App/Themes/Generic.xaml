@@ -285,4 +285,171 @@
     </Setter>
   </Style>
 
+  <!-- ============================================================ Settings card -->
+
+  <Style TargetType="controls:SettingsCard">
+    <Setter Property="MinHeight" Value="68" />
+    <Setter Property="Padding" Value="16,12" />
+    <Setter Property="Margin" Value="0,0,0,2" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="controls:FocusRing.IsEnabled" Value="True" />
+    <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="controls:SettingsCard">
+          <Grid>
+            <Border x:Name="Card" CornerRadius="4" BorderThickness="1"
+                    Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" />
+            <Rectangle x:Name="Divider" Height="1" VerticalAlignment="Top" Visibility="Collapsed"
+                       Fill="{DynamicResource DividerStrokeColorDefaultBrush}" />
+            <Grid Margin="{TemplateBinding Padding}" VerticalAlignment="Center">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="IconColumn" Width="36" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition x:Name="ChevronColumn" Width="0" />
+              </Grid.ColumnDefinitions>
+              <TextBlock x:Name="Icon" VerticalAlignment="Center" FontFamily="{StaticResource IconFont}" FontSize="20"
+                         Foreground="{TemplateBinding Foreground}" Text="{TemplateBinding HeaderIcon}" />
+              <Border x:Name="HdrIcon" Visibility="Collapsed" Height="18" Padding="3,0" HorizontalAlignment="Left" VerticalAlignment="Center"
+                      CornerRadius="3" BorderThickness="1.5" BorderBrush="{TemplateBinding Foreground}">
+                <TextBlock VerticalAlignment="Center" FontSize="9" FontWeight="Bold" Text="HDR" Foreground="{TemplateBinding Foreground}" />
+              </Border>
+              <StackPanel Grid.Column="1" Margin="0,0,16,0" VerticalAlignment="Center">
+                <TextBlock FontSize="14" TextWrapping="Wrap" Foreground="{TemplateBinding Foreground}" Text="{TemplateBinding Header}" />
+                <TextBlock x:Name="DescriptionText" FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                           Text="{TemplateBinding Description}" />
+              </StackPanel>
+              <ContentPresenter Grid.Column="2" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="3" HorizontalAlignment="Right" VerticalAlignment="Center" FontFamily="{StaticResource IconFont}"
+                         FontSize="12" Foreground="{TemplateBinding Foreground}" Text="&#xE76C;" />
+            </Grid>
+            <controls:FocusRingVisual x:Name="Ring" Visibility="Collapsed" />
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="HeaderIcon" Value="{x:Null}">
+              <Setter TargetName="IconColumn" Property="Width" Value="0" />
+            </Trigger>
+            <Trigger Property="HeaderIcon" Value="HDR">
+              <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />
+              <Setter TargetName="HdrIcon" Property="Visibility" Value="Visible" />
+            </Trigger>
+            <Trigger Property="Description" Value="{x:Null}">
+              <Setter TargetName="DescriptionText" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <Trigger Property="IsClickEnabled" Value="True">
+              <Setter TargetName="ChevronColumn" Property="Width" Value="28" />
+              <Setter Property="Focusable" Value="True" />
+              <Setter Property="Cursor" Value="Hand" />
+            </Trigger>
+            <MultiTrigger>
+              <MultiTrigger.Conditions>
+                <Condition Property="IsClickEnabled" Value="True" />
+                <Condition Property="IsMouseOver" Value="True" />
+              </MultiTrigger.Conditions>
+              <Setter TargetName="Card" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+            </MultiTrigger>
+            <MultiTrigger>
+              <MultiTrigger.Conditions>
+                <Condition Property="IsClickEnabled" Value="True" />
+                <Condition Property="IsPressed" Value="True" />
+              </MultiTrigger.Conditions>
+              <Setter TargetName="Card" Property="Background" Value="{DynamicResource ControlFillColorTertiaryBrush}" />
+            </MultiTrigger>
+            <!-- Nested in an expander: flat row with a divider, indented under the expander's icon. -->
+            <Trigger Property="IsNested" Value="True">
+              <Setter TargetName="Card" Property="Visibility" Value="Collapsed" />
+              <Setter TargetName="Divider" Property="Visibility" Value="Visible" />
+              <Setter Property="Padding" Value="52,10,16,10" />
+              <Setter Property="Margin" Value="0" />
+              <Setter Property="MinHeight" Value="52" />
+            </Trigger>
+            <Trigger Property="controls:FocusRing.IsVisible" Value="True">
+              <Setter TargetName="Ring" Property="Visibility" Value="Visible" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- ============================================================ Settings expander -->
+
+  <Style TargetType="controls:SettingsExpander">
+    <Setter Property="Margin" Value="0,0,0,2" />
+    <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="controls:SettingsExpander">
+          <StackPanel>
+            <ToggleButton x:Name="HeaderButton" MinHeight="68" FocusVisualStyle="{x:Null}" controls:FocusRing.IsEnabled="True"
+                          HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                          IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                          AutomationProperties.Name="{TemplateBinding Header}">
+              <ToggleButton.Template>
+                <ControlTemplate TargetType="ToggleButton">
+                  <Grid>
+                    <Border x:Name="Card" CornerRadius="4" BorderThickness="1"
+                            Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" />
+                    <ContentPresenter Margin="16,12" VerticalAlignment="Center" HorizontalAlignment="Stretch" />
+                    <controls:FocusRingVisual x:Name="Ring" Visibility="Collapsed" />
+                  </Grid>
+                  <ControlTemplate.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                      <Setter TargetName="Card" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+                    </Trigger>
+                    <Trigger Property="IsChecked" Value="True">
+                      <Setter TargetName="Card" Property="CornerRadius" Value="4,4,0,0" />
+                    </Trigger>
+                    <Trigger Property="controls:FocusRing.IsVisible" Value="True">
+                      <Setter TargetName="Ring" Property="Visibility" Value="Visible" />
+                    </Trigger>
+                  </ControlTemplate.Triggers>
+                </ControlTemplate>
+              </ToggleButton.Template>
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition x:Name="IconColumn" Width="36" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="28" />
+                </Grid.ColumnDefinitions>
+                <TextBlock VerticalAlignment="Center" FontFamily="{StaticResource IconFont}" FontSize="20"
+                           Foreground="{TemplateBinding Foreground}" Text="{TemplateBinding HeaderIcon}" />
+                <StackPanel Grid.Column="1" Margin="0,0,16,0" VerticalAlignment="Center">
+                  <TextBlock FontSize="14" TextWrapping="Wrap" Foreground="{TemplateBinding Foreground}" Text="{TemplateBinding Header}" />
+                  <TextBlock x:Name="DescriptionText" FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                             Text="{TemplateBinding Description}" />
+                </StackPanel>
+                <ContentPresenter Grid.Column="2" VerticalAlignment="Center" Content="{TemplateBinding HeaderContent}" />
+                <TextBlock x:Name="Chevron" Grid.Column="3" HorizontalAlignment="Right" VerticalAlignment="Center"
+                           FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="{TemplateBinding Foreground}" Text="&#xE70D;" />
+              </Grid>
+            </ToggleButton>
+            <Border x:Name="Body" Visibility="Collapsed" CornerRadius="0,0,4,4" BorderThickness="1,0,1,1"
+                    Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
+                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+              <ContentPresenter />
+            </Border>
+          </StackPanel>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsExpanded" Value="True">
+              <Setter TargetName="Body" Property="Visibility" Value="Visible" />
+              <Setter TargetName="Chevron" Property="Text" Value="&#xE70E;" />
+            </Trigger>
+            <Trigger Property="Description" Value="{x:Null}">
+              <Setter TargetName="DescriptionText" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <Trigger Property="HeaderIcon" Value="{x:Null}">
+              <Setter TargetName="IconColumn" Property="Width" Value="0" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
 </ResourceDictionary>

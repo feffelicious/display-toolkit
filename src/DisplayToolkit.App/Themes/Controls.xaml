@@ -52,6 +52,9 @@
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="CheckBox">
+          <StackPanel Orientation="Horizontal" Background="Transparent">
+          <TextBlock x:Name="StateLabel" Margin="0,0,12,0" VerticalAlignment="Center" FontSize="14" Visibility="Collapsed"
+                     Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="Off" />
           <Grid Width="40" Height="20" Background="Transparent">
             <Border x:Name="Track" CornerRadius="10" BorderThickness="1"
                     Background="{DynamicResource ControlAltFillColorSecondaryBrush}"
@@ -64,8 +67,13 @@
             </Ellipse>
             <controls:FocusRingVisual x:Name="Ring" CornerRadius="13" Visibility="Collapsed" />
           </Grid>
+          </StackPanel>
           <ControlTemplate.Triggers>
+            <Trigger Property="Tag" Value="Labeled">
+              <Setter TargetName="StateLabel" Property="Visibility" Value="Visible" />
+            </Trigger>
             <Trigger Property="IsChecked" Value="True">
+              <Setter TargetName="StateLabel" Property="Text" Value="On" />
               <Setter TargetName="Track" Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
               <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
               <Setter TargetName="Knob" Property="Fill" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
@@ -96,6 +104,11 @@
         </ControlTemplate>
       </Setter.Value>
     </Setter>
+  </Style>
+
+  <!-- Settings-page switch: "On"/"Off" next to it, as in Windows Settings. -->
+  <Style x:Key="SettingsToggle" TargetType="CheckBox" BasedOn="{StaticResource ToggleSwitch}">
+    <Setter Property="Tag" Value="Labeled" />
   </Style>
 
   <!-- ============================================================ Buttons -->
@@ -209,7 +222,46 @@
     </Setter>
   </Style>
 
+  <!-- ============================================================ Settings pages -->
+
+  <Style x:Key="PageTitle" TargetType="TextBlock">
+    <Setter Property="FontSize" Value="28" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+  </Style>
+
+  <Style x:Key="SettingsGroupHeader" TargetType="TextBlock" BasedOn="{StaticResource BodyStrongText}">
+    <Setter Property="Margin" Value="0,26,0,8" />
+  </Style>
+
+  <!-- A row of Segment buttons for FeatureState.Choices (Off, 1, 2, 3, 4 or named options). -->
+  <Style x:Key="SegmentedChoices" TargetType="ItemsControl">
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="ItemsPanel">
+      <Setter.Value>
+        <ItemsPanelTemplate>
+          <UniformGrid Rows="1" />
+        </ItemsPanelTemplate>
+      </Setter.Value>
+    </Setter>
+    <Setter Property="ItemTemplate">
+      <Setter.Value>
+        <DataTemplate>
+          <Button Style="{StaticResource Segment}" Content="{Binding Name}" Tag="{Binding IsSelected}" Command="{Binding SelectCommand}" />
+        </DataTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
   <!-- ============================================================ Info bar -->
+
+  <Style x:Key="InfoInfoBar" TargetType="Border">
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="16,12" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Background" Value="{DynamicResource SystemFillColorAttentionBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+  </Style>
 
   <Style x:Key="CautionInfoBar" TargetType="Border">
     <Setter Property="CornerRadius" Value="4" />

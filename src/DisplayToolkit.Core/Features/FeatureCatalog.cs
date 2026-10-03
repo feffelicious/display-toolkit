@@ -137,7 +137,10 @@ public static class FeatureCatalog
     public static readonly FlagFeature GlobalDimming = new("global-dimming", "Global dimming control", Vcp.AsusToggles2, bit: 14);
 
     /// <summary>Writing 1 starts pixel cleaning: the screen goes dark for about 6 minutes.</summary>
-    public static readonly FlagFeature PixelCleaning = new("pixel-cleaning", "Pixel cleaning", Vcp.AsusToggles2, bit: 4);
+    public static readonly FlagFeature PixelCleaning = new("pixel-cleaning", "Pixel cleaning", Vcp.AsusToggles2, bit: 4)
+    {
+        Settling = WriteSettling.Unverified,
+    };
 
     // Changes the panel timing: Windows drops and re-detects the monitor (verified on a PG32UCWM).
     public static readonly SwitchFeature OledAntiFlicker = new("oled-anti-flicker", "OLED anti-flicker", Vcp.AsusOledAntiFlicker)

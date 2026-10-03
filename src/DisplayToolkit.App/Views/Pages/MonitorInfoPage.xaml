@@ -1,0 +1,63 @@
+<UserControl x:Class="DisplayToolkit.App.Views.Pages.MonitorInfoPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="clr-namespace:DisplayToolkit.App.Controls"
+             xmlns:main="clr-namespace:DisplayToolkit.App.ViewModels.Main"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance main:MonitorInfoPageViewModel}">
+  <StackPanel>
+    <controls:SettingsCard Header="Copy diagnostics" HeaderIcon="&#xE8C8;" Description="Everything below as text, for a bug report.">
+      <StackPanel Orientation="Horizontal">
+        <TextBlock Margin="0,0,12,0" VerticalAlignment="Center" Style="{StaticResource CaptionText}" Text="Copied"
+                   Visibility="{Binding Copied, Converter={StaticResource VisibleWhenTrue}}" />
+        <Button Padding="16,5" Content="Copy" Command="{Binding CopyDiagnosticsCommand}" />
+      </StackPanel>
+    </controls:SettingsCard>
+
+    <TextBlock Style="{StaticResource SettingsGroupHeader}" Text="Monitor" />
+    <controls:SettingsCard Header="Name"><TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Monitor.Name}" /></controls:SettingsCard>
+    <controls:SettingsCard Header="Model id"><TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Model}" /></controls:SettingsCard>
+    <controls:SettingsCard Header="Connection"><TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Link}" /></controls:SettingsCard>
+    <controls:SettingsCard Header="Firmware"><TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Firmware}" /></controls:SettingsCard>
+    <controls:SettingsCard Header="Protocol" Description="ASUS VCP version and MCCS version">
+      <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+        <Run Text="{Binding AsusVcpVersion, Mode=OneWay}" /> · MCCS <Run Text="{Binding MccsVersion, Mode=OneWay}" />
+      </TextBlock>
+    </controls:SettingsCard>
+    <controls:SettingsCard Header="Device path">
+      <TextBlock MaxWidth="460" TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding DevicePath}" />
+    </controls:SettingsCard>
+
+    <TextBlock Style="{StaticResource SettingsGroupHeader}" Text="Settings it reports" />
+    <Border CornerRadius="4" BorderThickness="1" Padding="16,8"
+            Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+      <ItemsControl ItemsSource="{Binding Features}" Focusable="False">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate DataType="{x:Type main:FeatureRow}">
+            <Grid Height="28">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="60" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <TextBlock VerticalAlignment="Center" FontFamily="Cascadia Mono, Consolas" FontSize="12"
+                         Foreground="{DynamicResource TextFillColorTertiaryBrush}" Text="{Binding Code}" />
+              <TextBlock Grid.Column="1" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Name}" />
+              <TextBlock Grid.Column="2" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Value}" />
+            </Grid>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </Border>
+    <TextBlock Margin="0,8,0,0" Style="{StaticResource CaptionText}" Text="{Binding UnsupportedFeatures, StringFormat=Not supported by this monitor: {0}}" />
+
+    <TextBlock Style="{StaticResource SettingsGroupHeader}" Text="Capabilities string" />
+    <Border CornerRadius="4" BorderThickness="1" Padding="16,12"
+            Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+      <TextBox IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0" Background="Transparent" FontFamily="Cascadia Mono, Consolas" FontSize="12"
+               Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Capabilities, Mode=OneWay}" />
+    </Border>
+  </StackPanel>
+</UserControl>

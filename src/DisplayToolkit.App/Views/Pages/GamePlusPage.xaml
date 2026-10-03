@@ -1,0 +1,35 @@
+<UserControl x:Class="DisplayToolkit.App.Views.Pages.GamePlusPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="clr-namespace:DisplayToolkit.App.Controls"
+             xmlns:main="clr-namespace:DisplayToolkit.App.ViewModels.Main"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance main:GamePlusPageViewModel}">
+  <StackPanel>
+    <TextBlock Style="{StaticResource CaptionText}" Margin="0,0,0,8"
+               Text="Overlays drawn by the monitor itself. They work with any input and never appear in screenshots or recordings." />
+
+    <controls:SettingsCard Header="Crosshair" HeaderIcon="&#xF272;" Visibility="{Binding Crosshair, Converter={StaticResource VisibleWhenNotNull}}">
+      <ComboBox MinWidth="200" ItemsSource="{Binding Crosshair.Options}" DisplayMemberPath="Name"
+                SelectedItem="{Binding Crosshair.SelectedOption, Mode=TwoWay}" AutomationProperties.Name="Crosshair" />
+    </controls:SettingsCard>
+
+    <controls:SettingsCard Header="FPS counter" HeaderIcon="&#xF404;" Description="The refresh rate the monitor is receiving."
+                           Visibility="{Binding FpsCounter, Converter={StaticResource VisibleWhenNotNull}}">
+      <ItemsControl Width="240" Style="{StaticResource SegmentedChoices}" ItemsSource="{Binding FpsCounter.Choices}" />
+    </controls:SettingsCard>
+
+    <controls:SettingsCard Header="Timer" HeaderIcon="&#xE916;" Description="Counts down on screen, for example a respawn timer."
+                           Visibility="{Binding Timer, Converter={StaticResource VisibleWhenNotNull}}">
+      <ComboBox MinWidth="200" ItemsSource="{Binding Timer.Options}" DisplayMemberPath="Name"
+                SelectedItem="{Binding Timer.SelectedOption, Mode=TwoWay}" AutomationProperties.Name="Timer" />
+    </controls:SettingsCard>
+
+    <controls:SettingsCard Header="Display alignment" HeaderIcon="&#xE80A;" Description="Alignment lines for lining up several monitors."
+                           Visibility="{Binding DisplayAlignment, Converter={StaticResource VisibleWhenNotNull}}">
+      <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding DisplayAlignment.Toggled, Mode=TwoWay}" AutomationProperties.Name="Display alignment" />
+    </controls:SettingsCard>
+  </StackPanel>
+</UserControl>

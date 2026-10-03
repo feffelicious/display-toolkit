@@ -1,0 +1,226 @@
+<UserControl x:Class="DisplayToolkit.App.Views.Pages.DisplayPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="clr-namespace:DisplayToolkit.App.Controls"
+             xmlns:main="clr-namespace:DisplayToolkit.App.ViewModels.Main"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance main:DisplayPageViewModel}">
+  <!--
+    Cards bind to nullable FeatureStates: FallbackValue=Collapsed hides a card when the monitor doesn't support the
+    feature (null), and IsAvailable hides it while the monitor can't use it (for example in HDR).
+  -->
+  <StackPanel>
+
+    <!-- ======================================================== Hero -->
+    <Border Padding="20" CornerRadius="8" BorderThickness="1"
+            Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center"
+                    Visibility="{Binding InputSource, Converter={StaticResource VisibleWhenNotNull}}">
+          <Button x:Name="SwitchInputButton" Padding="12,5" Click="OnSwitchInputClick" AutomationProperties.Name="Switch input">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Style="{StaticResource IconText}" FontSize="14" Text="&#xEA4E;" />
+              <TextBlock Margin="8,0,8,0" Text="Switch input" />
+              <TextBlock Style="{StaticResource IconText}" FontSize="10" Text="&#xE70D;" />
+            </StackPanel>
+            <Button.ContextMenu>
+              <ContextMenu ItemsSource="{Binding InputChoices}">
+                <ContextMenu.ItemContainerStyle>
+                  <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                    <Setter Property="Header" Value="{Binding Name}" />
+                    <Setter Property="Command" Value="{Binding SwitchCommand}" />
+                  </Style>
+                </ContextMenu.ItemContainerStyle>
+              </ContextMenu>
+            </Button.ContextMenu>
+          </Button>
+        </StackPanel>
+
+        <!-- Monitor illustration: panel with a soft accent bloom on a stand. -->
+        <Grid Width="120" Height="84" VerticalAlignment="Center">
+          <Border Height="64" VerticalAlignment="Top" CornerRadius="4" BorderThickness="1.5" BorderBrush="#2A2C31">
+            <Border.Background>
+              <RadialGradientBrush Center="0.3,0.7" GradientOrigin="0.3,0.7" RadiusX="0.9" RadiusY="1.1">
+                <GradientStop Offset="0" Color="#3A4FA8" />
+                <GradientStop Offset="0.55" Color="#151826" />
+                <GradientStop Offset="1" Color="#08090D" />
+              </RadialGradientBrush>
+            </Border.Background>
+          </Border>
+          <Rectangle Width="8" Height="14" Margin="0,0,0,4" VerticalAlignment="Bottom" Fill="{DynamicResource ControlStrongStrokeColorDefaultBrush}" />
+          <Rectangle Width="44" Height="4" RadiusX="2" RadiusY="2" VerticalAlignment="Bottom" Fill="{DynamicResource ControlStrongStrokeColorDefaultBrush}" />
+        </Grid>
+
+        <StackPanel Margin="20,0,0,0" VerticalAlignment="Center">
+          <TextBlock FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Monitor.Name}" />
+          <StackPanel Margin="0,6,0,0" Orientation="Horizontal">
+            <Ellipse Width="8" Height="8" VerticalAlignment="Center" Fill="{DynamicResource SystemFillColorSuccessBrush}" />
+            <TextBlock Margin="6,0,0,0" Style="{StaticResource CaptionText}" Text="{Binding LinkText}" />
+            <Border Margin="8,0,0,0" Padding="4,0" CornerRadius="3" VerticalAlignment="Center"
+                    Background="{DynamicResource AccentFillColorDefaultBrush}"
+                    Visibility="{Binding IsHdrActive, Converter={StaticResource VisibleWhenTrue}}">
+              <TextBlock FontSize="10" FontWeight="SemiBold" Text="HDR" Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+            </Border>
+          </StackPanel>
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
+    <!-- ======================================================== Picture -->
+    <TextBlock Style="{StaticResource SettingsGroupHeader}" Text="Picture" />
+
+    <controls:SettingsCard Header="Brightness" HeaderIcon="&#xE706;"
+                           Visibility="{Binding Brightness.IsAvailable, Converter={StaticResource VisibleWhenTrue}, FallbackValue=Collapsed}">
+      <StackPanel Orientation="Horizontal">
+        <Slider Width="240" VerticalAlignment="Center" Minimum="0" Maximum="{Binding Brightness.Maximum}" IsMoveToPointEnabled="True"
+                IsSnapToTickEnabled="True" TickFrequency="1" Value="{Binding Brightness.SliderValue, Mode=TwoWay}"
+                AutomationProperties.Name="Brightness" />
+        <TextBlock Width="36" VerticalAlignment="Center" TextAlignment="Right" Typography.NumeralAlignment="Tabular"
+                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Brightness.Value}" />
+      </StackPanel>
+    </controls:SettingsCard>
+
+    <controls:SettingsCard Header="Brightness" HeaderIcon="&#xE706;" Description="In HDR the monitor sets brightness itself."
+                           Visibility="{Binding Brightness.IsLocked, Converter={StaticResource VisibleWhenTrue}, FallbackValue=Collapsed}" />
+
+    <controls:SettingsCard Header="Contrast" HeaderIcon="&#xE7A1;"
+                           Visibility="{Binding Contrast.IsAvailable, Converter={StaticResource VisibleWhenTrue}, FallbackValue=Collapsed}">
+      <StackPanel Orientation="Horizontal">
+        <Slider Width="240" VerticalAlignment="Center" Minimum="0" Maximum="{Binding Contrast.Maximum}" IsMoveToPointEnabled="True"
+                IsSnapToTickEnabled="True" TickFrequency="1" Value="{Binding Contrast.SliderValue, Mode=TwoWay}"
+                AutomationProperties.Name="Contrast" />
+        <TextBlock Width="36" VerticalAlignment="Center" TextAlignment="Right" Typography.NumeralAlignment="Tabular"
+                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Contrast.Value}" />
+      </StackPanel>
+    </controls:SettingsCard>
+
+    <controls:SettingsCard Header="Picture mode" HeaderIcon="&#xE790;" Description="Each mode keeps its own brightness and color settings."
+                           Visibility="{Binding PictureMode.IsAvailable, Converter={StaticResource VisibleWhenTrue}, FallbackValue=Collapsed}">
+      <ComboBox MinWidth="200" ItemsSource="{Binding PictureMode.Options}" DisplayMemberPath="Name"
+                SelectedItem="{Binding PictureMode.SelectedOption, Mode=TwoWay}" AutomationProperties.Name="Picture mode" />
+    </controls:SettingsCard>
+
+    <controls:SettingsCard Header="Use HDR" HeaderIcon="HDR" Description="Windows HDR for this display. The monitor offers its own HDR modes while it's on."
+                           Visibility="{Binding CanUseHdr, Converter={StaticResource VisibleWhenTrue}}">
+      <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding UseHdr, Mode=TwoWay}" AutomationProperties.Name="Use HDR" />
+    </controls:SettingsCard>
+
+    <controls:SettingsCard Header="HDR mode" HeaderIcon="&#xE790;"
+                           Visibility="{Binding IsHdrActive, Converter={StaticResource VisibleWhenTrue}}">
+      <ComboBox MinWidth="200" ItemsSource="{Binding HdrPresets}" DisplayMemberPath="Name"
+                SelectedItem="{Binding HdrMode.SelectedOption, Mode=TwoWay}" AutomationProperties.Name="HDR mode" />
+    </controls:SettingsCard>
+
+    <!-- Color: SDR only. -->
+    <StackPanel Visibility="{Binding IsSdr, Converter={StaticResource VisibleWhenTrue}}">
+      <controls:SettingsExpander Header="Color" HeaderIcon="&#xE9CA;" Description="Temperature, gamma, saturation and sharpness for the current picture mode"
+                                 Visibility="{Binding ColorTemperature, Converter={StaticResource VisibleWhenNotNull}}">
+        <StackPanel>
+          <controls:SettingsCard IsNested="True" Header="Color temperature">
+            <ComboBox MinWidth="200" ItemsSource="{Binding ColorTemperature.Options}" DisplayMemberPath="Name"
+                      SelectedItem="{Binding ColorTemperature.SelectedOption, Mode=TwoWay}" AutomationProperties.Name="Color temperature" />
+          </controls:SettingsCard>
+
+          <StackPanel Visibility="{Binding ShowRgbGains, Converter={StaticResource VisibleWhenTrue}}">
+            <controls:SettingsCard IsNested="True" Header="Red" Visibility="{Binding RedGain, Converter={StaticResource VisibleWhenNotNull}}">
+              <StackPanel Orientation="Horizontal">
+                <Slider Width="240" VerticalAlignment="Center" Minimum="0" Maximum="{Binding RedGain.Maximum}" IsMoveToPointEnabled="True"
+                        IsSnapToTickEnabled="True" TickFrequency="1" Value="{Binding RedGain.SliderValue, Mode=TwoWay}" AutomationProperties.Name="Red" />
+                <TextBlock Width="36" VerticalAlignment="Center" TextAlignment="Right" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding RedGain.Value}" />
+              </StackPanel>
+            </controls:SettingsCard>
+            <controls:SettingsCard IsNested="True" Header="Green" Visibility="{Binding GreenGain, Converter={StaticResource VisibleWhenNotNull}}">
+              <StackPanel Orientation="Horizontal">
+                <Slider Width="240" VerticalAlignment="Center" Minimum="0" Maximum="{Binding GreenGain.Maximum}" IsMoveToPointEnabled="True"
+                        IsSnapToTickEnabled="True" TickFrequency="1" Value="{Binding GreenGain.SliderValue, Mode=TwoWay}" AutomationProperties.Name="Green" />
+                <TextBlock Width="36" VerticalAlignment="Center" TextAlignment="Right" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding GreenGain.Value}" />
+              </StackPanel>
+            </controls:SettingsCard>
+            <controls:SettingsCard IsNested="True" Header="Blue" Visibility="{Binding BlueGain, Converter={StaticResource VisibleWhenNotNull}}">
+              <StackPanel Orientation="Horizontal">
+                <Slider Width="240" VerticalAlignment="Center" Minimum="0" Maximum="{Binding BlueGain.Maximum}" IsMoveToPointEnabled="True"
+                        IsSnapToTickEnabled="True" TickFrequency="1" Value="{Binding BlueGain.SliderValue, Mode=TwoWay}" AutomationProperties.Name="Blue" />
+                <TextBlock Width="36" VerticalAlignment="Center" TextAlignment="Right" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding BlueGain.Value}" />
+              </StackPanel>
+            </controls:SettingsCard>
+          </StackPanel>
+
+          <controls:SettingsCard IsNested="True" Header="Gamma" Visibility="{Binding Gamma, Converter={StaticResource VisibleWhenNotNull}}">
+            <ItemsControl Width="300" Style="{StaticResource SegmentedChoices}" ItemsSource="{Binding Gamma.Choices}" />
+          </controls:SettingsCard>
+
+          <controls:SettingsCard IsNested="True" Header="Saturation" Visibility="{Binding Saturation, Converter={StaticResource VisibleWhenNotNull}}">
+            <StackPanel Orientation="Horizontal">
+              <Slider Width="240" VerticalAlignment="Center" Minimum="0" Maximum="{Binding Saturation.Maximum}" IsMoveToPointEnabled="True"
+                      IsSnapToTickEnabled="True" TickFrequency="1" Value="{Binding Saturation.SliderValue, Mode=TwoWay}" AutomationProperties.Name="Saturation" />
+              <TextBlock Width="36" VerticalAlignment="Center" TextAlignment="Right" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Saturation.Value}" />
+            </StackPanel>
+          </controls:SettingsCard>
+
+          <controls:SettingsCard IsNested="True" Header="Sharpness" Visibility="{Binding Sharpness, Converter={StaticResource VisibleWhenNotNull}}">
+            <StackPanel Orientation="Horizontal">
+              <Slider Width="240" VerticalAlignment="Center" Minimum="0" Maximum="{Binding Sharpness.Maximum}" IsMoveToPointEnabled="True"
+                      IsSnapToTickEnabled="True" TickFrequency="1" Value="{Binding Sharpness.SliderValue, Mode=TwoWay}" AutomationProperties.Name="Sharpness" />
+              <TextBlock Width="36" VerticalAlignment="Center" TextAlignment="Right" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Sharpness.Value}" />
+            </StackPanel>
+          </controls:SettingsCard>
+        </StackPanel>
+      </controls:SettingsExpander>
+
+      <controls:SettingsCard Header="Six-axis color" HeaderIcon="&#xE9E9;" Description="Saturation of red, yellow, green, cyan, blue and magenta"
+                             IsClickEnabled="True" Command="{Binding OpenSixAxisCommand}"
+                             Visibility="{Binding HasSixAxis, Converter={StaticResource VisibleWhenTrue}}" />
+    </StackPanel>
+
+    <Border Margin="0,8,0,0" Style="{StaticResource InfoInfoBar}" Visibility="{Binding IsHdrActive, Converter={StaticResource VisibleWhenTrue}}">
+      <TextBlock Style="{StaticResource CaptionText}" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                 Text="Picture mode and color settings are managed by the monitor while HDR is on. They come back when you turn HDR off." />
+    </Border>
+
+    <!-- ======================================================== Gaming and comfort -->
+    <TextBlock Style="{StaticResource SettingsGroupHeader}" Text="Gaming and comfort" />
+
+    <controls:SettingsCard Header="Blue light filter" HeaderIcon="&#xE708;" Description="Level 4 matches TÜV low blue light."
+                           Visibility="{Binding BlueLight.IsAvailable, Converter={StaticResource VisibleWhenTrue}, FallbackValue=Collapsed}">
+      <ItemsControl Width="300" Style="{StaticResource SegmentedChoices}" ItemsSource="{Binding BlueLight.Choices}" />
+    </controls:SettingsCard>
+
+    <controls:SettingsCard Header="Shadow boost" HeaderIcon="&#xE793;" Description="Brightens dark areas without washing out bright ones."
+                           Visibility="{Binding ShadowBoost.IsAvailable, Converter={StaticResource VisibleWhenTrue}, FallbackValue=Collapsed}">
+      <ItemsControl Width="300" Style="{StaticResource SegmentedChoices}" ItemsSource="{Binding ShadowBoost.Choices}" />
+    </controls:SettingsCard>
+
+    <controls:SettingsCard Header="Variable refresh rate" HeaderIcon="&#xEC4A;" Description="Adaptive-Sync / G-SYNC Compatible. The screen blinks while it switches."
+                           Visibility="{Binding VariableRefreshRate.IsAvailable, Converter={StaticResource VisibleWhenTrue}, FallbackValue=Collapsed}">
+      <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding VariableRefreshRate.Toggled, Mode=TwoWay}" AutomationProperties.Name="Variable refresh rate" />
+    </controls:SettingsCard>
+
+    <controls:SettingsCard Header="Frame-rate boost" HeaderIcon="&#xE945;" Description="Dual mode: lower resolution for a higher refresh rate."
+                           Visibility="{Binding FrameRateBoost.IsAvailable, Converter={StaticResource VisibleWhenTrue}, FallbackValue=Collapsed}">
+      <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding FrameRateBoost.Toggled, Mode=TwoWay}" AutomationProperties.Name="Frame-rate boost" />
+    </controls:SettingsCard>
+
+    <!-- ======================================================== Sound -->
+    <TextBlock Style="{StaticResource SettingsGroupHeader}" Text="Sound"
+               Visibility="{Binding Volume, Converter={StaticResource VisibleWhenNotNull}}" />
+
+    <controls:SettingsCard Header="Volume" HeaderIcon="&#xE767;" Description="Headphone or speaker output of the monitor."
+                           Visibility="{Binding Volume.IsAvailable, Converter={StaticResource VisibleWhenTrue}, FallbackValue=Collapsed}">
+      <StackPanel Orientation="Horizontal">
+        <CheckBox Margin="0,0,16,0" VerticalAlignment="Center" Content="Mute" IsChecked="{Binding Mute.Toggled, Mode=TwoWay}"
+                  Visibility="{Binding Mute, Converter={StaticResource VisibleWhenNotNull}}" />
+        <Slider Width="200" VerticalAlignment="Center" Minimum="0" Maximum="{Binding Volume.Maximum}" IsMoveToPointEnabled="True"
+                IsSnapToTickEnabled="True" TickFrequency="1" Value="{Binding Volume.SliderValue, Mode=TwoWay}" AutomationProperties.Name="Volume" />
+        <TextBlock Width="36" VerticalAlignment="Center" TextAlignment="Right" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Volume.Value}" />
+      </StackPanel>
+    </controls:SettingsCard>
+
+    <!-- ======================================================== Related -->
+    <TextBlock Style="{StaticResource SettingsGroupHeader}" Text="Related" />
+
+    <controls:SettingsCard Header="Monitor information" HeaderIcon="&#xE946;" Description="Model, firmware, capabilities and diagnostics"
+                           IsClickEnabled="True" Command="{Binding OpenMonitorInformationCommand}" />
+  </StackPanel>
+</UserControl>

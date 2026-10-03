@@ -23,7 +23,8 @@ public sealed partial class MonitorViewModel : ObservableObject, IDisposable
     {
         Session = session;
         _dispatcher = dispatcher;
-        _features = session.Features.ToDictionary(feature => feature, feature => new FeatureState(session, feature));
+        _features = session.Features.ToDictionary(feature => feature, feature =>
+            new FeatureState(session, feature, feature is EnumFeature enumFeature ? session.OptionsOf(enumFeature) : []));
 
         foreach (var (feature, state) in _features)
         {

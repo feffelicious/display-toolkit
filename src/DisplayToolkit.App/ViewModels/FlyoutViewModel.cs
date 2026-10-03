@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DisplayToolkit.App.Services;
@@ -17,23 +16,23 @@ internal sealed partial class FlyoutViewModel : ObservableObject
 
     private static readonly TimeSpan DisplayChangeSettleTime = TimeSpan.FromSeconds(2);
 
-    private readonly MonitorService _monitors;
+    private readonly MonitorContext _context;
     private readonly LayoutStore _layouts;
-    private readonly Dispatcher _dispatcher;
+    private readonly MainWindowLauncher _mainWindow;
 
     /// <summary>The tile order when edit mode started, restored if editing is cancelled.</summary>
     private List<string>? _layoutBeforeEdit;
 
-    public FlyoutViewModel(MonitorService monitors, LayoutStore layouts, Dispatcher dispatcher)
+    public FlyoutViewModel(MonitorContext context, LayoutStore layouts, MainWindowLauncher mainWindow)
     {
-        _monitors = monitors;
+        _context = context;
         _layouts = layouts;
-        _dispatcher = dispatcher;
-        monitors.Changed += (_, _) => OnMonitorsChanged();
-        OnMonitorsChanged();
+        _mainWindow = mainWindow;
+        context.Changed += (_, _) => OnMonitorChanged();
+        OnMonitorChanged();
     }
 
-    public MonitorDiscoveryState State => _monitors.State;
+    public MonitorDiscoveryState State => _context.State;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Brightness), nameof(Subtitle))]
@@ -75,7 +74,7 @@ internal sealed partial class FlyoutViewModel : ObservableObject
         IsConflictingAppRunning = MonitorService.IsConflictingAppRunning();
         if (Monitor is null)
         {
-            await _monitors.RescanAsync();
+            await _context.RescanAsync();
             return;
         }
         await Monitor.RefreshAsync(VisibleFeatures());
@@ -120,6 +119,16 @@ internal sealed partial class FlyoutViewModel : ObservableObject
         Page = null;
     }
 
+    /// <summary>Raised when the flyout should close because another window takes over.</summary>
+    public event EventHandler? CloseRequested;
+
+    [RelayCommand]
+    private void OpenMainWindow()
+    {
+        CloseRequested?.Invoke(this, EventArgs.Empty);
+        _mainWindow.Show();
+    }
+
     [RelayCommand]
     private void Edit()
     {
@@ -155,7 +164,7 @@ internal sealed partial class FlyoutViewModel : ObservableObject
     private void OpenAddPage() => Navigate(new AddTilesPageViewModel(AvailableTiles, AddTile));
 
     [RelayCommand]
-    private Task Retry() => _monitors.RescanAsync();
+    private Task Retry() => _context.RescanAsync();
 
     [RelayCommand]
     private void RetryFailedWrite()
@@ -245,17 +254,15 @@ internal sealed partial class FlyoutViewModel : ObservableObject
         tile.RemoveRequested += (_, _) => RemoveTile(tile);
     }
 
-    private void OnMonitorsChanged()
+    private void OnMonitorChanged()
     {
-        var session = _monitors.Sessions.Count > 0 ? _monitors.Sessions[0] : null;
-        if (Monitor?.Session != session)
+        if (Monitor != _context.Current)
         {
             Back();
             SetEditing(false);
             FailedFeature = null;
-            Monitor?.Dispose();
             ClearTiles();
-            Monitor = session is null ? null : new MonitorViewModel(session, _dispatcher);
+            Monitor = _context.Current;
 
             if (Monitor is { } monitor)
             {

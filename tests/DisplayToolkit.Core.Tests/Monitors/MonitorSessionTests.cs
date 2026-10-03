@@ -207,6 +207,30 @@ public sealed class MonitorSessionTests : IDisposable
     }
 
     [Fact]
+    public async Task Actions_are_not_read_back()
+    {
+        // Pixel cleaning: the monitor may stop answering, so the write is trusted rather than verified.
+        var session = await OpenAsync();
+        _monitor.IgnoreWrites(Vcp.AsusToggles2);
+
+        var result = await session.WriteAsync(FeatureCatalog.PixelCleaning, 1);
+
+        Assert.Equal(FeatureStatus.Confirmed, result.Status);
+        Assert.Equal([(Vcp.AsusToggles2, 0x6839u)], _monitor.Writes);
+    }
+
+    [Fact]
+    public async Task Raw_reads_return_codes_outside_the_catalog()
+    {
+        _monitor.SetRegister(Vcp.AsusVcpVersion, 0xB1, 0x0217);
+        var session = await OpenAsync();
+
+        var reply = await session.ReadRawAsync(Vcp.AsusVcpVersion);
+
+        Assert.Equal(0x0217u, reply?.Maximum);
+    }
+
+    [Fact]
     public async Task Unsupported_features_are_rejected()
     {
         var session = await OpenAsync();

@@ -5,6 +5,7 @@ using DisplayToolkit.App.Flyout;
 using DisplayToolkit.App.Services;
 using DisplayToolkit.App.Tray;
 using DisplayToolkit.App.ViewModels;
+using DisplayToolkit.App.ViewModels.Main;
 using DisplayToolkit.Core.Monitors;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -34,6 +35,8 @@ public partial class App : Application
         var logger = _host.Services.GetRequiredService<ILogger<App>>();
         DispatcherUnhandledException += (_, args) => logger.LogError(args.Exception, "Unhandled exception");
         logger.LogInformation("Display Toolkit starting");
+
+        _host.Services.GetRequiredService<ThemeService>().Apply();
 
         var tray = _host.Services.GetRequiredService<TrayController>();
         tray.Start();
@@ -74,6 +77,38 @@ public partial class App : Application
         await Task.Delay(400);
         DebugSnapshot.Save(flyout.Root, folder, "flyout-add");
         viewModel.CancelEditCommand.Execute(null);
+        flyout.HideFlyout();
+
+        // Main window: the whole window once, then every page at full height.
+        var mainViewModel = _host.Services.GetRequiredService<MainWindowViewModel>();
+        var window = new Views.MainWindow(mainViewModel, _host.Services.GetRequiredService<ThemeService>());
+        window.ShowAndActivate();
+        await Task.Delay(2500);
+        DebugSnapshot.Save((FrameworkElement)window.Content, folder, "main-window");
+        foreach (var item in mainViewModel.NavItems.Append(mainViewModel.SettingsItem))
+        {
+            mainViewModel.SelectedNavItem = item;
+            await Task.Delay(2000);
+            DebugSnapshot.Save(window.PageHost, folder, $"main-{item.Title.Replace(' ', '-').ToLowerInvariant()}");
+            DebugSnapshot.Save((FrameworkElement)window.Content, folder, $"window-{item.Title.Replace(' ', '-').ToLowerInvariant()}");
+        }
+        if (mainViewModel.NavItems.Count > 0)
+        {
+            mainViewModel.SelectedNavItem = mainViewModel.NavItems[0];
+            await Task.Delay(500);
+            if (mainViewModel.Page is DisplayPageViewModel display)
+            {
+                display.OpenSixAxisCommand.Execute(null);
+                await Task.Delay(1000);
+                DebugSnapshot.Save(window.PageHost, folder, "main-six-axis");
+                mainViewModel.SelectedNavItem = mainViewModel.NavItems[1];
+                mainViewModel.SelectedNavItem = mainViewModel.NavItems[0];
+                ((DisplayPageViewModel)mainViewModel.Page!).OpenMonitorInformationCommand.Execute(null);
+                await Task.Delay(2500);
+                DebugSnapshot.Save(window.PageHost, folder, "main-monitor-info");
+            }
+        }
+        window.Close();
         Shutdown();
     }
 #endif
@@ -98,6 +133,11 @@ public partial class App : Application
         services.AddSingleton<CapabilitiesCache>();
         services.AddSingleton<LayoutStore>();
         services.AddSingleton<MonitorService>();
+        services.AddSingleton<MonitorContext>();
+        services.AddSingleton<AppSettings>();
+        services.AddSingleton<ThemeService>();
+        services.AddSingleton<MainWindowViewModel>();
+        services.AddSingleton<MainWindowLauncher>();
         services.AddSingleton<FlyoutViewModel>();
         services.AddSingleton<FlyoutWindow>();
         services.AddSingleton<TrayController>();

@@ -59,4 +59,10 @@ public enum WriteSettling
     /// invalidates handles, and the monitor reports stale values for several seconds.
     /// </summary>
     ModeSwitch,
+
+    /// <summary>
+    /// An action, not a setting (pixel cleaning). The monitor may stop answering while it runs, so the write isn't read
+    /// back; the value is reported as written.
+    /// </summary>
+    Unverified,
 }
