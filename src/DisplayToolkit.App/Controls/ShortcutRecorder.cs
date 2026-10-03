@@ -48,9 +48,13 @@ public sealed class ShortcutRecorder : Control
         private set => SetValue(IsRecordingPropertyKey, value);
     }
 
-    protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
+    /// <summary>
+    /// Starts on the press, not the release: the recorder sits inside a settings card, which is a button and captures
+    /// the mouse on press, so the release would never arrive here.
+    /// </summary>
+    protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
-        base.OnMouseLeftButtonUp(e);
+        base.OnMouseLeftButtonDown(e);
         Focus();
         IsRecording = true;
         e.Handled = true;
