@@ -84,8 +84,16 @@ public static class FeatureCatalog
     // Gaming and comfort
     public static readonly RangeFeature BlueLightFilter = new("blue-light", "Blue light filter", Vcp.AsusBlueLightFilter) { AvailableInHdr = false };
     public static readonly RangeFeature ShadowBoost = new("shadow-boost", "Shadow boost", Vcp.AsusShadowBoost) { AvailableInHdr = false };
-    public static readonly FlagFeature VariableRefreshRate = new("vrr", "Variable refresh rate", Vcp.AsusToggles2, bit: 0);
-    public static readonly FlagFeature FrameRateBoost = new("frame-rate-boost", "Frame-rate boost", Vcp.AsusToggles2, bit: 8);
+    // Both change the signal timing, so Windows drops and re-detects the monitor (VRR verified on a PG32UCWM).
+    public static readonly FlagFeature VariableRefreshRate = new("vrr", "Variable refresh rate", Vcp.AsusToggles2, bit: 0)
+    {
+        Settling = WriteSettling.ModeSwitch,
+    };
+
+    public static readonly FlagFeature FrameRateBoost = new("frame-rate-boost", "Frame-rate boost", Vcp.AsusToggles2, bit: 8)
+    {
+        Settling = WriteSettling.ModeSwitch,
+    };
     public static readonly SwitchFeature Elmb = new("elmb", "ELMB", Vcp.AsusElmb);
 
     // GamePlus (overlays drawn by the monitor)

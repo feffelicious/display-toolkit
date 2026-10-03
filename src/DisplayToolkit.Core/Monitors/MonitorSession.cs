@@ -215,11 +215,27 @@ public sealed class MonitorSession : IDisposable
         if (feature.Settling == WriteSettling.Immediate)
         {
             Sleep(_options.VerifyDelay);
-            var reply = _channel.Get(feature.Code);
-            return feature.Decode(reply) == value ? reply : null;
+            try
+            {
+                var reply = _channel.Get(feature.Code);
+                return feature.Decode(reply) == value ? reply : null;
+            }
+            catch (DdcException)
+            {
+                // The monitor vanished right after the write: it was a mode switch after all (a setting we haven't
+                // marked yet). Wait it out instead of reporting a failure.
+                return WaitForSettledValue(feature, value);
+            }
         }
+        return WaitForSettledValue(feature, value);
+    }
 
-        // Mode switches: the monitor may disappear and come back, and reports stale values in the meantime.
+    /// <summary>
+    /// Mode switches: the monitor may disappear and come back (the channel reconnects), and reports stale values in
+    /// the meantime. Polls until the value shows or the timeout passes.
+    /// </summary>
+    private VcpReply? WaitForSettledValue(Feature feature, uint value)
+    {
         var deadline = DateTime.UtcNow + _options.ModeSwitchTimeout;
         do
         {

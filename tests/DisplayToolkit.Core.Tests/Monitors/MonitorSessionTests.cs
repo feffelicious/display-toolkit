@@ -181,6 +181,19 @@ public sealed class MonitorSessionTests : IDisposable
     }
 
     [Fact]
+    public async Task Write_that_makes_the_monitor_reconnect_is_still_confirmed()
+    {
+        // Contrast isn't marked as a mode switch; the session must cope anyway when the monitor drops after a write.
+        var session = await OpenAsync();
+        _monitor.ReconnectAfterWrite(Vcp.Contrast);
+
+        var result = await session.WriteAsync(FeatureCatalog.Contrast, 60);
+
+        Assert.Equal(FeatureStatus.Confirmed, result.Status);
+        Assert.Equal([(Vcp.Contrast, 60u)], _monitor.Writes);
+    }
+
+    [Fact]
     public async Task Mode_switch_waits_for_the_monitor_to_settle()
     {
         _monitor.SetRegister(Vcp.AsusHdrMode, 0x0102, 0x0207);

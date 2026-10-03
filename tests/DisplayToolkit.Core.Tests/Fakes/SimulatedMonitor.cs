@@ -26,6 +26,7 @@ internal sealed class SimulatedMonitor
     private readonly Dictionary<byte, int> _staleReadsAfterWrite = [];
     private readonly Dictionary<byte, int> _staleReadsRemaining = [];
     private readonly HashSet<byte> _ignoredWrites = [];
+    private readonly HashSet<byte> _reconnectAfterWrite = [];
     private int _generation;
 
     public SimulatedMonitor(string capabilities = Pg32ucwmCapabilities)
@@ -95,6 +96,18 @@ internal sealed class SimulatedMonitor
         }
     }
 
+    /// <summary>
+    /// A write to <paramref name="code"/> takes effect and then invalidates every handle, like VRR or anti-flicker making
+    /// Windows re-detect the display.
+    /// </summary>
+    public void ReconnectAfterWrite(byte code)
+    {
+        lock (_gate)
+        {
+            _reconnectAfterWrite.Add(code);
+        }
+    }
+
     /// <summary>Writes to <paramref name="code"/> are acknowledged but have no effect.</summary>
     public void IgnoreWrites(byte code)
     {
@@ -149,6 +162,10 @@ internal sealed class SimulatedMonitor
             if (_staleReadsAfterWrite.Remove(code, out var staleReads))
             {
                 _staleReadsRemaining[code] = staleReads;
+            }
+            if (_reconnectAfterWrite.Contains(code))
+            {
+                _generation++;
             }
         }
     }
