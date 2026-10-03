@@ -19,6 +19,8 @@ public sealed class QuickTile : Control
     public static readonly DependencyProperty HasFailedProperty = Register(nameof(HasFailed), false);
     public static readonly DependencyProperty CommandProperty = Register<ICommand?>(nameof(Command), null);
     public static readonly DependencyProperty SecondaryCommandProperty = Register<ICommand?>(nameof(SecondaryCommand), null);
+    public static readonly DependencyProperty IsEditingProperty = Register(nameof(IsEditing), false);
+    public static readonly DependencyProperty RemoveCommandProperty = Register<ICommand?>(nameof(RemoveCommand), null);
 
     static QuickTile()
     {
@@ -75,6 +77,20 @@ public sealed class QuickTile : Control
     {
         get => (ICommand?)GetValue(SecondaryCommandProperty);
         set => SetValue(SecondaryCommandProperty, value);
+    }
+
+    /// <summary>Edit mode: the tile shows an unpin badge and its own buttons stop reacting, so it can be dragged.</summary>
+    public bool IsEditing
+    {
+        get => (bool)GetValue(IsEditingProperty);
+        set => SetValue(IsEditingProperty, value);
+    }
+
+    /// <summary>The unpin badge in edit mode.</summary>
+    public ICommand? RemoveCommand
+    {
+        get => (ICommand?)GetValue(RemoveCommandProperty);
+        set => SetValue(RemoveCommandProperty, value);
     }
 
     private static DependencyProperty Register<T>(string name, T defaultValue) =>

@@ -14,6 +14,7 @@ foreach (var connection in connections)
     Console.WriteLine($"=== {connection.Name}");
     Console.WriteLine($"Model:    {connection.Id.Model}");
     Console.WriteLine($"Instance: {connection.Id.Instance}");
+    Console.WriteLine($"Windows HDR: {(WindowsHdr.GetState(connection.Id) is { } hdr ? $"supported={hdr.IsSupported}, on={hdr.IsEnabled}" : "unknown")}");
 
     MonitorSession session;
     try

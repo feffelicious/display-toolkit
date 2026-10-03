@@ -246,6 +246,18 @@ never uses. Test them.
   per monitor model and re-request it only when the cache is missing.
 - DWC running at the same time as another DDC client is a collision risk. The app should detect it and warn.
 
+## More quirks found while building the app
+
+- **`0x60` input source is unreliable** while input auto-detection (`0xFC` bit 4) is on. Three reads in a row returned
+  HDMI 2, DisplayPort, HDMI 1 while the monitor stayed on DisplayPort, apparently the input being scanned. The app takes
+  the connection type and refresh rate from Windows (CCD API) instead.
+- **Leaving HDR always returns the monitor to the Racing preset (`0xDC` = 5)**, whatever was active before. The app
+  remembers the SDR preset and restores it after an HDR-to-SDR switch (including Win+Alt+B).
+- **OLED anti-flicker (`0xC5`) is a mode switch.** Windows drops and re-detects the monitor (handles go stale), and with
+  anti-flicker on, the monitor sat in the True Black 400 HDR preset with Windows HDR on. Afterwards, with HDR off,
+  anti-flicker read Off again. It likely needs HDR; this isn't confirmed whether the switch-off was automatic.
+- In HDR, brightness reads a normal value (100) but writes have no effect. Unlike Shadow Boost it doesn't report `0xFE`.
+
 ## Open questions
 
 - `0xFC` bit meanings (test by toggling OSD options and diffing).

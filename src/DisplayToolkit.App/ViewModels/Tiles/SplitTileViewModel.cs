@@ -19,13 +19,13 @@ public sealed class SplitTileViewModel : FeatureTileViewModel
         _page = page;
         _navigate = navigate;
         _lastOnValue = state.IsOn ? state.Value : defaultOnValue;
-        state.PropertyChanged += (_, e) =>
+        Observe(state, (_, e) =>
         {
             if (e.PropertyName == nameof(FeatureState.Value) && state.Value != 0)
             {
                 _lastOnValue = state.Value;
             }
-        };
+        });
     }
 
     protected override void OnMain() => State.Write(State.IsOn ? 0 : _lastOnValue);

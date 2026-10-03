@@ -1,4 +1,5 @@
 using DisplayToolkit.App.ViewModels.Pages;
+using DisplayToolkit.Core.Features;
 
 namespace DisplayToolkit.App.ViewModels.Tiles;
 
@@ -25,6 +26,8 @@ public sealed class HdrTileViewModel : TileViewModel
     public override bool HasFailed => false;
 
     public override bool IsVisible => _monitor.WindowsHdr?.IsSupported == true;
+
+    public override IEnumerable<Feature> Features => [FeatureCatalog.HdrMode];
 
     protected override void OnMain() => _ = _monitor.SetWindowsHdrAsync(!_monitor.IsHdrActive);
 

@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using DisplayToolkit.App.Flyout;
 using DisplayToolkit.App.Native;
 using DisplayToolkit.App.Services;
@@ -19,7 +20,10 @@ internal sealed class TrayController(MonitorService monitors, FlyoutWindow flyou
     /// </summary>
     private static readonly TimeSpan ReopenGuard = TimeSpan.FromMilliseconds(400);
 
+    private const int OpenFlyoutHotkey = 1;
+
     private TrayIcon? _icon;
+    private GlobalHotkeys? _hotkeys;
     private ContextMenu? _menu;
 
     public void Start()
@@ -29,21 +33,39 @@ internal sealed class TrayController(MonitorService monitors, FlyoutWindow flyou
         _icon.ContextMenuRequested += (_, _) => ShowMenu();
         _icon.DisplaysChanged += (_, _) => OnDisplaysChanged();
         monitors.Changed += (_, _) => UpdateTooltip();
+
+        _hotkeys = new GlobalHotkeys();
+        _hotkeys.Pressed += (_, id) =>
+        {
+            if (id == OpenFlyoutHotkey)
+            {
+                ToggleFlyout(fromKeyboard: true);
+            }
+        };
+        if (!_hotkeys.Register(OpenFlyoutHotkey, ModifierKeys.Control | ModifierKeys.Alt, Key.D))
+        {
+            logger.LogWarning("Ctrl+Alt+D is already used by another app");
+        }
     }
 
-    public void ToggleFlyout()
+    /// <param name="fromKeyboard">Opened with a shortcut: focus the brightness band so the arrow keys work at once.</param>
+    public void ToggleFlyout(bool fromKeyboard = false)
     {
         if (flyout.IsVisible)
         {
             flyout.HideFlyout();
         }
-        else if (DateTime.UtcNow - flyout.LastHiddenAt > ReopenGuard)
+        else if (fromKeyboard || DateTime.UtcNow - flyout.LastHiddenAt > ReopenGuard)
         {
-            flyout.ShowFlyout();
+            flyout.ShowFlyout(fromKeyboard);
         }
     }
 
-    public void Dispose() => _icon?.Dispose();
+    public void Dispose()
+    {
+        _hotkeys?.Dispose();
+        _icon?.Dispose();
+    }
 
     private async void OnDisplaysChanged()
     {

@@ -16,7 +16,7 @@ public static class WindowsHdr
 
     public static HdrState? GetState(MonitorId id)
     {
-        if (FindPath(id) is not { } path || DisplayConfig.GetAdvancedColorInfo(path) is not { } info)
+        if (DisplayConfig.FindPath(id.Instance) is not { } path || DisplayConfig.GetAdvancedColorInfo(path) is not { } info)
         {
             return null;
         }
@@ -25,17 +25,5 @@ public static class WindowsHdr
 
     /// <summary>Turns Windows HDR on or off. The screen blanks for a second or two while the mode changes.</summary>
     public static bool SetEnabled(MonitorId id, bool enabled) =>
-        FindPath(id) is { } path && DisplayConfig.SetHdr(path, enabled, HasHdrStateApi);
-
-    private static DisplayConfig.PathInfo? FindPath(MonitorId id)
-    {
-        foreach (var path in DisplayConfig.GetActivePaths())
-        {
-            if (DisplayConfig.GetTargetName(path) is { } target && target.DevicePath == id.Instance)
-            {
-                return path;
-            }
-        }
-        return null;
-    }
+        DisplayConfig.FindPath(id.Instance) is { } path && DisplayConfig.SetHdr(path, enabled, HasHdrStateApi);
 }

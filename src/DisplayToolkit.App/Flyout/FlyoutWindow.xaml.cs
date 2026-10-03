@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -7,6 +8,7 @@ using System.Windows.Media.Animation;
 using DisplayToolkit.App.Native;
 using DisplayToolkit.App.Services;
 using DisplayToolkit.App.ViewModels;
+using DisplayToolkit.App.ViewModels.Tiles;
 using Microsoft.Win32;
 
 namespace DisplayToolkit.App.Flyout;
@@ -22,8 +24,17 @@ internal sealed partial class FlyoutWindow : Window
 
     private static readonly Duration OpenDuration = TimeSpan.FromMilliseconds(200);
 
+    /// <summary>Pointer travel before a press on a tile becomes a drag, in DIPs.</summary>
+    private const double DragThreshold = 4;
+
     private readonly FlyoutViewModel _viewModel;
     private nint _hwnd;
+
+    // Edit-mode drag state.
+    private TileViewModel? _dragTile;
+    private ContentPresenter? _dragContainer;
+    private Point _dragStart;
+    private bool _isDragging;
 
     public FlyoutWindow(FlyoutViewModel viewModel)
     {
@@ -31,13 +42,18 @@ internal sealed partial class FlyoutWindow : Window
         _viewModel = viewModel;
         DataContext = viewModel;
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
+        TileGrid.PreviewMouseLeftButtonDown += OnTilePointerDown;
+        TileGrid.PreviewMouseMove += OnTilePointerMove;
+        TileGrid.PreviewMouseLeftButtonUp += (_, _) => EndDrag();
+        TileGrid.LostMouseCapture += (_, _) => EndDrag();
         UpdateState();
     }
 
     /// <summary>When the flyout last closed. Used to ignore the tray click that caused the close.</summary>
     public DateTime LastHiddenAt { get; private set; }
 
-    public void ShowFlyout()
+    /// <param name="focusBand">Put keyboard focus on the brightness band (when opened with a shortcut).</param>
+    public void ShowFlyout(bool focusBand = false)
     {
         _hwnd = new WindowInteropHelper(this).EnsureHandle();
         ApplyBackdrop();
@@ -46,6 +62,10 @@ internal sealed partial class FlyoutWindow : Window
         Activate();
         User32.SetForegroundWindow(_hwnd);
         AnimateOpen();
+        if (focusBand)
+        {
+            Dispatcher.BeginInvoke(() => Keyboard.Focus(Band), System.Windows.Threading.DispatcherPriority.Input);
+        }
         _ = _viewModel.OnOpenedAsync();
     }
 
@@ -76,6 +96,12 @@ internal sealed partial class FlyoutWindow : Window
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
+        if (_viewModel.IsEditing && _viewModel.Page is null && HandleEditKey(e))
+        {
+            e.Handled = true;
+            return;
+        }
+
         var goBack = e.Key == Key.Back || (e.Key == Key.Left && Keyboard.Modifiers == ModifierKeys.Alt);
         if (e.Key == Key.Escape || goBack)
         {
@@ -89,6 +115,119 @@ internal sealed partial class FlyoutWindow : Window
             }
             e.Handled = true;
         }
+    }
+
+    /// <summary>
+    /// Edit mode keyboard: Delete unpins the focused tile, Ctrl+Left/Right moves it, Enter finishes, Esc cancels.
+    /// </summary>
+    private bool HandleEditKey(KeyEventArgs e)
+    {
+        var focused = (Keyboard.FocusedElement as FrameworkElement)?.DataContext as TileViewModel;
+        var index = focused is null ? -1 : _viewModel.Tiles.IndexOf(focused);
+
+        switch (e.Key)
+        {
+            case Key.Escape:
+                _viewModel.CancelEditCommand.Execute(null);
+                return true;
+            case Key.Enter:
+                _viewModel.DoneCommand.Execute(null);
+                return true;
+            case Key.Delete when focused is not null:
+                focused.RemoveCommand.Execute(null);
+                return true;
+            case Key.Left or Key.Right when index >= 0 && Keyboard.Modifiers == ModifierKeys.Control:
+                _viewModel.MoveTile(index, index + (e.Key == Key.Left ? -1 : 1));
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private void OnTilePointerDown(object sender, MouseButtonEventArgs e)
+    {
+        // The unpin badge is the only live button on a tile in edit mode; let its click through.
+        if (!_viewModel.IsEditing || IsInsideButton(e.OriginalSource as DependencyObject))
+        {
+            return;
+        }
+        if (ItemsControl.ContainerFromElement(TileGrid, (DependencyObject)e.OriginalSource) is not ContentPresenter container)
+        {
+            return;
+        }
+
+        _dragTile = container.Content as TileViewModel;
+        _dragContainer = container;
+        _dragStart = e.GetPosition(TileGrid);
+        TileGrid.CaptureMouse();
+        e.Handled = true;
+    }
+
+    private void OnTilePointerMove(object sender, MouseEventArgs e)
+    {
+        if (_dragTile is null || _dragContainer is null)
+        {
+            return;
+        }
+
+        var position = e.GetPosition(TileGrid);
+        if (!_isDragging)
+        {
+            if ((position - _dragStart).Length < DragThreshold)
+            {
+                return;
+            }
+            _isDragging = true;
+            Panel.SetZIndex(_dragContainer, 1);
+            _dragContainer.Opacity = 0.85;
+            _dragContainer.RenderTransform = new ScaleTransform(1.04, 1.04);
+        }
+
+        _viewModel.MoveTile(_viewModel.Tiles.IndexOf(_dragTile), TileIndexAt(position));
+    }
+
+    private void EndDrag()
+    {
+        if (_dragContainer is not null)
+        {
+            Panel.SetZIndex(_dragContainer, 0);
+            _dragContainer.Opacity = 1;
+            _dragContainer.RenderTransform = Transform.Identity;
+        }
+        _dragTile = null;
+        _dragContainer = null;
+        _isDragging = false;
+        if (TileGrid.IsMouseCaptured)
+        {
+            TileGrid.ReleaseMouseCapture();
+        }
+    }
+
+    /// <summary>Which grid slot a point falls in. Every tile is shown in edit mode, so slots map 1:1 to the list.</summary>
+    private int TileIndexAt(Point position)
+    {
+        const int columns = 3;
+        var count = _viewModel.Tiles.Count;
+        var rows = Math.Max(1, (count + columns - 1) / columns);
+        var column = Math.Clamp((int)(position.X / (TileGrid.ActualWidth / columns)), 0, columns - 1);
+        var row = Math.Clamp((int)(position.Y / (TileGrid.ActualHeight / rows)), 0, rows - 1);
+        return Math.Min((row * columns) + column, count - 1);
+    }
+
+    private static bool IsInsideButton(DependencyObject? element)
+    {
+        for (var current = element; current is not null; current = VisualTreeHelper.GetParent(current))
+        {
+            if (current is Button)
+            {
+                return true;
+            }
+            if (current is ContentPresenter { Content: TileViewModel })
+            {
+                return false;
+            }
+        }
+        return false;
     }
 
     /// <summary>Keeps the bottom edge anchored above the taskbar when the content (and so the height) changes.</summary>
@@ -172,6 +311,7 @@ internal sealed partial class FlyoutWindow : Window
         EmptyState.Visibility = state is MonitorDiscoveryState.NoMonitors or MonitorDiscoveryState.NotResponding
             ? Visibility.Visible
             : Visibility.Collapsed;
+        Footer.Visibility = state == MonitorDiscoveryState.Ready ? Visibility.Visible : Visibility.Collapsed;
         EmptyTitle.Text = state == MonitorDiscoveryState.NoMonitors ? "No monitor found" : "Can't reach the monitor";
     }
 

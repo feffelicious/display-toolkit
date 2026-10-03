@@ -87,14 +87,45 @@
                    Text="Turn on HDR to choose how the monitor shows HDR content." />
       </StackPanel>
     </DataTemplate>
+    <DataTemplate DataType="{x:Type pages:AddTilesPageViewModel}">
+      <StackPanel>
+        <TextBlock Style="{StaticResource CaptionText}" Text="Everything this monitor supports is already in quick settings."
+                   Visibility="{Binding IsEmpty, Converter={StaticResource VisibleWhenTrue}}" />
+        <ItemsControl ItemsSource="{Binding Groups}" Focusable="False">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate DataType="{x:Type pages:AddTileGroup}">
+              <StackPanel Margin="0,0,0,12">
+                <TextBlock Margin="0,0,0,4" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                           Text="{Binding Name}" />
+                <ItemsControl ItemsSource="{Binding Items}" Focusable="False">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type pages:AddTileItem}">
+                      <DockPanel Height="36">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE710;" Command="{Binding AddCommand}"
+                                AutomationProperties.Name="{Binding Name, StringFormat=Add {0}}" />
+                        <TextBlock DockPanel.Dock="Right" Margin="0,0,10,0" VerticalAlignment="Center" FontSize="12"
+                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}" Text="{Binding KindLabel}" />
+                        <TextBlock VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                   Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                      </DockPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </DataTemplate>
   </Window.Resources>
 
-  <Border x:Name="Root" Padding="18,16,18,20">
+  <Border x:Name="Root">
     <Border.RenderTransform>
       <TranslateTransform x:Name="RootOffset" />
     </Border.RenderTransform>
 
     <StackPanel>
+    <StackPanel Margin="18,16,18,20">
     <Grid>
       <!-- ======================================================== Searching -->
       <StackPanel x:Name="SearchingState" Visibility="Collapsed">
@@ -156,7 +187,7 @@
                      Visibility="{Binding Brightness.IsLocked, Converter={StaticResource VisibleWhenTrue}, FallbackValue=Collapsed}"
                      Text="In HDR the monitor sets brightness itself." />
 
-          <ItemsControl Margin="-6,20,-6,-14" ItemsSource="{Binding Tiles}" Focusable="False">
+          <ItemsControl x:Name="TileGrid" Margin="-6,20,-6,-14" ItemsSource="{Binding Tiles}" Focusable="False" Background="Transparent">
             <ItemsControl.ItemsPanel>
               <ItemsPanelTemplate>
                 <UniformGrid Columns="3" />
@@ -165,14 +196,16 @@
             <ItemsControl.ItemContainerStyle>
               <Style TargetType="ContentPresenter">
                 <Setter Property="Margin" Value="6,0,6,14" />
-                <Setter Property="Visibility" Value="{Binding IsVisible, Converter={StaticResource VisibleWhenTrue}}" />
+                <Setter Property="Visibility" Value="{Binding IsShown, Converter={StaticResource VisibleWhenTrue}}" />
+                <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
               </Style>
             </ItemsControl.ItemContainerStyle>
             <ItemsControl.ItemTemplate>
               <DataTemplate>
                 <controls:QuickTile Kind="{Binding Kind}" Glyph="{Binding Glyph}" Label="{Binding Label}"
                                     IsOn="{Binding IsOn}" IsPending="{Binding IsPending}" HasFailed="{Binding HasFailed}"
-                                    Command="{Binding MainCommand}" SecondaryCommand="{Binding SecondaryCommand}" />
+                                    Command="{Binding MainCommand}" SecondaryCommand="{Binding SecondaryCommand}"
+                                    IsEditing="{Binding IsEditing}" RemoveCommand="{Binding RemoveCommand}" />
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
@@ -217,6 +250,31 @@
           <TextBlock Style="{StaticResource CaptionText}" Text="The monitor didn't respond." />
         </StackPanel>
       </DockPanel>
+    </Border>
+    </StackPanel>
+
+    <!-- ======================================================== Footer -->
+    <Border x:Name="Footer" Height="48" Padding="12,0" BorderThickness="0,1,0,0" Visibility="Collapsed"
+            BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
+            Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+      <Grid>
+        <!-- Normal -->
+        <Button HorizontalAlignment="Right" Style="{StaticResource IconButton}" Content="&#xE70F;" Command="{Binding EditCommand}"
+                ToolTip="Edit quick settings" AutomationProperties.Name="Edit quick settings"
+                Visibility="{Binding IsEditing, Converter={StaticResource VisibleWhenFalse}}" />
+        <!-- Edit mode -->
+        <DockPanel Visibility="{Binding IsEditing, Converter={StaticResource VisibleWhenTrue}}">
+          <Button DockPanel.Dock="Right" VerticalAlignment="Center" Padding="16,4" Content="Done" Command="{Binding DoneCommand}"
+                  Style="{DynamicResource AccentButtonStyle}" />
+          <Button HorizontalAlignment="Left" VerticalAlignment="Center" Padding="10,4" Command="{Binding OpenAddPageCommand}"
+                  AutomationProperties.Name="Add" Visibility="{Binding CanAddTiles, Converter={StaticResource VisibleWhenTrue}}">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Style="{StaticResource IconText}" FontSize="12" Text="&#xE710;" />
+              <TextBlock Margin="8,0,0,0" Text="Add" />
+            </StackPanel>
+          </Button>
+        </DockPanel>
+      </Grid>
     </Border>
     </StackPanel>
   </Border>

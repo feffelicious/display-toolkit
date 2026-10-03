@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -8,24 +9,25 @@ using DisplayToolkit.Core.Features;
 
 namespace DisplayToolkit.App.ViewModels;
 
-/// <summary>The tray flyout: one monitor's brightness band, tile grid and sub-pages.</summary>
+/// <summary>The tray flyout: one monitor's brightness band, tile grid, sub-pages and edit mode.</summary>
 internal sealed partial class FlyoutViewModel : ObservableObject
 {
-    /// <summary>Features shown on the main page, refreshed each time the flyout opens.</summary>
-    private static readonly Feature[] QuickFeatures =
-    [
-        FeatureCatalog.Brightness, FeatureCatalog.PictureMode, FeatureCatalog.HdrMode, FeatureCatalog.InputSource,
-        FeatureCatalog.BlueLightFilter, FeatureCatalog.ShadowBoost, FeatureCatalog.Crosshair, FeatureCatalog.OledAntiFlicker,
-    ];
+    /// <summary>Always shown above the tiles, so always refreshed on open.</summary>
+    private static readonly Feature[] HeaderFeatures = [FeatureCatalog.Brightness, FeatureCatalog.HdrMode];
 
     private static readonly TimeSpan DisplayChangeSettleTime = TimeSpan.FromSeconds(2);
 
     private readonly MonitorService _monitors;
+    private readonly LayoutStore _layouts;
     private readonly Dispatcher _dispatcher;
 
-    public FlyoutViewModel(MonitorService monitors, Dispatcher dispatcher)
+    /// <summary>The tile order when edit mode started, restored if editing is cancelled.</summary>
+    private List<string>? _layoutBeforeEdit;
+
+    public FlyoutViewModel(MonitorService monitors, LayoutStore layouts, Dispatcher dispatcher)
     {
         _monitors = monitors;
+        _layouts = layouts;
         _dispatcher = dispatcher;
         monitors.Changed += (_, _) => OnMonitorsChanged();
         OnMonitorsChanged();
@@ -39,21 +41,31 @@ internal sealed partial class FlyoutViewModel : ObservableObject
 
     public FeatureState? Brightness => Monitor?[FeatureCatalog.Brightness];
 
-    /// <summary>Input and signal under the monitor name, for example "DisplayPort".</summary>
-    public string Subtitle => Monitor?[FeatureCatalog.InputSource] is { } input
-        ? FeatureCatalog.InputSource.FindOption(input.Value)?.Name ?? string.Empty
-        : string.Empty;
+    /// <summary>
+    /// The link under the monitor name, for example "DisplayPort, 240 Hz". From Windows, not the monitor's input
+    /// register, which is unreliable while input auto-detection is on.
+    /// </summary>
+    public string Subtitle => Monitor?.Link?.ToString() ?? string.Empty;
 
-    public IReadOnlyList<TileViewModel> Tiles { get; private set; } = [];
+    public ObservableCollection<TileViewModel> Tiles { get; } = [];
 
     /// <summary>The open sub-page, or null for the main page.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanAddTiles))]
     public partial PageViewModel? Page { get; private set; }
+
+    /// <summary>Edit mode: tiles show unpin badges, can be dragged to reorder, and the footer offers Add and Done.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanAddTiles))]
+    public partial bool IsEditing { get; private set; }
+
+    /// <summary>The footer's Add button: in edit mode, but not while the Add page itself is open.</summary>
+    public bool CanAddTiles => IsEditing && Page is null;
 
     [ObservableProperty]
     public partial bool IsConflictingAppRunning { get; private set; }
 
-    /// <summary>The name of a setting whose last write failed, shown in an info bar with a Retry button.</summary>
+    /// <summary>A setting whose last write failed, shown in an info bar with a Retry button.</summary>
     [ObservableProperty]
     public partial FeatureState? FailedFeature { get; private set; }
 
@@ -66,10 +78,18 @@ internal sealed partial class FlyoutViewModel : ObservableObject
             await _monitors.RescanAsync();
             return;
         }
-        await Monitor.RefreshAsync(QuickFeatures);
+        await Monitor.RefreshAsync(VisibleFeatures());
     }
 
-    public void OnClosed() => Back();
+    /// <summary>Closing the flyout leaves sub-pages and keeps any layout edits.</summary>
+    public void OnClosed()
+    {
+        Back();
+        if (IsEditing)
+        {
+            Done();
+        }
+    }
 
     /// <summary>
     /// Displays changed: possibly an HDR switch from Windows (Win+Alt+B). Re-read once things have settled, which also
@@ -80,7 +100,16 @@ internal sealed partial class FlyoutViewModel : ObservableObject
         await Task.Delay(DisplayChangeSettleTime);
         if (Monitor is { } monitor)
         {
-            await monitor.RefreshAsync(QuickFeatures);
+            await monitor.RefreshAsync(VisibleFeatures());
+        }
+    }
+
+    /// <summary>Moves a tile during a drag or keyboard reorder in edit mode.</summary>
+    public void MoveTile(int from, int to)
+    {
+        if (IsEditing && from != to && from >= 0 && to >= 0 && from < Tiles.Count && to < Tiles.Count)
+        {
+            Tiles.Move(from, to);
         }
     }
 
@@ -90,6 +119,40 @@ internal sealed partial class FlyoutViewModel : ObservableObject
         Page?.Close();
         Page = null;
     }
+
+    [RelayCommand]
+    private void Edit()
+    {
+        Back();
+        _layoutBeforeEdit = [.. Tiles.Select(tile => tile.Id)];
+        SetEditing(true);
+    }
+
+    [RelayCommand]
+    private void Done()
+    {
+        Back();
+        SetEditing(false);
+        if (Monitor is { } monitor)
+        {
+            _layouts.Set(monitor.Session.Id.Model, [.. Tiles.Select(tile => tile.Id)]);
+        }
+    }
+
+    /// <summary>Esc in edit mode: put the tiles back the way they were.</summary>
+    [RelayCommand]
+    private void CancelEdit()
+    {
+        Back();
+        SetEditing(false);
+        if (Monitor is { } monitor && _layoutBeforeEdit is { } layout)
+        {
+            LoadTiles(monitor, layout);
+        }
+    }
+
+    [RelayCommand]
+    private void OpenAddPage() => Navigate(new AddTilesPageViewModel(AvailableTiles, AddTile));
 
     [RelayCommand]
     private Task Retry() => _monitors.RescanAsync();
@@ -120,23 +183,84 @@ internal sealed partial class FlyoutViewModel : ObservableObject
         Page = page;
     }
 
+    private IEnumerable<Feature> VisibleFeatures() => HeaderFeatures.Concat(Tiles.SelectMany(tile => tile.Features)).Distinct();
+
+    /// <summary>Tiles the monitor supports that aren't in the flyout yet.</summary>
+    private List<TileDefinition> AvailableTiles() => Monitor is { } monitor
+        ? [.. TileCatalog.All.Where(definition =>
+            Tiles.All(tile => tile.Id != definition.Id) && definition.IsSupported(monitor))]
+        : [];
+
+    private void AddTile(TileDefinition definition)
+    {
+        if (Monitor is { } monitor && definition.Create(monitor, Navigate) is { } tile)
+        {
+            AttachTile(tile);
+            Tiles.Add(tile);
+        }
+    }
+
+    private void RemoveTile(TileViewModel tile)
+    {
+        if (IsEditing && Tiles.Remove(tile))
+        {
+            tile.Detach();
+        }
+    }
+
+    private void SetEditing(bool editing)
+    {
+        IsEditing = editing;
+        foreach (var tile in Tiles)
+        {
+            tile.IsEditing = editing;
+        }
+    }
+
+    private void LoadTiles(MonitorViewModel monitor, IEnumerable<string> ids)
+    {
+        ClearTiles();
+        foreach (var id in ids)
+        {
+            if (TileCatalog.Find(id)?.Create(monitor, Navigate) is { } tile)
+            {
+                AttachTile(tile);
+                Tiles.Add(tile);
+            }
+        }
+    }
+
+    private void ClearTiles()
+    {
+        foreach (var tile in Tiles)
+        {
+            tile.Detach();
+        }
+        Tiles.Clear();
+    }
+
+    private void AttachTile(TileViewModel tile)
+    {
+        tile.IsEditing = IsEditing;
+        tile.RemoveRequested += (_, _) => RemoveTile(tile);
+    }
 
     private void OnMonitorsChanged()
     {
         var session = _monitors.Sessions.Count > 0 ? _monitors.Sessions[0] : null;
         if (Monitor?.Session != session)
         {
-            Page?.Close();
-            Page = null;
+            Back();
+            SetEditing(false);
             FailedFeature = null;
             Monitor?.Dispose();
+            ClearTiles();
             Monitor = session is null ? null : new MonitorViewModel(session, _dispatcher);
-            Tiles = Monitor is null ? [] : CreateTiles(Monitor);
-            OnPropertyChanged(nameof(Tiles));
 
-            if (Monitor is not null)
+            if (Monitor is { } monitor)
             {
-                foreach (var feature in Monitor.Session.Features.Select(feature => Monitor[feature]!))
+                LoadTiles(monitor, _layouts.Get(monitor.Session.Id.Model) ?? TileCatalog.DefaultLayout);
+                foreach (var feature in monitor.Session.Features.Select(feature => monitor[feature]!))
                 {
                     feature.PropertyChanged += (_, e) =>
                     {
@@ -146,50 +270,9 @@ internal sealed partial class FlyoutViewModel : ObservableObject
                         }
                     };
                 }
-                Monitor.PropertyChanged += (_, _) => OnPropertyChanged(nameof(Subtitle));
-                Monitor[FeatureCatalog.InputSource]?.PropertyChanged += (_, _) => OnPropertyChanged(nameof(Subtitle));
+                monitor.PropertyChanged += (_, _) => OnPropertyChanged(nameof(Subtitle));
             }
         }
         OnPropertyChanged(nameof(State));
-    }
-
-    /// <summary>The default tile layout from the design spec (§13), minus anything this monitor doesn't support.</summary>
-    private List<TileViewModel> CreateTiles(MonitorViewModel monitor)
-    {
-        var tiles = new List<TileViewModel>();
-
-        if (monitor[FeatureCatalog.PictureMode] is not null || monitor[FeatureCatalog.HdrMode] is not null)
-        {
-            tiles.Add(new PictureModeTileViewModel(monitor, Navigate));
-        }
-
-        tiles.Add(new HdrTileViewModel(monitor, Navigate));
-
-        if (monitor[FeatureCatalog.BlueLightFilter] is { } blueLight)
-        {
-            tiles.Add(new SplitTileViewModel("blue-light", "", blueLight, defaultOnValue: 2,
-                () => new LevelsPageViewModel(blueLight, "Level 4 matches TÜV low blue light."), Navigate, name: "Blue light"));
-        }
-
-        if (monitor[FeatureCatalog.ShadowBoost] is { } shadowBoost)
-        {
-            tiles.Add(new SplitTileViewModel("shadow-boost", "", shadowBoost, defaultOnValue: 1,
-                () => new LevelsPageViewModel(shadowBoost), Navigate));
-        }
-
-        if (monitor[FeatureCatalog.Crosshair] is { } crosshair)
-        {
-            var styles = monitor.OptionsOf(FeatureCatalog.Crosshair);
-            var firstStyle = styles.FirstOrDefault(option => option.Value != 0)?.Value ?? 0;
-            tiles.Add(new SplitTileViewModel("crosshair", "", crosshair, firstStyle,
-                () => new OptionsPageViewModel("Crosshair", crosshair, styles), Navigate));
-        }
-
-        if (monitor[FeatureCatalog.OledAntiFlicker] is { } antiFlicker)
-        {
-            tiles.Add(new SwitchTileViewModel("oled-anti-flicker", "", antiFlicker, name: "Anti-flicker"));
-        }
-
-        return tiles;
     }
 }

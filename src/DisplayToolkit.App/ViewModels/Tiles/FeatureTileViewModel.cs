@@ -1,3 +1,5 @@
+using DisplayToolkit.Core.Features;
+
 namespace DisplayToolkit.App.ViewModels.Tiles;
 
 /// <summary>A tile backed by one feature. Its status (pending, failed, available) comes straight from the feature.</summary>
@@ -22,4 +24,6 @@ public abstract class FeatureTileViewModel : TileViewModel
     public override bool HasFailed => State.HasFailed;
 
     public override bool IsVisible => State.IsAvailable;
+
+    public override IEnumerable<Feature> Features => [State.Feature];
 }

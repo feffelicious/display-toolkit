@@ -123,7 +123,7 @@
               <Border x:Name="Plate" CornerRadius="4" BorderThickness="1"
                       Background="{DynamicResource ControlFillColorDefaultBrush}"
                       BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" />
-              <Grid>
+              <Grid x:Name="Parts">
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="*" />
                   <ColumnDefinition x:Name="ChevronColumn" Width="0" />
@@ -165,6 +165,27 @@
                 <Ellipse x:Name="PendingPulse" Fill="{TemplateBinding Foreground}" />
               </Grid>
 
+              <!-- Edit mode: unpin badge overlapping the top-right corner. -->
+              <Button x:Name="UnpinBadge" Width="22" Height="22" Margin="0,-8,-8,0" HorizontalAlignment="Right" VerticalAlignment="Top"
+                      Visibility="Collapsed" Command="{TemplateBinding RemoveCommand}" Cursor="Hand"
+                      AutomationProperties.Name="Remove from quick settings">
+                <Button.Template>
+                  <ControlTemplate TargetType="Button">
+                    <Border x:Name="Disc" CornerRadius="11" BorderThickness="1"
+                            Background="{DynamicResource ControlSolidFillColorDefaultBrush}"
+                            BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}">
+                      <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="{StaticResource IconFont}" FontSize="10"
+                                 Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="&#xE77A;" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                      <Trigger Property="IsMouseOver" Value="True">
+                        <Setter TargetName="Disc" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+                      </Trigger>
+                    </ControlTemplate.Triggers>
+                  </ControlTemplate>
+                </Button.Template>
+              </Button>
+
               <Border x:Name="FailedBadge" Width="20" Height="20" Margin="0,-8,-8,0" HorizontalAlignment="Right" VerticalAlignment="Top"
                       CornerRadius="10" Visibility="Collapsed" IsHitTestVisible="False"
                       Background="{DynamicResource SystemFillColorCautionBackgroundBrush}">
@@ -205,6 +226,12 @@
             </Trigger>
             <Trigger Property="HasFailed" Value="True">
               <Setter TargetName="FailedBadge" Property="Visibility" Value="Visible" />
+            </Trigger>
+            <Trigger Property="IsEditing" Value="True">
+              <Setter TargetName="UnpinBadge" Property="Visibility" Value="Visible" />
+              <Setter TargetName="FailedBadge" Property="Visibility" Value="Collapsed" />
+              <Setter TargetName="Parts" Property="IsHitTestVisible" Value="False" />
+              <Setter Property="Cursor" Value="SizeAll" />
             </Trigger>
             <Trigger Property="IsPending" Value="True">
               <Trigger.EnterActions>

@@ -37,7 +37,7 @@ public partial class App : Application
 
         var tray = _host.Services.GetRequiredService<TrayController>();
         tray.Start();
-        _singleInstance.ListenForActivation(() => Dispatcher.BeginInvoke(tray.ToggleFlyout));
+        _singleInstance.ListenForActivation(() => Dispatcher.BeginInvoke(() => tray.ToggleFlyout()));
 
         await _host.Services.GetRequiredService<MonitorService>().RescanAsync();
 
@@ -66,6 +66,14 @@ public partial class App : Application
             DebugSnapshot.Save(flyout.Root, folder, $"flyout-{tile.Id}");
             viewModel.BackCommand.Execute(null);
         }
+
+        viewModel.EditCommand.Execute(null);
+        await Task.Delay(400);
+        DebugSnapshot.Save(flyout.Root, folder, "flyout-edit");
+        viewModel.OpenAddPageCommand.Execute(null);
+        await Task.Delay(400);
+        DebugSnapshot.Save(flyout.Root, folder, "flyout-add");
+        viewModel.CancelEditCommand.Execute(null);
         Shutdown();
     }
 #endif
@@ -88,6 +96,7 @@ public partial class App : Application
         services.AddSingleton(dispatcher);
         services.AddSingleton<IMonitorEnumerator, Win32MonitorEnumerator>();
         services.AddSingleton<CapabilitiesCache>();
+        services.AddSingleton<LayoutStore>();
         services.AddSingleton<MonitorService>();
         services.AddSingleton<FlyoutViewModel>();
         services.AddSingleton<FlyoutWindow>();

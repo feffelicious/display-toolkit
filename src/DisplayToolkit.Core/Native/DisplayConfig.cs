@@ -180,6 +180,19 @@ internal static unsafe partial class DisplayConfig
         }
     }
 
+    /// <summary>The active path whose target is the monitor with this device path.</summary>
+    internal static PathInfo? FindPath(string monitorDevicePath)
+    {
+        foreach (var path in GetActivePaths())
+        {
+            if (GetTargetName(path) is { } target && target.DevicePath == monitorDevicePath)
+            {
+                return path;
+            }
+        }
+        return null;
+    }
+
     internal static string? GetSourceGdiName(in PathInfo path)
     {
         var request = new SourceDeviceName

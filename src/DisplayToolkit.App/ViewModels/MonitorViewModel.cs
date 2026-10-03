@@ -54,6 +54,10 @@ public sealed partial class MonitorViewModel : ObservableObject, IDisposable
 
     public bool IsHdrActive => WindowsHdr?.IsEnabled == true;
 
+    /// <summary>Connection and refresh rate as Windows drives the monitor, for example "DisplayPort, 240 Hz".</summary>
+    [ObservableProperty]
+    public partial DisplayLinkInfo? Link { get; private set; }
+
     /// <summary>True while Windows switches HDR on or off (the screen blanks for a second or two).</summary>
     [ObservableProperty]
     public partial bool IsHdrSwitching { get; private set; }
@@ -108,6 +112,7 @@ public sealed partial class MonitorViewModel : ObservableObject, IDisposable
     {
         var wasHdr = IsHdrActive;
         WindowsHdr = Core.Monitors.WindowsHdr.GetState(Session.Id);
+        Link = DisplayLink.Get(Session.Id);
         _leftHdr |= wasHdr && !IsHdrActive;
     }
 

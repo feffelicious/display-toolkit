@@ -49,6 +49,8 @@ public sealed class PictureModeTileViewModel : TileViewModel
 
     public override bool IsVisible => Active?.IsKnown == true;
 
+    public override IEnumerable<Feature> Features => [FeatureCatalog.PictureMode, FeatureCatalog.HdrMode];
+
     protected override void OnMain()
     {
         if (Active is { } state && state.Feature is EnumFeature feature)
