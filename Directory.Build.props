@@ -13,8 +13,8 @@
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <!-- CS1591: missing XML docs. We document intent where it helps, not every member. -->
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <!-- CS1591/CS1573: missing XML docs. We document intent where it helps, not every member or parameter. -->
+    <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Label="Metadata">

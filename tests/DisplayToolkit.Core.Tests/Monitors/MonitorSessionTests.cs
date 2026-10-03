@@ -1,0 +1,184 @@
+using DisplayToolkit.Core.Features;
+using DisplayToolkit.Core.Monitors;
+using DisplayToolkit.Core.Tests.Fakes;
+
+namespace DisplayToolkit.Core.Tests.Monitors;
+
+public sealed class MonitorSessionTests : IDisposable
+{
+    private static readonly MonitorId Id = new("AUS32B1", @"\\?\DISPLAY#AUS32B1#test");
+
+    private readonly SimulatedMonitor _monitor = SimulatedMonitor.Pg32ucwm();
+    private MonitorSession? _session;
+
+    public void Dispose() => _session?.Dispose();
+
+    [Fact]
+    public async Task Opening_reads_capabilities_and_current_values()
+    {
+        var session = await OpenAsync();
+
+        Assert.Equal("PG32UCWM", session.Capabilities.Model);
+        Assert.Contains(FeatureCatalog.Brightness, session.Features);
+        Assert.DoesNotContain(FeatureCatalog.BoundaryDetection, session.Features);
+        Assert.Equal(new FeatureValue(FeatureCatalog.Brightness, 70, 100, FeatureStatus.Confirmed), session.GetValue(FeatureCatalog.Brightness));
+        Assert.Equal(1u, session.GetValue(FeatureCatalog.TaskbarDetection)!.Value);
+        Assert.Equal(0u, session.GetValue(FeatureCatalog.UniformBrightness)!.Value);
+    }
+
+    [Fact]
+    public async Task Write_is_confirmed_by_reading_back()
+    {
+        var session = await OpenAsync();
+
+        var result = await session.WriteAsync(FeatureCatalog.Brightness, 40);
+
+        Assert.Equal(FeatureStatus.Confirmed, result.Status);
+        Assert.Equal(40u, _monitor.Current(Vcp.Brightness));
+        Assert.Equal(result, session.GetValue(FeatureCatalog.Brightness));
+    }
+
+    [Fact]
+    public async Task Write_shows_pending_value_immediately()
+    {
+        var session = await OpenAsync();
+        var seen = new List<FeatureValue>();
+        session.ValueChanged += (_, e) => seen.Add(e.Value);
+
+        await session.WriteAsync(FeatureCatalog.Brightness, 40);
+
+        Assert.Equal(FeatureStatus.Pending, seen[0].Status);
+        Assert.Equal(40u, seen[0].Value);
+        Assert.Equal(FeatureStatus.Confirmed, seen[^1].Status);
+    }
+
+    [Fact]
+    public async Task Flag_write_changes_only_its_bit()
+    {
+        var session = await OpenAsync();
+
+        await session.WriteAsync(FeatureCatalog.UniformBrightness, 1);
+
+        Assert.Equal(0x6869u, _monitor.Current(Vcp.AsusToggles2));
+        Assert.Equal(1u, session.GetValue(FeatureCatalog.UniformBrightness)!.Value);
+        Assert.Equal(1u, session.GetValue(FeatureCatalog.TaskbarDetection)!.Value);
+    }
+
+    [Fact]
+    public async Task Locked_settings_are_reported_as_locked()
+    {
+        _monitor.SetRegister(Vcp.AsusShadowBoost, 0xFE, 0xFE);
+
+        var session = await OpenAsync();
+
+        Assert.Equal(FeatureStatus.Locked, session.GetValue(FeatureCatalog.ShadowBoost)!.Status);
+    }
+
+    [Fact]
+    public async Task Write_that_does_not_take_effect_fails_and_reverts()
+    {
+        var session = await OpenAsync();
+        _monitor.IgnoreWrites(Vcp.Brightness);
+
+        var result = await session.WriteAsync(FeatureCatalog.Brightness, 40);
+
+        Assert.Equal(FeatureStatus.Failed, result.Status);
+        Assert.Equal(70u, result.Value);
+        Assert.Equal(result, session.GetValue(FeatureCatalog.Brightness));
+    }
+
+    [Fact]
+    public async Task Rapid_writes_coalesce_to_the_latest_value()
+    {
+        var session = await OpenAsync();
+        using var firstWriteStarted = new ManualResetEventSlim();
+        using var releaseFirstWrite = new ManualResetEventSlim();
+        _monitor.OnSet = (_, _) =>
+        {
+            if (!firstWriteStarted.IsSet)
+            {
+                firstWriteStarted.Set();
+                releaseFirstWrite.Wait(TimeSpan.FromSeconds(5));
+            }
+        };
+
+        var first = session.WriteAsync(FeatureCatalog.Brightness, 10);
+        firstWriteStarted.Wait(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        var queued = new List<Task<FeatureValue>>();
+        for (var value = 20u; value <= 40; value += 10)
+        {
+            queued.Add(session.WriteAsync(FeatureCatalog.Brightness, value));
+        }
+        releaseFirstWrite.Set();
+        await Task.WhenAll([first, .. queued]);
+
+        Assert.Equal([(Vcp.Brightness, 10u), (Vcp.Brightness, 40u)], _monitor.Writes);
+        Assert.Equal(40u, session.GetValue(FeatureCatalog.Brightness)!.Value);
+        Assert.All(queued, task => Assert.Equal(40u, task.Result.Value));
+    }
+
+    [Fact]
+    public async Task Older_write_completing_does_not_hide_a_newer_pending_value()
+    {
+        var session = await OpenAsync();
+        using var releaseFirstWrite = new ManualResetEventSlim();
+        _monitor.OnSet = (_, value) =>
+        {
+            if (value == 10)
+            {
+                releaseFirstWrite.Wait(TimeSpan.FromSeconds(5));
+            }
+        };
+        var seen = new List<FeatureValue>();
+        session.ValueChanged += (_, e) => seen.Add(e.Value);
+
+        var first = session.WriteAsync(FeatureCatalog.Brightness, 10);
+        var second = session.WriteAsync(FeatureCatalog.Brightness, 20);
+        releaseFirstWrite.Set();
+        await Task.WhenAll(first, second);
+
+        // The UI never jumps back to 10 after the user moved on to 20.
+        Assert.DoesNotContain(seen, value => value is { Value: 10, Status: FeatureStatus.Confirmed });
+        Assert.Equal(new FeatureValue(FeatureCatalog.Brightness, 20, 100, FeatureStatus.Confirmed), session.GetValue(FeatureCatalog.Brightness));
+    }
+
+    [Fact]
+    public async Task Reconnects_when_the_handle_goes_stale()
+    {
+        var session = await OpenAsync();
+        _monitor.InvalidateHandles();
+
+        var result = await session.WriteAsync(FeatureCatalog.Brightness, 55);
+
+        Assert.Equal(FeatureStatus.Confirmed, result.Status);
+        Assert.Equal(55u, _monitor.Current(Vcp.Brightness));
+    }
+
+    [Fact]
+    public async Task Mode_switch_waits_for_the_monitor_to_settle()
+    {
+        _monitor.SetRegister(Vcp.AsusHdrMode, 0x0102, 0x0207);
+        var session = await OpenAsync();
+        _monitor.ReportStaleValuesAfterWrite(Vcp.AsusHdrMode, reads: 3);
+
+        var result = await session.WriteAsync(FeatureCatalog.HdrMode, 0x0104);
+
+        Assert.Equal(FeatureStatus.Confirmed, result.Status);
+        Assert.Equal(0x0104u, result.Value);
+    }
+
+    [Fact]
+    public async Task Unsupported_features_are_rejected()
+    {
+        var session = await OpenAsync();
+
+        await Assert.ThrowsAsync<NotSupportedException>(() => session.WriteAsync(FeatureCatalog.BoundaryDetection, 1));
+    }
+
+    private async Task<MonitorSession> OpenAsync()
+    {
+        var connection = new MonitorConnection(Id, "PG32UCWM", _monitor.OpenChannel());
+        _session = await MonitorSession.OpenAsync(connection, _monitor.Enumerator(Id), MonitorSessionOptions.Instant);
+        return _session;
+    }
+}

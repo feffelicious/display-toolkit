@@ -236,6 +236,16 @@ Sensitivity = `0x47` (0–max, max 5), only meaningful when distance ≠ 0. It r
 11 Blue Heavy Duplex, 12 Green Heavy Duplex. Legacy set (1–6): red/green point, dial, crosshair. Caps also lists 13–15, which DWC
 never uses. Test them.
 
+## Availability caveats (observed)
+
+- With the user away from the desk (Neo proximity sensor set to "screen off after 5 min"), the capabilities request failed
+  every time with `0xC0262589` (`ERROR_GRAPHICS_DDCCI_INVALID_MESSAGE_COMMAND`), and single reads started failing
+  intermittently. `0xD6` still reported "on". Closing DWC didn't help. Likely cause: the panel was dimmed or off. Not yet
+  confirmed with the user present.
+- A long multi-packet capabilities transfer is the most fragile DDC operation. The app should cache the capabilities string
+  per monitor model and re-request it only when the cache is missing.
+- DWC running at the same time as another DDC client is a collision risk. The app should detect it and warn.
+
 ## Open questions
 
 - `0xFC` bit meanings (test by toggling OSD options and diffing).

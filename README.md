@@ -34,8 +34,10 @@ Requires the .NET 10 SDK. The solution is `DisplayToolkit.slnx`:
 | Project | Purpose |
 |---|---|
 | `DisplayToolkit.Core` | Monitor discovery, capabilities, DDC/CI sessions. No UI. |
-| `DisplayToolkit.Automation` | Profiles, rules and triggers. No UI. |
 | `DisplayToolkit.App` | WPF tray app, flyout and main window. |
+| `tools/DisplayToolkit.Probe` | Console tool that dumps what a monitor reports. Handy for bug reports and new models. |
+
+Profiles and automation will live in `DisplayToolkit.Automation` once they're built.
 
 See [docs/architecture.md](docs/architecture.md) for the design and [docs/design](docs/design/design-spec.md) for the UI spec.
 
