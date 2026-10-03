@@ -58,7 +58,7 @@ public static class FeatureCatalog
         new(7, "8200K"),
         new(8, "9300K"),
         new(9, "10000K"),
-        new(11, "User"),
+        new(11, "Custom"), // "User" in the monitor's menu, which clashes with the User picture mode.
     ]);
 
     public static readonly RangeFeature RedGain = new("red-gain", "Red", Vcp.RedGain);

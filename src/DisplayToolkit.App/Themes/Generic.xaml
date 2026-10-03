@@ -10,13 +10,30 @@
     Two storyboards: one reveals the dot's container, the other pulses the dot itself.
   -->
 
+  <!-- ============================================================ Focus ring -->
+
+  <Style TargetType="controls:FocusRingVisual">
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="controls:FocusRingVisual">
+          <Grid Margin="-3" UseLayoutRounding="True" SnapsToDevicePixels="True">
+            <Border BorderThickness="2" BorderBrush="{DynamicResource FocusStrokeColorOuterBrush}"
+                    CornerRadius="{Binding OuterCornerRadius, RelativeSource={RelativeSource TemplatedParent}}" />
+            <Border Margin="2" BorderThickness="1" BorderBrush="{DynamicResource FocusStrokeColorInnerBrush}"
+                    CornerRadius="{Binding InnerCornerRadius, RelativeSource={RelativeSource TemplatedParent}}" />
+          </Grid>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
   <!-- ============================================================ Brightness band -->
 
   <Style TargetType="controls:BrightnessBand">
     <Setter Property="Height" Value="40" />
     <Setter Property="Minimum" Value="0" />
-    <!-- The ring is drawn by the template (see BrightnessBand.IsFocusVisible). -->
     <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="controls:FocusRing.IsEnabled" Value="True" />
     <Setter Property="AutomationProperties.Name" Value="Brightness" />
     <Setter Property="Template">
       <Setter.Value>
@@ -52,17 +69,14 @@
               </StackPanel>
             </Grid>
             <Border x:Name="Stroke" CornerRadius="6" BorderThickness="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" />
-            <Grid x:Name="FocusRing" Visibility="Collapsed" IsHitTestVisible="False" UseLayoutRounding="True" SnapsToDevicePixels="True">
-              <Border Margin="-3" CornerRadius="9" BorderThickness="2" BorderBrush="{DynamicResource FocusStrokeColorOuterBrush}" />
-              <Border Margin="-1" CornerRadius="7" BorderThickness="1" BorderBrush="{DynamicResource FocusStrokeColorInnerBrush}" />
-            </Grid>
+            <controls:FocusRingVisual x:Name="Ring" CornerRadius="9" Visibility="Collapsed" />
           </Grid>
           <ControlTemplate.Triggers>
             <Trigger Property="HasFailed" Value="True">
               <Setter TargetName="FailedGlyph" Property="Visibility" Value="Visible" />
             </Trigger>
-            <Trigger Property="IsFocusVisible" Value="True">
-              <Setter TargetName="FocusRing" Property="Visibility" Value="Visible" />
+            <Trigger Property="controls:FocusRing.IsVisible" Value="True">
+              <Setter TargetName="Ring" Property="Visibility" Value="Visible" />
             </Trigger>
             <Trigger Property="IsPending" Value="True">
               <Trigger.EnterActions>
@@ -95,7 +109,8 @@
   <Style x:Key="TilePartButton" TargetType="Button">
     <Setter Property="OverridesDefaultStyle" Value="True" />
     <Setter Property="Focusable" Value="True" />
-    <Setter Property="FocusVisualStyle" Value="{DynamicResource FocusRing}" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="controls:FocusRing.IsEnabled" Value="True" />
     <Setter Property="Tag">
       <Setter.Value>
         <CornerRadius>4</CornerRadius>
@@ -107,6 +122,7 @@
           <Grid>
             <Border x:Name="Overlay" Background="Transparent" CornerRadius="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" />
             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <controls:FocusRingVisual x:Name="Ring" Visibility="Collapsed" />
           </Grid>
           <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
@@ -114,6 +130,9 @@
             </Trigger>
             <Trigger Property="IsPressed" Value="True">
               <Setter TargetName="Overlay" Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
+            </Trigger>
+            <Trigger Property="controls:FocusRing.IsVisible" Value="True">
+              <Setter TargetName="Ring" Property="Visibility" Value="Visible" />
             </Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>
@@ -175,7 +194,7 @@
 
               <!-- Edit mode: unpin badge overlapping the top-right corner. -->
               <Button x:Name="UnpinBadge" Width="22" Height="22" Margin="0,-8,-8,0" HorizontalAlignment="Right" VerticalAlignment="Top"
-                      Visibility="Collapsed" Command="{TemplateBinding RemoveCommand}" Cursor="Hand"
+                      Visibility="Collapsed" Command="{TemplateBinding RemoveCommand}" Cursor="Hand" Focusable="False"
                       AutomationProperties.Name="Remove from quick settings">
                 <Button.Template>
                   <ControlTemplate TargetType="Button">
