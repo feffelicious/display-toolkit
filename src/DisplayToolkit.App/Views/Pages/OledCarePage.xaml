@@ -101,15 +101,17 @@
           <ComboBox MinWidth="160" ItemsSource="{Binding ProximityScreenOff.Options}" DisplayMemberPath="Name"
                     SelectedItem="{Binding ProximityScreenOff.SelectedOption, Mode=TwoWay}" AutomationProperties.Name="Turn off after" />
         </controls:SettingsCard>
-        <controls:SettingsCard IsNested="True" Header="Sensitivity" Visibility="{Binding ProximitySensitivity, Converter={StaticResource VisibleWhenNotNull}}">
-          <StackPanel Orientation="Horizontal">
-            <Slider Width="200" VerticalAlignment="Center" Minimum="0" Maximum="{Binding ProximitySensitivity.Maximum}" IsMoveToPointEnabled="True"
-                    IsSnapToTickEnabled="True" TickFrequency="1" Value="{Binding ProximitySensitivity.SliderValue, Mode=TwoWay}" AutomationProperties.Name="Sensitivity" />
-            <TextBlock Width="36" VerticalAlignment="Center" TextAlignment="Right" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                       Text="{Binding ProximitySensitivity.Value}" />
-          </StackPanel>
+        <controls:SettingsCard IsNested="True" Header="Sensitivity" Description="Change this in the monitor's menu. The monitor doesn't accept it from apps."
+                               Visibility="{Binding ProximitySensitivity, Converter={StaticResource VisibleWhenNotNull}}">
+          <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding SensitivityText}" />
         </controls:SettingsCard>
       </StackPanel>
     </controls:SettingsExpander>
+
+    <Border Margin="0,8,0,0" Style="{StaticResource InfoInfoBar}"
+            Visibility="{Binding ProximityDistance.IsAwaitingConfirmation, Converter={StaticResource VisibleWhenTrue}, FallbackValue=Collapsed}">
+      <TextBlock Style="{StaticResource CaptionText}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" TextWrapping="Wrap"
+                 Text="Confirm Tailored in your monitor's menu. It then measures how far away you sit, which takes a few seconds." />
+    </Border>
   </StackPanel>
 </UserControl>

@@ -24,6 +24,11 @@ public sealed record MonitorSessionOptions
 
     public TimeSpan ModeSwitchPollInterval { get; init; } = TimeSpan.FromMilliseconds(500);
 
+    /// <summary>How long to wait for the user to confirm a choice on the monitor (and for the monitor to apply it).</summary>
+    public TimeSpan ConfirmationTimeout { get; init; } = TimeSpan.FromMinutes(2);
+
+    public TimeSpan ConfirmationPollInterval { get; init; } = TimeSpan.FromSeconds(1);
+
     /// <summary>Attempts for the capabilities request, which is slower and more fragile than single reads.</summary>
     public int CapabilitiesAttempts { get; init; } = 5;
 
@@ -37,6 +42,8 @@ public sealed record MonitorSessionOptions
         RetryDelay = TimeSpan.Zero,
         ModeSwitchTimeout = TimeSpan.FromMilliseconds(200),
         ModeSwitchPollInterval = TimeSpan.Zero,
+        ConfirmationTimeout = TimeSpan.FromMilliseconds(200),
+        ConfirmationPollInterval = TimeSpan.FromMilliseconds(10),
         CapabilitiesRetryDelay = TimeSpan.Zero,
     };
 }

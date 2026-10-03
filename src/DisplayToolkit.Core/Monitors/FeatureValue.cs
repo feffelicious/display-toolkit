@@ -18,6 +18,12 @@ public enum FeatureStatus
     /// <summary>A write is queued or in flight.</summary>
     Pending,
 
+    /// <summary>
+    /// Sent, but the monitor waits for the user to confirm it in its on-screen menu. <see cref="FeatureValue.Value"/>
+    /// is the requested value.
+    /// </summary>
+    AwaitingConfirmation,
+
     /// <summary>The last write didn't take effect. <see cref="FeatureValue.Value"/> is the last confirmed value.</summary>
     Failed,
 

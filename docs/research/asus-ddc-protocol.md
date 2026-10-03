@@ -230,7 +230,13 @@ into that preset's stored settings in the monitor.
 
 `0xED` = `(screenOffMinutes << 8) | distance`. Distance: 0 off, 3 = max 60 cm, 2 = max 90 cm, 1 = max 120 cm, 0xFF = Tailored mode.
 Screen-off minutes come from the caps high bytes (`0500 0A00 0F00` → 5/10/15). PG32UCWM read `0x0501` = 5 min @ 120 cm ✅ (matches DWC).
-Sensitivity = `0x47` (0–max, max 5), only meaningful when distance ≠ 0. It read 0 while DWC showed "Level 3", so this needs checking.
+Sensitivity = `0x47` (levels 1–5 in the OSD, max 5), only meaningful when distance ≠ 0. Changing it in the OSD reads back
+correctly (1, 2, 3 …), but **any DDC/CI write resets it to 0**: values 1, 3, 5 and `0x0300` all read back as 0, and so did
+DWC's own slider. Treat it as read-only.
+
+**Tailored (`0xFF`) needs confirmation on the monitor.** Writing it opens an OSD prompt; the register keeps the old distance
+until the user confirms, then the monitor calibrates (about 10 s, DDC reads fail intermittently) and reports `0xFF`.
+Without confirmation the prompt times out and nothing changes. Write it once and poll; re-sending restarts the prompt.
 
 `0xE3` crosshair, "new" style set (caps contains 07+): 7 Blue Dot, 8 Green Dot, 9 Blue Mini Duplex, 10 Green Mini Duplex,
 11 Blue Heavy Duplex, 12 Green Heavy Duplex. Legacy set (1–6): red/green point, dial, crosshair. Caps also lists 13–15, which DWC

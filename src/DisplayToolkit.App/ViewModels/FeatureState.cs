@@ -41,7 +41,7 @@ public sealed partial class FeatureState : ObservableObject
     public partial uint Maximum { get; private set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsPending), nameof(HasFailed), nameof(IsLocked), nameof(IsAvailable))]
+    [NotifyPropertyChangedFor(nameof(IsPending), nameof(IsAwaitingConfirmation), nameof(HasFailed), nameof(IsLocked), nameof(IsAvailable))]
     public partial FeatureStatus Status { get; private set; }
 
     /// <summary>False until the first value arrives from the monitor.</summary>
@@ -50,6 +50,9 @@ public sealed partial class FeatureState : ObservableObject
     public partial bool IsKnown { get; private set; }
 
     public bool IsPending => Status == FeatureStatus.Pending;
+
+    /// <summary>Sent; the monitor shows a prompt the user has to confirm on the monitor itself.</summary>
+    public bool IsAwaitingConfirmation => Status == FeatureStatus.AwaitingConfirmation;
 
     public bool HasFailed => Status == FeatureStatus.Failed;
 

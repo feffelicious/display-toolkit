@@ -134,6 +134,10 @@ public sealed class MonitorSession : IDisposable
     public Task<FeatureValue> WriteAsync(Feature feature, uint value)
     {
         EnsureSupported(feature);
+        if (feature.IsReadOnly)
+        {
+            throw new NotSupportedException($"{feature} can only be changed in the monitor's menu.");
+        }
 
         long sequence;
         FeatureValue pending;
@@ -203,6 +207,11 @@ public sealed class MonitorSession : IDisposable
 
     private FeatureValue ExecuteWrite(Feature feature, uint value, long sequence)
     {
+        if (feature.NeedsConfirmation(value))
+        {
+            return ExecuteConfirmedWrite(feature, value, sequence);
+        }
+
         for (var attempt = 0; attempt <= _options.Retries; attempt++)
         {
             try
@@ -236,6 +245,98 @@ public sealed class MonitorSession : IDisposable
             Sleep(_options.RetryDelay);
         }
         return Fail(feature, sequence);
+    }
+
+    /// <summary>
+    /// Sends a choice the monitor wants confirmed in its menu. It is sent exactly once (sending it again would restart
+    /// the prompt), reported as <see cref="FeatureStatus.AwaitingConfirmation"/>, and then watched without blocking
+    /// other DDC traffic.
+    /// </summary>
+    private FeatureValue ExecuteConfirmedWrite(Feature feature, uint value, long sequence)
+    {
+        try
+        {
+            var register = feature.IsPartialRegister ? _channel.Get(feature.Code).Current : 0;
+            _channel.Set(feature.Code, feature.Encode(value, register));
+        }
+        catch (DdcException)
+        {
+            return Fail(feature, sequence);
+        }
+
+        FeatureValue awaiting;
+        lock (_stateGate)
+        {
+            if (!IsLatestWrite(feature, sequence))
+            {
+                return _visible.GetValueOrDefault(feature.Id) ?? new FeatureValue(feature, value, 0, FeatureStatus.Pending);
+            }
+            var maximum = _confirmed.GetValueOrDefault(feature.Id)?.Maximum ?? 0;
+            awaiting = new FeatureValue(feature, value, maximum, FeatureStatus.AwaitingConfirmation);
+            _visible[feature.Id] = awaiting;
+        }
+        RaiseChanged([awaiting]);
+        _ = WatchForConfirmationAsync(feature, value, sequence);
+        return awaiting;
+    }
+
+    /// <summary>
+    /// Polls until the monitor reports the confirmed value, a newer write replaces this one, or the time runs out (the
+    /// user cancelled or ignored the prompt). Either way, what the monitor reports at the end becomes visible.
+    /// </summary>
+    private async Task WatchForConfirmationAsync(Feature feature, uint value, long sequence)
+    {
+        var deadline = DateTime.UtcNow + _options.ConfirmationTimeout;
+        while (true)
+        {
+            await Task.Delay(_options.ConfirmationPollInterval);
+            var expired = DateTime.UtcNow >= deadline;
+            bool done;
+            try
+            {
+                done = await _worker.Enqueue(() => CheckConfirmation(feature, value, sequence, expired));
+            }
+            catch (ObjectDisposedException)
+            {
+                return; // The session closed (monitor unplugged or app exiting).
+            }
+
+            if (done)
+            {
+                return;
+            }
+            if (expired)
+            {
+                Fail(feature, sequence);
+                return;
+            }
+        }
+    }
+
+    /// <summary>One poll of <see cref="WatchForConfirmationAsync"/>, on the worker thread. Returns true when finished.</summary>
+    private bool CheckConfirmation(Feature feature, uint value, long sequence, bool expired)
+    {
+        lock (_stateGate)
+        {
+            if (!IsLatestWrite(feature, sequence))
+            {
+                return true;
+            }
+        }
+        try
+        {
+            var reply = _channel.Get(feature.Code);
+            if (feature.Decode(reply) == value || expired)
+            {
+                Publish(feature.Code, reply, (feature, sequence));
+                return true;
+            }
+        }
+        catch (DdcException)
+        {
+            // Calibrating; try again.
+        }
+        return false;
     }
 
     /// <summary>Reads the register back until it shows <paramref name="value"/>. Returns the matching reply, or null.</summary>

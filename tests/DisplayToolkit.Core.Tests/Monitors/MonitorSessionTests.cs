@@ -220,6 +220,36 @@ public sealed class MonitorSessionTests : IDisposable
     }
 
     [Fact]
+    public async Task Choices_confirmed_on_the_monitor_are_sent_once_and_awaited()
+    {
+        // Proximity "Tailored": the monitor shows a prompt and keeps the old value until the user confirms it.
+        var session = await OpenAsync();
+        _monitor.IgnoreWrites(Vcp.AsusProximitySensor);
+        var confirmed = NextConfirmedValue(session, FeatureCatalog.ProximityDistance);
+
+        var result = await session.WriteAsync(FeatureCatalog.ProximityDistance, 0xFF);
+        Assert.Equal(FeatureStatus.AwaitingConfirmation, result.Status);
+
+        _monitor.SetRegister(Vcp.AsusProximitySensor, 0x05FF, 0x0FFF);
+
+        Assert.Equal(new FeatureValue(FeatureCatalog.ProximityDistance, 0xFF, 0xFF, FeatureStatus.Confirmed), await confirmed);
+        Assert.Equal([(Vcp.AsusProximitySensor, 0x05FFu)], _monitor.Writes);
+    }
+
+    [Fact]
+    public async Task Unconfirmed_choices_revert_to_what_the_monitor_reports()
+    {
+        var session = await OpenAsync();
+        _monitor.IgnoreWrites(Vcp.AsusProximitySensor);
+        var confirmed = NextConfirmedValue(session, FeatureCatalog.ProximityDistance);
+
+        await session.WriteAsync(FeatureCatalog.ProximityDistance, 0xFF);
+
+        Assert.Equal(1u, (await confirmed).Value);
+        Assert.Single(_monitor.Writes);
+    }
+
+    [Fact]
     public async Task Raw_reads_return_codes_outside_the_catalog()
     {
         _monitor.SetRegister(Vcp.AsusVcpVersion, 0xB1, 0x0217);
@@ -231,11 +261,33 @@ public sealed class MonitorSessionTests : IDisposable
     }
 
     [Fact]
+    public async Task Read_only_features_are_rejected()
+    {
+        var session = await OpenAsync();
+
+        await Assert.ThrowsAsync<NotSupportedException>(() => session.WriteAsync(FeatureCatalog.ProximitySensitivity, 3));
+        Assert.Empty(_monitor.Writes);
+    }
+
+    [Fact]
     public async Task Unsupported_features_are_rejected()
     {
         var session = await OpenAsync();
 
         await Assert.ThrowsAsync<NotSupportedException>(() => session.WriteAsync(FeatureCatalog.BoundaryDetection, 1));
+    }
+
+    private static Task<FeatureValue> NextConfirmedValue(MonitorSession session, Feature feature)
+    {
+        var completion = new TaskCompletionSource<FeatureValue>(TaskCreationOptions.RunContinuationsAsynchronously);
+        session.ValueChanged += (_, e) =>
+        {
+            if (e.Value.Feature == feature && e.Value.Status == FeatureStatus.Confirmed)
+            {
+                completion.TrySetResult(e.Value);
+            }
+        };
+        return completion.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 
     private async Task<MonitorSession> OpenAsync()

@@ -19,5 +19,7 @@ public class EnumFeature(string id, string name, byte code, IReadOnlyList<Featur
         return advertised.Count == 0 ? Options : [.. Options.Where(option => advertised.Contains(option.Value))];
     }
 
+    public override bool NeedsConfirmation(uint value) => FindOption(value)?.NeedsConfirmation == true;
+
     public FeatureOption? FindOption(uint value) => Options.FirstOrDefault(option => option.Value == value);
 }

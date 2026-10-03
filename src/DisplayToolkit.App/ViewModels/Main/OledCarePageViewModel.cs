@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -24,6 +25,10 @@ public sealed partial class OledCarePageViewModel : MainPageViewModel
         if (ProximityDistance is { } distance)
         {
             Observe(distance, (_, _) => OnPropertyChanged(nameof(IsProximityOn)));
+        }
+        if (ProximitySensitivity is { } sensitivity)
+        {
+            Observe(sensitivity, (_, _) => OnPropertyChanged(nameof(SensitivityText)));
         }
     }
 
@@ -58,6 +63,11 @@ public sealed partial class OledCarePageViewModel : MainPageViewModel
     public FeatureState? ProximityScreenOff => Monitor[FeatureCatalog.ProximityScreenOff];
 
     public FeatureState? ProximitySensitivity => Monitor[FeatureCatalog.ProximitySensitivity];
+
+    /// <summary>The menu offers levels 1–5; 0 is what the monitor reports after an app tried to change it.</summary>
+    public string SensitivityText => ProximitySensitivity?.Value is { } level and > 0
+        ? string.Create(CultureInfo.CurrentCulture, $"Level {level}")
+        : "Not set";
 
     /// <summary>Screen-off time and sensitivity only matter while the sensor is on.</summary>
     public bool IsProximityOn => ProximityDistance?.Value is not (null or 0);

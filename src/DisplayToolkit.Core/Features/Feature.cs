@@ -24,6 +24,12 @@ public abstract class Feature(string id, string name, byte code)
     public bool AvailableInHdr { get; init; } = true;
 
     /// <summary>
+    /// True for settings the monitor reports but won't let apps change: it accepts the write and then resets the value
+    /// (proximity sensitivity on the PG32UCWM, also from ASUS's own app). Change them in the monitor's menu.
+    /// </summary>
+    public bool IsReadOnly { get; init; }
+
+    /// <summary>
     /// True when the feature shares its register with other features, so writes must read the register first and
     /// change only this feature's bits.
     /// </summary>
@@ -31,6 +37,9 @@ public abstract class Feature(string id, string name, byte code)
 
     /// <summary>How long the monitor may take before a write reads back correctly.</summary>
     public WriteSettling Settling { get; init; } = WriteSettling.Immediate;
+
+    /// <summary>True when the monitor only applies <paramref name="value"/> after the user confirms it on the monitor.</summary>
+    public virtual bool NeedsConfirmation(uint value) => false;
 
     public abstract bool IsSupportedBy(MonitorCapabilities capabilities);
 

@@ -170,7 +170,7 @@ public static class FeatureCatalog
         new(3, "Up to 60 cm"),
         new(2, "Up to 90 cm"),
         new(1, "Up to 120 cm"),
-        new(0xFF, "Tailored"),
+        new(0xFF, "Tailored") { NeedsConfirmation = true },
     ]);
 
     public static readonly ByteFieldFeature ProximityScreenOff = new("proximity-screen-off", "Turn screen off after", Vcp.AsusProximitySensor, highByte: true,
@@ -181,7 +181,10 @@ public static class FeatureCatalog
         new(15, "15 minutes"),
     ]);
 
-    public static readonly RangeFeature ProximitySensitivity = new("proximity-sensitivity", "Proximity sensitivity", Vcp.AsusProximitySensitivity);
+    public static readonly RangeFeature ProximitySensitivity = new("proximity-sensitivity", "Proximity sensitivity", Vcp.AsusProximitySensitivity)
+    {
+        IsReadOnly = true,
+    };
 
     // Input and sound
     public static readonly EnumFeature InputSource = new("input-source", "Input", Vcp.InputSource,
