@@ -14,6 +14,11 @@ internal static unsafe partial class User32
 
     private const uint MonitorDefaultToNearest = 2;
 
+    private const int GwlExStyle = -20;
+    private const nint WsExTransparent = 0x20;
+    private const nint WsExToolWindow = 0x80;
+    private const nint WsExNoActivate = 0x08000000;
+
     [StructLayout(LayoutKind.Sequential)]
     internal struct Point
     {
@@ -107,6 +112,18 @@ internal static unsafe partial class User32
         var scale = GetDpiForMonitor(monitor, 0, out var dpi, out _) == 0 ? dpi / 96.0 : 1.0;
         return (info.Monitor, info.WorkArea, scale);
     }
+
+    /// <summary>
+    /// Turns a window into an overlay: clicks go through it, it never takes focus, and it stays out of Alt+Tab.
+    /// </summary>
+    internal static void MakeOverlay(nint hwnd) =>
+        SetWindowLongPtr(hwnd, GwlExStyle, GetWindowLongPtr(hwnd, GwlExStyle) | WsExTransparent | WsExToolWindow | WsExNoActivate);
+
+    [LibraryImport("user32.dll", EntryPoint = "GetWindowLongPtrW")]
+    private static partial nint GetWindowLongPtr(nint hwnd, int index);
+
+    [LibraryImport("user32.dll", EntryPoint = "SetWindowLongPtrW")]
+    private static partial nint SetWindowLongPtr(nint hwnd, int index, nint value);
 
     /// <summary>Creates an icon from premultiplied 32-bit BGRA pixels. The caller owns the handle.</summary>
     internal static nint CreateIcon(int width, int height, ReadOnlySpan<byte> bgraPixels)

@@ -43,6 +43,15 @@ public partial class App : Application
         _singleInstance.ListenForActivation(() => Dispatcher.BeginInvoke(() => tray.ToggleFlyout()));
 
         await _host.Services.GetRequiredService<MonitorService>().RescanAsync();
+        var automation = _host.Services.GetRequiredService<AutomationService>();
+#if DEBUG
+        // Screenshots must never change the monitor, whatever the sample rules say.
+        if (DebugSnapshot.RequestedFolder(e.Args) is not null)
+        {
+            automation.Pause(null);
+        }
+#endif
+        automation.Start();
 
 #if DEBUG
         if (DebugSnapshot.RequestedFolder(e.Args) is { } folder)
@@ -91,6 +100,34 @@ public partial class App : Application
             await Task.Delay(2000);
             DebugSnapshot.Save(window.PageHost, folder, $"main-{item.Title.Replace(' ', '-').ToLowerInvariant()}");
             DebugSnapshot.Save((FrameworkElement)window.Content, folder, $"window-{item.Title.Replace(' ', '-').ToLowerInvariant()}");
+        }
+        if (mainViewModel.NavItems.FirstOrDefault(item => item.Title.StartsWith("Profiles", StringComparison.Ordinal)) is { } profilesItem)
+        {
+            mainViewModel.SelectedNavItem = profilesItem;
+            await Task.Delay(1000);
+            if (mainViewModel.Page is AutomationPageViewModel automationPage)
+            {
+                if (automationPage.Editor is { } editor)
+                {
+                    editor.ToggleAllSettingsCommand.Execute(null);
+                    await Task.Delay(500);
+                    DebugSnapshot.Save(window.PageHost, folder, "main-profiles-all-settings");
+                    editor.ToggleAllSettingsCommand.Execute(null);
+                }
+                automationPage.AddRuleCommand.Execute(null);
+                await Task.Delay(800);
+                DebugSnapshot.Save((FrameworkElement)window.Content, folder, "window-rule-step1");
+                if (mainViewModel.Dialog is ViewModels.Automation.RuleDialogViewModel dialog)
+                {
+                    await dialog.ChooseTriggerCommand.ExecuteAsync(ViewModels.Automation.TriggerKind.Sun);
+                    await Task.Delay(500);
+                    DebugSnapshot.Save((FrameworkElement)window.Content, folder, "window-rule-sun");
+                    await dialog.ChooseTriggerCommand.ExecuteAsync(ViewModels.Automation.TriggerKind.App);
+                    await Task.Delay(2500);
+                    DebugSnapshot.Save((FrameworkElement)window.Content, folder, "window-rule-app");
+                }
+                mainViewModel.CloseDialog();
+            }
         }
         if (mainViewModel.NavItems.Count > 0)
         {
@@ -141,6 +178,10 @@ public partial class App : Application
         services.AddSingleton<FlyoutViewModel>();
         services.AddSingleton<FlyoutWindow>();
         services.AddSingleton<TrayController>();
+        services.AddSingleton<GlobalHotkeys>();
+        services.AddSingleton<AutomationStore>();
+        services.AddSingleton<LocationService>();
+        services.AddSingleton<AutomationService>();
 
         return builder.Build();
     }

@@ -1,7 +1,9 @@
 using System.Collections.ObjectModel;
+using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DisplayToolkit.App.Services;
+using DisplayToolkit.App.ViewModels.Automation;
 using DisplayToolkit.App.ViewModels.Pages;
 using DisplayToolkit.App.ViewModels.Tiles;
 using DisplayToolkit.Core.Features;
@@ -16,20 +18,28 @@ internal sealed partial class FlyoutViewModel : ObservableObject
 
     private static readonly TimeSpan DisplayChangeSettleTime = TimeSpan.FromSeconds(2);
 
+    /// <summary>Profiles that fit in the row; with more, the last cell becomes "More".</summary>
+    private const int MaxRowProfiles = 4;
+
     private readonly MonitorContext _context;
     private readonly LayoutStore _layouts;
     private readonly MainWindowLauncher _mainWindow;
+    private readonly AutomationService _automation;
+    private List<ProfileChipViewModel> _quickProfiles = [];
 
     /// <summary>The tile order when edit mode started, restored if editing is cancelled.</summary>
     private List<string>? _layoutBeforeEdit;
 
-    public FlyoutViewModel(MonitorContext context, LayoutStore layouts, MainWindowLauncher mainWindow)
+    public FlyoutViewModel(MonitorContext context, LayoutStore layouts, MainWindowLauncher mainWindow, AutomationService automation)
     {
         _context = context;
         _layouts = layouts;
         _mainWindow = mainWindow;
+        _automation = automation;
         context.Changed += (_, _) => OnMonitorChanged();
+        automation.Changed += (_, _) => UpdateProfiles();
         OnMonitorChanged();
+        UpdateProfiles();
     }
 
     public MonitorDiscoveryState State => _context.State;
@@ -47,6 +57,24 @@ internal sealed partial class FlyoutViewModel : ObservableObject
     public string Subtitle => Monitor?.Link?.ToString() ?? string.Empty;
 
     public ObservableCollection<TileViewModel> Tiles { get; } = [];
+
+    /// <summary>
+    /// The profiles row: a <see cref="ProfileChipViewModel"/> per quick settings profile, or the first three and a
+    /// <see cref="MoreProfilesItem"/> when there are more than four.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasProfiles))]
+    public partial IReadOnlyList<object> ProfileRow { get; private set; } = [];
+
+    public bool HasProfiles => ProfileRow.Count > 0;
+
+    /// <summary>What automation is doing, for the footer: "Night since sunset, 18:21".</summary>
+    [ObservableProperty]
+    public partial string AutomationStatus { get; private set; } = string.Empty;
+
+    /// <summary>"Night applied, except Color temperature."</summary>
+    [ObservableProperty]
+    public partial string? ProfileFailure { get; private set; }
 
     /// <summary>The open sub-page, or null for the main page.</summary>
     [ObservableProperty]
@@ -180,6 +208,15 @@ internal sealed partial class FlyoutViewModel : ObservableObject
     private void DismissFailure() => FailedFeature = null;
 
     [RelayCommand]
+    private void OpenProfilesPage() => Navigate(new ProfilesPageViewModel(_quickProfiles));
+
+    [RelayCommand]
+    private Task RetryProfile() => _automation.RetryAsync();
+
+    [RelayCommand]
+    private void DismissProfileFailure() => _automation.DismissFailure();
+
+    [RelayCommand]
     private void CloseConflictingApp()
     {
         MonitorService.CloseConflictingApp();
@@ -254,6 +291,37 @@ internal sealed partial class FlyoutViewModel : ObservableObject
         tile.RemoveRequested += (_, _) => RemoveTile(tile);
     }
 
+    private void UpdateProfiles()
+    {
+        var profiles = _automation.Profiles.Where(profile => profile.ShowInQuickSettings).ToList();
+        if (profiles.Select(profile => profile.Id).SequenceEqual(_quickProfiles.Select(chip => chip.Profile.Id)))
+        {
+            for (var i = 0; i < profiles.Count; i++)
+            {
+                _quickProfiles[i].Update(profiles[i]);
+            }
+        }
+        else
+        {
+            _quickProfiles = [.. profiles.Select(profile => new ProfileChipViewModel(profile, _automation.ApplyAsync))];
+            ProfileRow = profiles.Count > MaxRowProfiles
+                ? [.. _quickProfiles.Take(MaxRowProfiles - 1), new MoreProfilesItem(OpenProfilesPageCommand)]
+                : [.. _quickProfiles];
+        }
+
+        var active = _automation.State.ProfileId;
+        foreach (var chip in _quickProfiles)
+        {
+            chip.IsActive = chip.Profile.Id == active;
+            chip.IsPending = chip.IsActive && _automation.IsApplying;
+        }
+
+        AutomationStatus = AutomationText.Status(_automation.Engine, _automation.Automation);
+        ProfileFailure = _automation.LastFailure is { } failure
+            ? $"{failure.Profile.Name} applied, except {string.Join(", ", failure.Failed.Select(setting => setting.Name))}."
+            : null;
+    }
+
     private void OnMonitorChanged()
     {
         if (Monitor != _context.Current)
@@ -283,3 +351,6 @@ internal sealed partial class FlyoutViewModel : ObservableObject
         OnPropertyChanged(nameof(State));
     }
 }
+
+/// <summary>The last cell of a full profiles row, which opens the list of all profiles.</summary>
+public sealed record MoreProfilesItem(ICommand Command);

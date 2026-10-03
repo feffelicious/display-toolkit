@@ -6,6 +6,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="clr-namespace:DisplayToolkit.App.Controls"
         xmlns:main="clr-namespace:DisplayToolkit.App.ViewModels.Main"
+        xmlns:automation="clr-namespace:DisplayToolkit.App.ViewModels.Automation"
+        xmlns:views="clr-namespace:DisplayToolkit.App.Views"
         xmlns:pages="clr-namespace:DisplayToolkit.App.Views.Pages"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance main:MainWindowViewModel}"
@@ -26,6 +28,8 @@
     <DataTemplate DataType="{x:Type main:OledCarePageViewModel}"><pages:OledCarePage /></DataTemplate>
     <DataTemplate DataType="{x:Type main:GamePlusPageViewModel}"><pages:GamePlusPage /></DataTemplate>
     <DataTemplate DataType="{x:Type main:SettingsPageViewModel}"><pages:SettingsPage /></DataTemplate>
+    <DataTemplate DataType="{x:Type main:AutomationPageViewModel}"><pages:AutomationPage /></DataTemplate>
+    <DataTemplate DataType="{x:Type automation:RuleDialogViewModel}"><views:RuleDialog /></DataTemplate>
 
     <!-- Navigation entry: glyph and title, subtle fill and an accent pill when selected (Windows Settings style). -->
     <ControlTemplate x:Key="NavEntryTemplate" TargetType="ContentControl">
@@ -151,6 +155,15 @@
 
           <ContentControl Content="{Binding Page}" Focusable="False" />
         </StackPanel>
+      </ScrollViewer>
+    </Grid>
+
+    <!-- ======================================================== Dialog (Add rule) -->
+    <Grid Grid.RowSpan="2" Visibility="{Binding Dialog, Converter={StaticResource VisibleWhenNotNull}}">
+      <Rectangle Fill="{DynamicResource SmokeFillColorDefaultBrush}" />
+      <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False">
+        <ContentControl x:Name="DialogHost" Margin="24" HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Content="{Binding Dialog}" Focusable="False" KeyboardNavigation.TabNavigation="Cycle" />
       </ScrollViewer>
     </Grid>
 

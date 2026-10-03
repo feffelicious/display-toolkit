@@ -8,6 +8,7 @@
         xmlns:pages="clr-namespace:DisplayToolkit.App.ViewModels.Pages"
         xmlns:services="clr-namespace:DisplayToolkit.App.Services"
         xmlns:vm="clr-namespace:DisplayToolkit.App.ViewModels"
+        xmlns:automation="clr-namespace:DisplayToolkit.App.ViewModels.Automation"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance vm:FlyoutViewModel}"
         Title="Display Toolkit"
@@ -87,6 +88,31 @@
                    Text="Turn on HDR to choose how the monitor shows HDR content." />
       </StackPanel>
     </DataTemplate>
+    <DataTemplate DataType="{x:Type pages:ProfilesPageViewModel}">
+      <ItemsControl ItemsSource="{Binding Profiles}" Focusable="False">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate DataType="{x:Type automation:ProfileChipViewModel}">
+            <Button Style="{StaticResource OptionRow}" Margin="0,0,0,2" Content="{Binding Name}"
+                    Tag="{Binding IsActive}" Command="{Binding SelectCommand}" />
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type automation:ProfileChipViewModel}">
+      <Button x:Name="Chip" Style="{StaticResource Segment}" Content="{Binding Name}" Tag="{Binding IsActive}"
+              Command="{Binding SelectCommand}" ToolTip="{Binding Name}" />
+      <DataTemplate.Triggers>
+        <DataTrigger Binding="{Binding IsPending}" Value="True">
+          <Setter TargetName="Chip" Property="Opacity" Value="0.6" />
+        </DataTrigger>
+      </DataTemplate.Triggers>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type vm:MoreProfilesItem}">
+      <Button Style="{StaticResource Segment}" Content="More" Command="{Binding Command}" AutomationProperties.Name="More profiles" />
+    </DataTemplate>
+
     <DataTemplate DataType="{x:Type pages:AddTilesPageViewModel}">
       <StackPanel>
         <TextBlock Style="{StaticResource CaptionText}" Text="Everything this monitor supports is already in quick settings."
@@ -187,6 +213,16 @@
                      Visibility="{Binding Brightness.IsLocked, Converter={StaticResource VisibleWhenTrue}, FallbackValue=Collapsed}"
                      Text="In HDR the monitor sets brightness itself." />
 
+          <ItemsControl Margin="-3,12,-3,0" ItemsSource="{Binding ProfileRow}" Focusable="False"
+                        AutomationProperties.Name="Profiles"
+                        Visibility="{Binding HasProfiles, Converter={StaticResource VisibleWhenTrue}}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <UniformGrid Rows="1" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+          </ItemsControl>
+
           <ItemsControl x:Name="TileGrid" Margin="-6,20,-6,-14" ItemsSource="{Binding Tiles}" Focusable="False" Background="Transparent">
             <ItemsControl.ItemsPanel>
               <ItemsPanelTemplate>
@@ -237,6 +273,17 @@
     </Border>
 
     <Border Style="{StaticResource CautionInfoBar}" Margin="0,16,0,0"
+            Visibility="{Binding ProfileFailure, Converter={StaticResource VisibleWhenNotNull}}">
+      <DockPanel>
+        <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE711;" Command="{Binding DismissProfileFailureCommand}"
+                AutomationProperties.Name="Dismiss" />
+        <Button DockPanel.Dock="Right" Margin="12,0,4,0" VerticalAlignment="Center" Padding="10,4" Content="Retry"
+                Command="{Binding RetryProfileCommand}" />
+        <TextBlock VerticalAlignment="Center" Style="{StaticResource BodyStrongText}" FontSize="13" TextWrapping="Wrap" Text="{Binding ProfileFailure}" />
+      </DockPanel>
+    </Border>
+
+    <Border Style="{StaticResource CautionInfoBar}" Margin="0,16,0,0"
             Visibility="{Binding FailedFeature, Converter={StaticResource VisibleWhenNotNull}}">
       <DockPanel>
         <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE711;" Command="{Binding DismissFailureCommand}"
@@ -258,14 +305,20 @@
             BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
             Background="{DynamicResource SubtleFillColorSecondaryBrush}">
       <Grid>
-        <!-- Normal -->
-        <StackPanel HorizontalAlignment="Right" Orientation="Horizontal"
-                    Visibility="{Binding IsEditing, Converter={StaticResource VisibleWhenFalse}}">
-          <Button Style="{StaticResource IconButton}" Content="&#xE70F;" Command="{Binding EditCommand}"
-                  ToolTip="Edit quick settings" AutomationProperties.Name="Edit quick settings" />
-          <Button Margin="4,0,0,0" Style="{StaticResource IconButton}" Content="&#xE713;" Command="{Binding OpenMainWindowCommand}"
-                  ToolTip="Open Display Toolkit" AutomationProperties.Name="Open Display Toolkit" />
-        </StackPanel>
+        <!-- Normal: automation status, then Edit and Open app -->
+        <DockPanel Visibility="{Binding IsEditing, Converter={StaticResource VisibleWhenFalse}}">
+          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+            <Button Style="{StaticResource IconButton}" Content="&#xE70F;" Command="{Binding EditCommand}"
+                    ToolTip="Edit quick settings" AutomationProperties.Name="Edit quick settings" />
+            <Button Margin="4,0,0,0" Style="{StaticResource IconButton}" Content="&#xE713;" Command="{Binding OpenMainWindowCommand}"
+                    ToolTip="Open Display Toolkit" AutomationProperties.Name="Open Display Toolkit" />
+          </StackPanel>
+          <DockPanel Margin="6,0,12,0" VerticalAlignment="Center" Background="Transparent" ToolTip="{Binding AutomationStatus}"
+                     Visibility="{Binding AutomationStatus, Converter={StaticResource VisibleWhenNotNull}}">
+            <TextBlock Style="{StaticResource IconText}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="&#xE945;" />
+            <TextBlock Margin="8,0,0,0" Style="{StaticResource CaptionText}" Text="{Binding AutomationStatus}" TextTrimming="CharacterEllipsis" />
+          </DockPanel>
+        </DockPanel>
         <!-- Edit mode -->
         <DockPanel Visibility="{Binding IsEditing, Converter={StaticResource VisibleWhenTrue}}">
           <Button DockPanel.Dock="Right" VerticalAlignment="Center" Padding="16,4" Content="Done" Command="{Binding DoneCommand}"

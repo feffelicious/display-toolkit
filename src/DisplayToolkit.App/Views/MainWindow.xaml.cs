@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -14,6 +15,7 @@ internal sealed partial class MainWindow : Window
 {
     private readonly MainWindowViewModel _viewModel;
     private readonly ThemeService _theme;
+    private IInputElement? _focusBeforeDialog;
 
     public MainWindow(MainWindowViewModel viewModel, ThemeService theme)
     {
@@ -43,13 +45,18 @@ internal sealed partial class MainWindow : Window
         ApplyBackdrop();
     }
 
-    /// <summary>Esc closes the confirmation dialog; Alt+Left goes back from a sub-page.</summary>
+    /// <summary>Esc closes the confirmation, then a dialog; Alt+Left goes back from a sub-page.</summary>
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
         base.OnPreviewKeyDown(e);
         if (e.Key == Key.Escape && _viewModel.Confirmation is not null)
         {
             _viewModel.ConfirmCancelCommand.Execute(null);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape && _viewModel.Dialog is not null && !IsDropDownOpen(e.OriginalSource))
+        {
+            _viewModel.CloseDialogCommand.Execute(null);
             e.Handled = true;
         }
         else if (e.SystemKey == Key.Left && Keyboard.Modifiers == ModifierKeys.Alt)
@@ -68,14 +75,37 @@ internal sealed partial class MainWindow : Window
 
     private void OnSettingsClick(object sender, MouseButtonEventArgs e) => _viewModel.OpenSettingsCommand.Execute(null);
 
-    /// <summary>A confirmation opens with Cancel focused, so Enter can't trigger the action by accident.</summary>
+    /// <summary>
+    /// A confirmation opens with Cancel focused, so Enter can't trigger the action by accident. A dialog takes the
+    /// focus to its first control, and gives it back to the page when it closes.
+    /// </summary>
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(MainWindowViewModel.Confirmation) && _viewModel.Confirmation is not null)
         {
             Dispatcher.BeginInvoke(() => Keyboard.Focus(CancelButton), System.Windows.Threading.DispatcherPriority.Input);
         }
+        else if (e.PropertyName == nameof(MainWindowViewModel.Dialog))
+        {
+            if (_viewModel.Dialog is not null)
+            {
+                _focusBeforeDialog = Keyboard.FocusedElement;
+                Dispatcher.BeginInvoke(
+                    () => DialogHost.MoveFocus(new TraversalRequest(FocusNavigationDirection.First)),
+                    System.Windows.Threading.DispatcherPriority.Input);
+            }
+            else
+            {
+                _focusBeforeDialog?.Focus();
+                _focusBeforeDialog = null;
+            }
+        }
     }
+
+    /// <summary>Esc in an open combo box closes the drop-down, not the dialog.</summary>
+    private static bool IsDropDownOpen(object source) =>
+        source is DependencyObject element && ItemsControl.ItemsControlFromItemContainer(element) is System.Windows.Controls.ComboBox { IsDropDownOpen: true }
+        || source is System.Windows.Controls.ComboBox { IsDropDownOpen: true };
 
     private void OnThemeChanged(object? sender, EventArgs e) => ApplyBackdrop();
 

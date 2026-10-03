@@ -11,6 +11,11 @@ public interface IMainWindowHost
 
     /// <summary>Shows a modal confirmation in the window. Returns true if the user chose the primary action.</summary>
     Task<bool> ConfirmAsync(ConfirmationViewModel confirmation);
+
+    /// <summary>Shows a dialog over the window (a view model with a matching template). Esc closes it.</summary>
+    void ShowDialog(object dialog);
+
+    void CloseDialog();
 }
 
 /// <summary>

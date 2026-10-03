@@ -1,0 +1,428 @@
+<UserControl x:Class="DisplayToolkit.App.Views.Pages.AutomationPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="clr-namespace:DisplayToolkit.App.Controls"
+             xmlns:main="clr-namespace:DisplayToolkit.App.ViewModels.Main"
+             xmlns:automation="clr-namespace:DisplayToolkit.App.ViewModels.Automation"
+             xmlns:pages="clr-namespace:DisplayToolkit.App.ViewModels.Pages"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance main:AutomationPageViewModel}">
+
+  <UserControl.Resources>
+    <!-- A profile in the list: glyph plate, name and how it's triggered; accent pill when selected. -->
+    <Style x:Key="ProfileListItem" TargetType="ListBoxItem">
+      <Setter Property="OverridesDefaultStyle" Value="True" />
+      <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+      <Setter Property="controls:FocusRing.IsEnabled" Value="True" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ListBoxItem">
+            <Grid Margin="0,1" Background="Transparent">
+              <Border x:Name="Body" CornerRadius="4" Background="Transparent" />
+              <Rectangle x:Name="Pill" Width="3" Height="16" RadiusX="1.5" RadiusY="1.5" HorizontalAlignment="Left" Visibility="Collapsed"
+                         Fill="{DynamicResource AccentFillColorDefaultBrush}" />
+              <ContentPresenter Margin="12,6" />
+              <controls:FocusRingVisual x:Name="Ring" Visibility="Collapsed" />
+            </Grid>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Body" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+              </Trigger>
+              <Trigger Property="IsSelected" Value="True">
+                <Setter TargetName="Body" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="Pill" Property="Visibility" Value="Visible" />
+              </Trigger>
+              <Trigger Property="controls:FocusRing.IsVisible" Value="True">
+                <Setter TargetName="Ring" Property="Visibility" Value="Visible" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- The 28 px glyph plate used in the profile list, the rule chips and the day strip. -->
+    <Style x:Key="GlyphPlate" TargetType="Border">
+      <Setter Property="Width" Value="28" />
+      <Setter Property="Height" Value="28" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+    </Style>
+
+    <!-- One "Settings in this profile" row: checkbox, name, and an inline control for the stored value. -->
+    <DataTemplate x:Key="SettingRow" DataType="{x:Type automation:ProfileSettingRowViewModel}">
+      <Border MinHeight="48" Padding="16,6" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}">
+        <DockPanel>
+          <Grid x:Name="Editor" DockPanel.Dock="Right" Width="280" VerticalAlignment="Center"
+                IsEnabled="{Binding IsIncluded}">
+            <CheckBox x:Name="Toggle" HorizontalAlignment="Right" Visibility="Collapsed" Style="{StaticResource ToggleSwitch}" Tag="Labeled"
+                      IsChecked="{Binding IsOn, Mode=TwoWay}" AutomationProperties.Name="{Binding Name}" />
+            <ItemsControl x:Name="Levels" Visibility="Collapsed" Style="{StaticResource SegmentedChoices}" ItemsSource="{Binding Levels}"
+                          AutomationProperties.Name="{Binding Name}" />
+            <DockPanel x:Name="Slider" Visibility="Collapsed">
+              <TextBlock DockPanel.Dock="Right" Width="36" VerticalAlignment="Center" TextAlignment="Right"
+                         Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding ValueText}" />
+              <Slider VerticalAlignment="Center" Minimum="0" Maximum="{Binding Maximum}" IsMoveToPointEnabled="True"
+                      IsSnapToTickEnabled="True" TickFrequency="1" Value="{Binding SliderValue, Mode=TwoWay}"
+                      AutomationProperties.Name="{Binding Name}" />
+            </DockPanel>
+            <ComboBox x:Name="Choice" Visibility="Collapsed" HorizontalAlignment="Right" MinWidth="200" ItemsSource="{Binding Options}"
+                      DisplayMemberPath="Name" SelectedItem="{Binding SelectedOption, Mode=TwoWay}" AutomationProperties.Name="{Binding Name}" />
+          </Grid>
+          <CheckBox VerticalAlignment="Center" IsChecked="{Binding IsIncluded, Mode=TwoWay}">
+            <TextBlock FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Name}" />
+          </CheckBox>
+        </DockPanel>
+      </Border>
+      <DataTemplate.Triggers>
+        <DataTrigger Binding="{Binding Control}" Value="{x:Static automation:SettingControl.Toggle}">
+          <Setter TargetName="Toggle" Property="Visibility" Value="Visible" />
+        </DataTrigger>
+        <DataTrigger Binding="{Binding Control}" Value="{x:Static automation:SettingControl.Levels}">
+          <Setter TargetName="Levels" Property="Visibility" Value="Visible" />
+        </DataTrigger>
+        <DataTrigger Binding="{Binding Control}" Value="{x:Static automation:SettingControl.Slider}">
+          <Setter TargetName="Slider" Property="Visibility" Value="Visible" />
+        </DataTrigger>
+        <DataTrigger Binding="{Binding Control}" Value="{x:Static automation:SettingControl.Choice}">
+          <Setter TargetName="Choice" Property="Visibility" Value="Visible" />
+        </DataTrigger>
+        <DataTrigger Binding="{Binding IsIncluded}" Value="False">
+          <Setter TargetName="Editor" Property="Opacity" Value="0.45" />
+        </DataTrigger>
+      </DataTemplate.Triggers>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <StackPanel>
+
+    <!-- ======================================================== Profiles -->
+    <TextBlock Style="{StaticResource SettingsGroupHeader}" Margin="0,0,0,8" Text="Profiles" />
+
+    <!-- Empty state -->
+    <Border Padding="24" CornerRadius="8" BorderThickness="1" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+            Visibility="{Binding HasProfiles, Converter={StaticResource VisibleWhenFalse}}">
+      <DockPanel>
+        <Button DockPanel.Dock="Right" VerticalAlignment="Center" Padding="16,5" Style="{DynamicResource AccentButtonStyle}"
+                Command="{Binding NewProfileCommand}" Content="New profile" />
+        <StackPanel Margin="0,0,24,0">
+          <TextBlock Style="{StaticResource BodyStrongText}" Text="Switch several settings at once" />
+          <TextBlock Margin="0,4,0,0" Style="{StaticResource CaptionText}" TextWrapping="Wrap"
+                     Text="A profile remembers the settings you choose, like brightness, picture mode and the blue light filter. Pick it in quick settings, give it a shortcut, or let a rule switch to it." />
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
+    <!-- List and editor -->
+    <Border CornerRadius="8" BorderThickness="1" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+            Visibility="{Binding HasProfiles, Converter={StaticResource VisibleWhenTrue}}">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="232" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Padding="6" BorderThickness="0,0,1,0" BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}">
+          <StackPanel>
+            <ListBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile, Mode=TwoWay}"
+                     ItemContainerStyle="{StaticResource ProfileListItem}" Background="Transparent" BorderThickness="0"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="Profiles">
+              <ListBox.ItemTemplate>
+                <DataTemplate DataType="{x:Type main:ProfileListItem}">
+                  <DockPanel>
+                    <Border Style="{StaticResource GlyphPlate}">
+                      <TextBlock Style="{StaticResource IconText}" HorizontalAlignment="Center" FontSize="14"
+                                 Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Profile.Glyph}" />
+                    </Border>
+                    <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                      <TextBlock FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Profile.Name}"
+                                 TextTrimming="CharacterEllipsis" />
+                      <TextBlock Style="{StaticResource CaptionText}" Text="{Binding Subtitle}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </DockPanel>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <Button Margin="0,4,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="12,8"
+                    Background="Transparent" BorderThickness="0" Command="{Binding NewProfileCommand}">
+              <StackPanel Orientation="Horizontal">
+                <TextBlock Width="28" Style="{StaticResource IconText}" FontSize="14" TextAlignment="Center"
+                           Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Text="&#xE710;" />
+                <TextBlock Margin="12,0,0,0" FontSize="14" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Text="New profile" />
+              </StackPanel>
+            </Button>
+          </StackPanel>
+        </Border>
+
+        <!-- Editor -->
+        <StackPanel Grid.Column="1" DataContext="{Binding Editor}" Visibility="{Binding Converter={StaticResource VisibleWhenNotNull}}">
+          <DockPanel Margin="20,20,20,16">
+            <Button x:Name="GlyphButton" Width="40" Height="40" Padding="0" Style="{DynamicResource AccentButtonStyle}"
+                    Click="OnGlyphButtonClick" ToolTip="Change icon" AutomationProperties.Name="Change icon">
+              <TextBlock Style="{StaticResource IconText}" FontSize="20" Text="{Binding Glyph}" />
+            </Button>
+            <Popup x:Name="GlyphPopup" PlacementTarget="{Binding ElementName=GlyphButton}" Placement="Bottom" StaysOpen="False"
+                   AllowsTransparency="True" VerticalOffset="4">
+              <Border Padding="6" CornerRadius="8" BorderThickness="1" Background="{DynamicResource SolidBackgroundFillColorQuarternaryBrush}"
+                      BorderBrush="{DynamicResource SurfaceStrokeColorFlyoutBrush}">
+                <ItemsControl ItemsSource="{x:Static automation:ProfileEditorViewModel.GlyphChoices}" Focusable="False">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <UniformGrid Columns="6" />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Button Margin="2" Style="{StaticResource IconButton}" Content="{Binding}" Click="OnGlyphChosen"
+                              Command="{Binding DataContext.SetGlyphCommand, ElementName=GlyphButton}" CommandParameter="{Binding}" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </Border>
+            </Popup>
+
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+              <Button Padding="12,5" Content="Capture current" Command="{Binding CaptureCurrentCommand}"
+                      ToolTip="Store what the monitor uses now for the checked settings" />
+              <Button Margin="8,0" Padding="12,5" Content="Apply now" Style="{DynamicResource AccentButtonStyle}" Command="{Binding ApplyNowCommand}" />
+              <Button x:Name="MoreButton" Style="{StaticResource IconButton}" Content="&#xE712;" Click="OnMoreButtonClick" AutomationProperties.Name="More">
+                <Button.ContextMenu>
+                  <ContextMenu>
+                    <MenuItem Header="Duplicate" Command="{Binding DuplicateCommand}" />
+                    <MenuItem Header="Delete" Command="{Binding DeleteCommand}" />
+                  </ContextMenu>
+                </Button.ContextMenu>
+              </Button>
+            </StackPanel>
+
+            <TextBox x:Name="NameBox" Margin="12,0,16,0" VerticalAlignment="Center" FontSize="14" Text="{Binding Name}"
+                     AutomationProperties.Name="Profile name" />
+          </DockPanel>
+
+          <controls:SettingsCard Margin="20,0,20,2" Header="Shortcut" Description="Switches to this profile from anywhere.">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Margin="0,0,12,0" VerticalAlignment="Center" Style="{StaticResource CaptionText}"
+                         Foreground="{DynamicResource SystemFillColorCautionBrush}" Text="Another app uses this shortcut"
+                         Visibility="{Binding IsShortcutTaken, Converter={StaticResource VisibleWhenTrue}}" />
+              <TextBlock Margin="0,0,4,0" VerticalAlignment="Center" Style="{StaticResource CaptionText}" Text="None"
+                         Visibility="{Binding HasShortcut, Converter={StaticResource VisibleWhenFalse}}" />
+              <controls:ShortcutRecorder Keys="{Binding ShortcutKeys}" Command="{Binding RecordShortcutCommand}"
+                                         AutomationProperties.Name="Shortcut" />
+              <Button Margin="4,0,0,0" Style="{StaticResource IconButton}" Content="&#xE711;" ToolTip="Remove shortcut"
+                      AutomationProperties.Name="Remove shortcut" Command="{Binding RecordShortcutCommand}" CommandParameter="{x:Null}"
+                      Visibility="{Binding HasShortcut, Converter={StaticResource VisibleWhenTrue}}" />
+            </StackPanel>
+          </controls:SettingsCard>
+          <controls:SettingsCard Margin="20,0,20,0" Header="Show in quick settings" Description="In the flyout's profiles row and the tray menu.">
+            <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding ShowInQuickSettings, Mode=TwoWay}"
+                      AutomationProperties.Name="Show in quick settings" />
+          </controls:SettingsCard>
+
+          <StackPanel Margin="20,24,20,8">
+            <TextBlock Style="{StaticResource BodyStrongText}" Text="Settings in this profile" />
+            <TextBlock Style="{StaticResource CaptionText}" Text="Unchecked settings stay as they are." />
+          </StackPanel>
+          <Border Margin="20,0,20,20" CornerRadius="4" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}">
+            <StackPanel>
+              <ItemsControl ItemsSource="{Binding CommonSettings}" ItemTemplate="{StaticResource SettingRow}" Focusable="False" />
+              <ItemsControl ItemsSource="{Binding MoreSettings}" ItemTemplate="{StaticResource SettingRow}" Focusable="False"
+                            Visibility="{Binding ShowAllSettings, Converter={StaticResource VisibleWhenTrue}}" />
+              <Button HorizontalAlignment="Left" Margin="4,8" Padding="12,5" Background="Transparent" BorderThickness="0"
+                      Command="{Binding ToggleAllSettingsCommand}">
+                <TextBlock FontSize="14" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Text="{Binding ShowMoreText}" />
+              </Button>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- ======================================================== Automation: today -->
+    <TextBlock Style="{StaticResource SettingsGroupHeader}" Text="Automation" />
+
+    <Border Padding="20,16,20,16" CornerRadius="8" BorderThickness="1" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+      <StackPanel>
+        <DockPanel>
+          <Button x:Name="PauseButton" DockPanel.Dock="Right" VerticalAlignment="Top" Padding="12,5" Click="OnMoreButtonClick"
+                  Visibility="{Binding IsPaused, Converter={StaticResource VisibleWhenFalse}}" IsEnabled="{Binding HasRules}">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Style="{StaticResource IconText}" FontSize="12" Text="&#xE769;" />
+              <TextBlock Margin="8,0,0,0" Text="Pause automation" />
+            </StackPanel>
+            <Button.ContextMenu>
+              <ContextMenu>
+                <MenuItem Header="For 1 hour" Command="{Binding PauseForAnHourCommand}" />
+                <MenuItem Header="Until tomorrow" Command="{Binding PauseUntilTomorrowCommand}" />
+                <MenuItem Header="Until I resume" Command="{Binding PauseUntilResumedCommand}" />
+              </ContextMenu>
+            </Button.ContextMenu>
+          </Button>
+          <Button DockPanel.Dock="Right" VerticalAlignment="Top" Padding="12,5" Style="{DynamicResource AccentButtonStyle}"
+                  Command="{Binding ResumeCommand}" Visibility="{Binding IsPaused, Converter={StaticResource VisibleWhenTrue}}">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Style="{StaticResource IconText}" FontSize="12" Text="&#xE768;" />
+              <TextBlock Margin="8,0,0,0" Text="Resume" />
+            </StackPanel>
+          </Button>
+          <StackPanel>
+            <TextBlock Style="{StaticResource BodyStrongText}" Text="Today" />
+            <TextBlock Style="{StaticResource CaptionText}" Text="{Binding Status}" TextWrapping="Wrap" />
+          </StackPanel>
+        </DockPanel>
+
+        <!-- Day strip: sunrise and sunset above, the schedule's profiles, now, and the hours below. -->
+        <Grid Margin="0,20,0,0" DataContext="{Binding Day}">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="44" />
+            <RowDefinition Height="Auto" />
+          </Grid.RowDefinitions>
+
+          <ItemsControl Margin="0,0,0,4" ItemsSource="{Binding Markers}" Focusable="False">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <controls:ProportionalPanel />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemContainerStyle>
+              <Style TargetType="ContentPresenter">
+                <Setter Property="controls:ProportionalPanel.Start" Value="{Binding Position}" />
+              </Style>
+            </ItemsControl.ItemContainerStyle>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="{x:Type automation:DayMarker}">
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Style="{StaticResource IconText}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Glyph}" />
+                  <TextBlock Margin="4,0,0,0" Style="{StaticResource CaptionText}" Text="{Binding Time}" />
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <Border Grid.Row="1" CornerRadius="6" Background="{DynamicResource ControlFillColorSecondaryBrush}">
+            <Grid SizeChanged="OnStripSizeChanged">
+              <ItemsControl ItemsSource="{Binding Segments}" Focusable="False">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <controls:ProportionalPanel />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemContainerStyle>
+                  <Style TargetType="ContentPresenter">
+                    <Setter Property="controls:ProportionalPanel.Start" Value="{Binding Start}" />
+                    <Setter Property="controls:ProportionalPanel.Length" Value="{Binding Length}" />
+                  </Style>
+                </ItemsControl.ItemContainerStyle>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate DataType="{x:Type automation:DaySegment}">
+                    <Border x:Name="Segment" BorderThickness="0,0,1,0" BorderBrush="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                            Background="{DynamicResource ControlFillColorDefaultBrush}" ToolTip="{Binding Name}">
+                      <StackPanel Margin="10,0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock x:Name="Glyph" Style="{StaticResource IconText}" FontSize="14"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Glyph}" />
+                        <TextBlock x:Name="Name" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="13"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                      </StackPanel>
+                    </Border>
+                    <DataTemplate.Triggers>
+                      <DataTrigger Binding="{Binding IsActive}" Value="True">
+                        <Setter TargetName="Segment" Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                        <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+                        <Setter TargetName="Name" Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+                      </DataTrigger>
+                      <DataTrigger Binding="{Binding Glyph}" Value="">
+                        <Setter TargetName="Segment" Property="Background" Value="Transparent" />
+                        <Setter TargetName="Name" Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}" />
+                      </DataTrigger>
+                    </DataTemplate.Triggers>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+
+              <!-- The past part of the day is faded; a line marks now. -->
+              <controls:ProportionalPanel IsHitTestVisible="False">
+                <Rectangle controls:ProportionalPanel.Start="0" controls:ProportionalPanel.Length="{Binding Now}"
+                           Fill="{DynamicResource SolidBackgroundFillColorBaseBrush}" Opacity="0.45" />
+                <Rectangle controls:ProportionalPanel.Start="{Binding Now}" Width="2" Fill="{DynamicResource TextFillColorPrimaryBrush}" />
+              </controls:ProportionalPanel>
+            </Grid>
+          </Border>
+
+          <Grid Grid.Row="2" Margin="0,4,0,0">
+            <controls:ProportionalPanel>
+              <TextBlock controls:ProportionalPanel.Start="0" Style="{StaticResource CaptionText}" Text="00:00" />
+              <TextBlock controls:ProportionalPanel.Start="0.25" Style="{StaticResource CaptionText}" Text="06:00" />
+              <TextBlock controls:ProportionalPanel.Start="0.5" Style="{StaticResource CaptionText}" Text="12:00" />
+              <TextBlock controls:ProportionalPanel.Start="0.75" Style="{StaticResource CaptionText}" Text="18:00" />
+              <TextBlock controls:ProportionalPanel.Start="1" Style="{StaticResource CaptionText}" Text="24:00" />
+            </controls:ProportionalPanel>
+          </Grid>
+        </Grid>
+
+        <StackPanel Margin="0,12,0,0" Orientation="Horizontal">
+          <TextBlock Style="{StaticResource CaptionText}"
+                     Text="App, game, power and HDR rules interrupt the day while they apply, then the schedule takes over again." />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <!-- ======================================================== Rules -->
+    <DockPanel Margin="0,26,0,8">
+      <Button DockPanel.Dock="Right" Padding="12,5" Command="{Binding AddRuleCommand}" IsEnabled="{Binding HasProfiles}">
+        <StackPanel Orientation="Horizontal">
+          <TextBlock Style="{StaticResource IconText}" FontSize="12" Text="&#xE710;" />
+          <TextBlock Margin="8,0,0,0" Text="Add rule" />
+        </StackPanel>
+      </Button>
+      <StackPanel VerticalAlignment="Bottom">
+        <TextBlock Style="{StaticResource BodyStrongText}" Text="Rules" />
+        <TextBlock Style="{StaticResource CaptionText}" Text="Higher rules win when two apply at the same time." />
+      </StackPanel>
+    </DockPanel>
+
+    <TextBlock Margin="0,4,0,0" Style="{StaticResource CaptionText}"
+               Visibility="{Binding HasRules, Converter={StaticResource VisibleWhenFalse}}"
+               Text="No rules yet. Rules switch profiles at a time of day, at sunrise or sunset, or while an app or game runs." />
+
+    <ItemsControl ItemsSource="{Binding Rules}" Focusable="False">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate DataType="{x:Type automation:RuleItemViewModel}">
+          <controls:SettingsCard x:Name="Card" HeaderIcon="{Binding Glyph}" Header="{Binding Title}" Description="{Binding Description}">
+            <StackPanel Orientation="Horizontal">
+              <Border Margin="0,0,16,0" Padding="10,4" CornerRadius="12" VerticalAlignment="Center"
+                      Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Style="{StaticResource IconText}" FontSize="12" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding ProfileGlyph}" />
+                  <TextBlock Margin="6,0,0,0" FontSize="12" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding ProfileName}" />
+                </StackPanel>
+              </Border>
+              <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding IsEnabled, Mode=TwoWay}" AutomationProperties.Name="{Binding Title}" />
+              <Button Margin="8,0,0,0" Style="{StaticResource IconButton}" Content="&#xE712;" Click="OnMoreButtonClick" AutomationProperties.Name="More">
+                <Button.ContextMenu>
+                  <ContextMenu>
+                    <MenuItem Header="Edit" Command="{Binding EditCommand}" />
+                    <MenuItem Header="Duplicate" Command="{Binding DuplicateCommand}" />
+                    <MenuItem Header="Move up" Command="{Binding MoveUpCommand}" />
+                    <MenuItem Header="Move down" Command="{Binding MoveDownCommand}" />
+                    <Separator />
+                    <MenuItem Header="Delete" Command="{Binding DeleteCommand}" />
+                  </ContextMenu>
+                </Button.ContextMenu>
+              </Button>
+            </StackPanel>
+          </controls:SettingsCard>
+          <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding IsEnabled}" Value="False">
+              <Setter TargetName="Card" Property="Opacity" Value="0.5" />
+            </DataTrigger>
+          </DataTemplate.Triggers>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+  </StackPanel>
+</UserControl>

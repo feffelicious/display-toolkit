@@ -38,6 +38,35 @@
       </StackPanel>
     </controls:SettingsCard>
 
+    <controls:SettingsCard Header="Show changes from shortcuts" HeaderIcon="&#xE7F4;"
+                           Description="A small overlay above the taskbar confirms a profile switched with its shortcut.">
+      <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding ShowShortcutOverlay, Mode=TwoWay}"
+                AutomationProperties.Name="Show changes from shortcuts" />
+    </controls:SettingsCard>
+
+    <!-- ======================================================== Location -->
+    <TextBlock Style="{StaticResource SettingsGroupHeader}" Text="Location" />
+
+    <controls:SettingsExpander Header="Location for sunrise and sunset" HeaderIcon="&#xE81D;" IsExpanded="True"
+                               Description="{Binding LocationSummary}">
+      <StackPanel>
+        <controls:SettingsCard IsNested="True" Header="Use Windows location"
+                               Description="Rounded to about a kilometer and kept on this PC.">
+          <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding UseWindowsLocation, Mode=TwoWay}"
+                    AutomationProperties.Name="Use Windows location" />
+        </controls:SettingsCard>
+        <controls:SettingsCard IsNested="True" Header="Or enter it yourself" Description="Latitude and longitude in degrees. North and east are positive.">
+          <StackPanel Orientation="Horizontal">
+            <TextBox Width="96" Text="{Binding Latitude, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Latitude" />
+            <TextBox Width="96" Margin="8,0" Text="{Binding Longitude, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Longitude" />
+            <Button Padding="12,4" Content="Use this location" Command="{Binding SaveLocationCommand}" />
+          </StackPanel>
+        </controls:SettingsCard>
+        <controls:SettingsCard IsNested="True" Header="Location settings in Windows" Description="Turn on location for desktop apps."
+                               IsClickEnabled="True" Command="{Binding OpenLocationSettingsCommand}" />
+      </StackPanel>
+    </controls:SettingsExpander>
+
     <!-- ======================================================== Monitor -->
     <StackPanel Visibility="{Binding Monitor, Converter={StaticResource VisibleWhenNotNull}}">
       <TextBlock Style="{StaticResource SettingsGroupHeader}" Text="Monitor" />

@@ -1,0 +1,194 @@
+<UserControl x:Class="DisplayToolkit.App.Views.RuleDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:automation="clr-namespace:DisplayToolkit.App.ViewModels.Automation"
+             xmlns:services="clr-namespace:DisplayToolkit.App.Services"
+             xmlns:rules="clr-namespace:DisplayToolkit.Automation.Rules;assembly=DisplayToolkit.Automation"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance automation:RuleDialogViewModel}"
+             Width="580">
+
+  <UserControl.Resources>
+    <sys:Boolean x:Key="FalseValue">False</sys:Boolean>
+
+    <!-- A trigger card in step 1. -->
+    <Style x:Key="TriggerCard" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+      <Setter Property="Margin" Value="0,0,8,8" />
+      <Setter Property="Padding" Value="16,12" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="VerticalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    </Style>
+  </UserControl.Resources>
+
+  <Border CornerRadius="8" BorderThickness="1" Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
+          BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}">
+    <Border.Effect>
+      <DropShadowEffect BlurRadius="40" ShadowDepth="12" Opacity="0.25" />
+    </Border.Effect>
+    <StackPanel>
+      <StackPanel Margin="24,24,24,8">
+        <TextBlock FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Title}" />
+
+        <!-- ================================================ Step 1: what triggers the rule -->
+        <StackPanel Visibility="{Binding IsChoosingTrigger, Converter={StaticResource VisibleWhenTrue}}">
+          <TextBlock Margin="0,4,0,16" Style="{StaticResource CaptionText}" Text="When should a profile switch on?" />
+          <ItemsControl x:Name="TriggerCards" Margin="0,0,-8,0" ItemsSource="{Binding Triggers}" Focusable="False">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <UniformGrid Columns="2" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="{x:Type automation:TriggerChoice}">
+                <Button Style="{StaticResource TriggerCard}" CommandParameter="{Binding Kind}"
+                        Command="{Binding DataContext.ChooseTriggerCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                  <DockPanel>
+                    <TextBlock Style="{StaticResource IconText}" VerticalAlignment="Top" Margin="0,2,0,0" FontSize="20"
+                               Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Text="{Binding Glyph}" />
+                    <StackPanel Margin="14,0,0,0">
+                      <TextBlock FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Title}" TextWrapping="Wrap" />
+                      <TextBlock Style="{StaticResource CaptionText}" Text="{Binding Description}" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </DockPanel>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Margin="0,8,0,8" Style="{StaticResource CaptionText}" TextWrapping="Wrap"
+                     Text="Want a key combination instead? Give the profile a shortcut." />
+        </StackPanel>
+
+        <!-- ================================================ Step 2: details -->
+        <StackPanel Visibility="{Binding IsChoosingTrigger, Converter={StaticResource VisibleWhenFalse}}">
+          <TextBlock Margin="0,4,0,16" Style="{StaticResource CaptionText}" Text="{Binding DetailsTitle}" />
+
+          <!-- App -->
+          <StackPanel Visibility="{Binding IsApp, Converter={StaticResource VisibleWhenTrue}}">
+            <DockPanel Margin="0,0,0,8">
+              <Button DockPanel.Dock="Right" Padding="12,4" Content="Browse…" Command="{Binding BrowseCommand}" />
+              <TextBlock VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="App" />
+            </DockPanel>
+            <ListBox Height="220" ItemsSource="{Binding Apps}" SelectedItem="{Binding SelectedApp, Mode=TwoWay}"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="App">
+              <ListBox.ItemTemplate>
+                <DataTemplate DataType="{x:Type services:AppChoice}">
+                  <StackPanel Orientation="Horizontal">
+                    <Image Width="20" Height="20" Source="{Binding Icon}" />
+                    <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" Text="{Binding DisplayName}" />
+                  </StackPanel>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <TextBlock Margin="0,6,0,0" Style="{StaticResource CaptionText}" Text="Looking for running apps…"
+                       Visibility="{Binding IsLoadingApps, Converter={StaticResource VisibleWhenTrue}}" />
+          </StackPanel>
+
+          <!-- Full-screen game -->
+          <TextBlock Style="{StaticResource CaptionText}" TextWrapping="Wrap"
+                     Visibility="{Binding IsFullscreenGame, Converter={StaticResource VisibleWhenTrue}}"
+                     Text="Applies while a game fills the screen, then switches back. Browsers, video players and slideshows don't count." />
+
+          <!-- Time -->
+          <DockPanel Visibility="{Binding IsTime, Converter={StaticResource VisibleWhenTrue}}">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+              <ComboBox Width="72" ItemsSource="{Binding Hours}" SelectedItem="{Binding Hour, Mode=TwoWay}" ItemStringFormat="00"
+                        AutomationProperties.Name="Hour" />
+              <TextBlock Margin="6,0" VerticalAlignment="Center" Text=":" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+              <ComboBox Width="72" ItemsSource="{Binding Minutes}" SelectedItem="{Binding Minute, Mode=TwoWay}" ItemStringFormat="00"
+                        AutomationProperties.Name="Minute" />
+            </StackPanel>
+            <TextBlock VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="Time" />
+          </DockPanel>
+
+          <!-- Sunrise or sunset -->
+          <StackPanel Visibility="{Binding IsSun, Converter={StaticResource VisibleWhenTrue}}">
+            <DockPanel>
+              <UniformGrid DockPanel.Dock="Right" Width="240" Rows="1">
+                <Button Style="{StaticResource Segment}" Content="Sunrise" Tag="{Binding IsSunrise}"
+                        Command="{Binding SetSunEventCommand}" CommandParameter="{x:Static rules:SunEvent.Sunrise}" />
+                <Button Style="{StaticResource Segment}" Content="Sunset" Tag="{Binding IsSunset}"
+                        Command="{Binding SetSunEventCommand}" CommandParameter="{x:Static rules:SunEvent.Sunset}" />
+              </UniformGrid>
+              <TextBlock VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="When" />
+            </DockPanel>
+            <DockPanel Margin="0,12,0,0">
+              <ComboBox DockPanel.Dock="Right" Width="234" Margin="0,0,3,0" ItemsSource="{Binding Offsets}" DisplayMemberPath="Name"
+                        SelectedItem="{Binding Offset, Mode=TwoWay}" AutomationProperties.Name="Offset" />
+              <TextBlock VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="Offset" />
+            </DockPanel>
+          </StackPanel>
+
+          <!-- Power -->
+          <DockPanel Visibility="{Binding IsPower, Converter={StaticResource VisibleWhenTrue}}">
+            <UniformGrid DockPanel.Dock="Right" Width="240" Rows="1">
+              <Button Style="{StaticResource Segment}" Content="Plugged in" Tag="{Binding PluggedIn}"
+                      Command="{Binding SetOnBatteryCommand}" CommandParameter="{StaticResource FalseValue}" />
+              <Button Style="{StaticResource Segment}" Content="On battery" Tag="{Binding OnBattery}"
+                      Command="{Binding SetOnBatteryCommand}" CommandParameter="{StaticResource True}" />
+            </UniformGrid>
+            <TextBlock VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="When the PC is" />
+          </DockPanel>
+
+          <!-- HDR -->
+          <DockPanel Visibility="{Binding IsHdr, Converter={StaticResource VisibleWhenTrue}}">
+            <UniformGrid DockPanel.Dock="Right" Width="240" Rows="1">
+              <Button Style="{StaticResource Segment}" Content="On" Tag="{Binding HdrOn}"
+                      Command="{Binding SetHdrOnCommand}" CommandParameter="{StaticResource True}" />
+              <Button Style="{StaticResource Segment}" Content="Off" Tag="{Binding HdrOff}"
+                      Command="{Binding SetHdrOnCommand}" CommandParameter="{StaticResource FalseValue}" />
+            </UniformGrid>
+            <TextBlock VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="While HDR is" />
+          </DockPanel>
+
+          <!-- Days, for schedule rules -->
+          <DockPanel Margin="0,12,0,0" Visibility="{Binding HasDays, Converter={StaticResource VisibleWhenTrue}}">
+            <ItemsControl DockPanel.Dock="Right" ItemsSource="{Binding Days}" Focusable="False">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type automation:DayChip}">
+                  <Button Width="40" Style="{StaticResource Segment}" Content="{Binding Label}" Tag="{Binding IsSelected}"
+                          Command="{Binding ToggleCommand}" AutomationProperties.Name="{Binding Name}" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="Days" />
+          </DockPanel>
+
+          <!-- Profile -->
+          <DockPanel Margin="0,16,0,0">
+            <ComboBox DockPanel.Dock="Right" Width="234" Margin="0,0,3,0" ItemsSource="{Binding Profiles}" DisplayMemberPath="Name"
+                      SelectedItem="{Binding SelectedProfile, Mode=TwoWay}" AutomationProperties.Name="Use profile" />
+            <TextBlock VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="Use profile" />
+          </DockPanel>
+
+          <Border Margin="0,16,0,8" Style="{StaticResource InfoInfoBar}" Visibility="{Binding IsSun, Converter={StaticResource VisibleWhenTrue}}">
+            <TextBlock Style="{StaticResource CaptionText}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" TextWrapping="Wrap"
+                       Text="{Binding SunSummary}" />
+          </Border>
+        </StackPanel>
+      </StackPanel>
+
+      <!-- ================================================ Buttons -->
+      <Border Margin="0,16,0,0" Padding="24" CornerRadius="0,0,8,8" Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}">
+        <Grid>
+          <UniformGrid Columns="2" Visibility="{Binding IsChoosingTrigger, Converter={StaticResource VisibleWhenFalse}}">
+            <Button Margin="0,0,4,0" HorizontalAlignment="Stretch" Content="Save rule" Style="{DynamicResource AccentButtonStyle}"
+                    Command="{Binding SaveCommand}" IsDefault="True" />
+            <Button Margin="4,0,0,0" HorizontalAlignment="Stretch" Content="Back" Command="{Binding BackCommand}" />
+          </UniformGrid>
+          <Button HorizontalAlignment="Right" MinWidth="120" Content="Cancel" Command="{Binding CancelCommand}"
+                  Visibility="{Binding IsChoosingTrigger, Converter={StaticResource VisibleWhenTrue}}" />
+        </Grid>
+      </Border>
+    </StackPanel>
+  </Border>
+</UserControl>

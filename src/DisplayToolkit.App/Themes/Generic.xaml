@@ -452,4 +452,74 @@
     </Setter>
   </Style>
 
+  <!-- ============================================================ Shortcut recorder -->
+
+  <!-- A key of a shortcut, drawn as a keycap. -->
+  <Style x:Key="Keycap" TargetType="Border">
+    <Setter Property="MinWidth" Value="28" />
+    <Setter Property="Height" Value="28" />
+    <Setter Property="Margin" Value="0,0,4,0" />
+    <Setter Property="Padding" Value="8,0" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="BorderThickness" Value="1,1,1,2" />
+    <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
+  </Style>
+
+  <Style TargetType="controls:ShortcutRecorder">
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="controls:FocusRing.IsEnabled" Value="True" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="controls:ShortcutRecorder">
+          <Grid MinHeight="32">
+            <Border x:Name="Body" CornerRadius="4" BorderThickness="1" Background="Transparent" BorderBrush="Transparent" />
+            <!-- Keycaps, or "Not set" -->
+            <StackPanel x:Name="Display" Margin="4,2" Orientation="Horizontal" VerticalAlignment="Center">
+              <ItemsControl x:Name="Caps" ItemsSource="{TemplateBinding Keys}" Focusable="False">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Border Style="{StaticResource Keycap}">
+                      <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12"
+                                 Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding}" />
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <TextBlock Margin="4,0,8,0" VerticalAlignment="Center" FontFamily="{StaticResource IconFont}" FontSize="14"
+                         Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="&#xE70F;" />
+            </StackPanel>
+            <!-- Recording -->
+            <StackPanel x:Name="Prompt" Margin="12,0" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
+              <TextBlock VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="Press a shortcut" />
+              <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                         Text="Esc to cancel, Backspace to remove" />
+            </StackPanel>
+            <controls:FocusRingVisual x:Name="Ring" Visibility="Collapsed" />
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="Body" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+            </Trigger>
+            <Trigger Property="IsRecording" Value="True">
+              <Setter TargetName="Display" Property="Visibility" Value="Collapsed" />
+              <Setter TargetName="Prompt" Property="Visibility" Value="Visible" />
+              <Setter TargetName="Body" Property="Background" Value="{DynamicResource ControlFillColorInputActiveBrush}" />
+              <Setter TargetName="Body" Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+            </Trigger>
+            <Trigger Property="controls:FocusRing.IsVisible" Value="True">
+              <Setter TargetName="Ring" Property="Visibility" Value="Visible" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
 </ResourceDictionary>

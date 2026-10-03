@@ -4,13 +4,15 @@ using System.Windows.Data;
 
 namespace DisplayToolkit.App.Converters;
 
-/// <summary>Visible when the value is non-null (or, with <see cref="Invert"/>, when it is null).</summary>
+/// <summary>
+/// Visible when the value is non-null and not an empty string (or, with <see cref="Invert"/>, when it is null or empty).
+/// </summary>
 public sealed class NullToVisibilityConverter : IValueConverter
 {
     public bool Invert { get; set; }
 
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        (value is not null) ^ Invert ? Visibility.Visible : Visibility.Collapsed;
+        (value is not (null or "")) ^ Invert ? Visibility.Visible : Visibility.Collapsed;
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();

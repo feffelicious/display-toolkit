@@ -1,0 +1,32 @@
+<Window x:Class="DisplayToolkit.App.Views.HudWindow"
+        x:ClassModifier="internal"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Display Toolkit"
+        Width="260"
+        Height="80"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        Topmost="True"
+        Focusable="False"
+        IsHitTestVisible="False">
+
+  <!-- A pill above the taskbar: glyph and profile name. The window is click-through and never takes focus. -->
+  <Border x:Name="Pill" Width="236" Height="48" HorizontalAlignment="Center" VerticalAlignment="Center" CornerRadius="24"
+          BorderThickness="1" Opacity="0"
+          Background="{DynamicResource SolidBackgroundFillColorQuarternaryBrush}"
+          BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}">
+    <Border.Effect>
+      <DropShadowEffect BlurRadius="16" ShadowDepth="4" Direction="270" Opacity="0.25" />
+    </Border.Effect>
+    <StackPanel Margin="20,0" HorizontalAlignment="Center" VerticalAlignment="Center" Orientation="Horizontal">
+      <TextBlock x:Name="Glyph" Style="{StaticResource IconText}" FontSize="16" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+      <TextBlock x:Name="Label" Margin="12,0,0,0" MaxWidth="170" VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold"
+                 Foreground="{DynamicResource TextFillColorPrimaryBrush}" TextTrimming="CharacterEllipsis" />
+    </StackPanel>
+  </Border>
+</Window>

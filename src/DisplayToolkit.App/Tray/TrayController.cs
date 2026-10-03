@@ -12,7 +12,14 @@ namespace DisplayToolkit.App.Tray;
 
 /// <summary>Connects the tray icon to the flyout and the context menu, and display changes to monitor rescans.</summary>
 internal sealed class TrayController(
-    MonitorService monitors, FlyoutWindow flyout, FlyoutViewModel flyoutViewModel, MainWindowLauncher mainWindow, ILogger<TrayController> logger)
+    MonitorService monitors,
+    FlyoutWindow flyout,
+    FlyoutViewModel flyoutViewModel,
+    MainWindowLauncher mainWindow,
+    GlobalHotkeys hotkeys,
+    AutomationService automation,
+    AppSettings settings,
+    ILogger<TrayController> logger)
     : IDisposable
 {
     /// <summary>
@@ -24,8 +31,7 @@ internal sealed class TrayController(
     private const int OpenFlyoutHotkey = 1;
 
     private TrayIcon? _icon;
-    private GlobalHotkeys? _hotkeys;
-    private ContextMenu? _menu;
+    private Views.HudWindow? _hud;
 
     public void Start()
     {
@@ -34,16 +40,16 @@ internal sealed class TrayController(
         _icon.ContextMenuRequested += (_, _) => ShowMenu();
         _icon.DisplaysChanged += (_, _) => OnDisplaysChanged();
         monitors.Changed += (_, _) => UpdateTooltip();
+        automation.ShortcutUsed += (_, profile) => ShowHud(profile.Glyph, profile.Name);
 
-        _hotkeys = new GlobalHotkeys();
-        _hotkeys.Pressed += (_, id) =>
+        hotkeys.Pressed += (_, id) =>
         {
             if (id == OpenFlyoutHotkey)
             {
                 ToggleFlyout(fromKeyboard: true);
             }
         };
-        if (!_hotkeys.Register(OpenFlyoutHotkey, ModifierKeys.Control | ModifierKeys.Alt, Key.D))
+        if (!hotkeys.Register(OpenFlyoutHotkey, ModifierKeys.Control | ModifierKeys.Alt, Key.D))
         {
             logger.LogWarning("Ctrl+Alt+D is already used by another app");
         }
@@ -64,8 +70,8 @@ internal sealed class TrayController(
 
     public void Dispose()
     {
-        _hotkeys?.Dispose();
         _icon?.Dispose();
+        _hud?.Close();
     }
 
     private async void OnDisplaysChanged()
@@ -75,28 +81,81 @@ internal sealed class TrayController(
         await flyoutViewModel.OnDisplaysChangedAsync();
     }
 
+    /// <summary>Confirms a shortcut on screen, unless the user turned that off or quick settings already shows it.</summary>
+    private void ShowHud(string glyph, string text)
+    {
+        if (settings.Current.ShowShortcutOverlay && !flyout.IsVisible)
+        {
+            _hud ??= new Views.HudWindow();
+            _hud.Show(glyph, text);
+        }
+    }
+
     private void ShowMenu()
     {
-        _menu ??= CreateMenu();
+        // Rebuilt every time: the profiles and the automation state change.
+        var menu = CreateMenu();
 
         // The menu only closes on an outside click if our process owns the foreground window.
         User32.SetForegroundWindow(_icon!.WindowHandle);
-        _menu.Placement = PlacementMode.MousePoint;
-        _menu.IsOpen = true;
+        menu.Placement = PlacementMode.MousePoint;
+        menu.IsOpen = true;
     }
 
     private ContextMenu CreateMenu()
     {
-        var open = new MenuItem { Header = "Open Display Toolkit", FontWeight = FontWeights.SemiBold };
-        open.Click += (_, _) => mainWindow.Show();
+        var menu = new ContextMenu();
+        menu.Items.Add(Item("Open Display Toolkit", mainWindow.Show, bold: true));
+        menu.Items.Add(Item("Quick settings", () => flyout.ShowFlyout(), gesture: "Ctrl+Alt+D"));
 
-        var quickSettings = new MenuItem { Header = "Quick settings", InputGestureText = "Ctrl+Alt+D" };
-        quickSettings.Click += (_, _) => flyout.ShowFlyout();
+        if (automation.Profiles.Count > 0)
+        {
+            menu.Items.Add(new Separator());
+            var profiles = new MenuItem { Header = "Profiles" };
+            foreach (var profile in automation.Profiles)
+            {
+                var item = Item(profile.Name, () => _ = automation.ApplyAsync(profile));
+                item.IsChecked = automation.State.ProfileId == profile.Id;
+                profiles.Items.Add(item);
+            }
+            menu.Items.Add(profiles);
+        }
 
-        var exit = new MenuItem { Header = "Exit" };
-        exit.Click += (_, _) => Application.Current.Shutdown();
+        if (automation.Rules.Count > 0)
+        {
+            if (automation.Engine.IsPaused)
+            {
+                menu.Items.Add(Item("Resume automation", automation.Resume));
+            }
+            else
+            {
+                menu.Items.Add(new MenuItem
+                {
+                    Header = "Pause automation",
+                    Items =
+                    {
+                        Item("For 1 hour", () => automation.Pause(TimeSpan.FromHours(1))),
+                        Item("Until tomorrow", automation.PauseUntilMorning),
+                        Item("Until I resume", () => automation.Pause(null)),
+                    },
+                });
+            }
+        }
 
-        return new ContextMenu { Items = { open, quickSettings, new Separator(), exit } };
+        menu.Items.Add(new Separator());
+        menu.Items.Add(Item("Exit", () => Application.Current.Shutdown()));
+        return menu;
+    }
+
+    private static MenuItem Item(string header, Action action, bool bold = false, string? gesture = null)
+    {
+        var item = new MenuItem { Header = header, InputGestureText = gesture ?? string.Empty };
+        if (bold)
+        {
+            item.FontWeight = FontWeights.SemiBold;
+        }
+        item.Click += (_, _) => action();
+        return item;
     }
 
     private void UpdateTooltip()

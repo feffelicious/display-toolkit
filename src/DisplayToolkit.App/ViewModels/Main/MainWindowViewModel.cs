@@ -12,14 +12,18 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IMainWindo
 {
     private readonly MonitorContext _context;
     private readonly AppSettings _settings;
+    private readonly AutomationService _automation;
+    private readonly LocationService _location;
     private TaskCompletionSource<bool>? _confirmation;
 
-    public MainWindowViewModel(MonitorContext context, AppSettings settings)
+    public MainWindowViewModel(MonitorContext context, AppSettings settings, AutomationService automation, LocationService location)
     {
         _context = context;
         _settings = settings;
+        _automation = automation;
+        _location = location;
         context.Changed += (_, _) => OnMonitorChanged();
-        SettingsItem = new NavItem("Settings", "", () => new SettingsPageViewModel(_settings, Monitor));
+        SettingsItem = new NavItem("Settings", "", () => new SettingsPageViewModel(_settings, _location, Monitor));
         OnMonitorChanged();
     }
 
@@ -46,6 +50,15 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IMainWindo
 
     [ObservableProperty]
     public partial ConfirmationViewModel? Confirmation { get; private set; }
+
+    /// <summary>A dialog shown over the window, such as Add rule.</summary>
+    [ObservableProperty]
+    public partial object? Dialog { get; private set; }
+
+    public void ShowDialog(object dialog) => Dialog = dialog;
+
+    [RelayCommand]
+    public void CloseDialog() => Dialog = null;
 
     public void Navigate(MainPageViewModel page)
     {
@@ -119,6 +132,7 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IMainWindo
         NavItems = Monitor is { } monitor
             ? [
                 new("Display", "", () => new DisplayPageViewModel(monitor, this)),
+                new("Profiles & automation", "", () => new AutomationPageViewModel(monitor, _automation, _location, this)),
                 new("OLED care", "", () => new OledCarePageViewModel(monitor, this)),
                 new("GamePlus", "", () => new GamePlusPageViewModel(monitor)),
             ]
