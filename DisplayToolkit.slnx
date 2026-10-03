@@ -1,9 +1,11 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/DisplayToolkit.App/DisplayToolkit.App.csproj" />
+    <Project Path="src/DisplayToolkit.Automation/DisplayToolkit.Automation.csproj" />
     <Project Path="src/DisplayToolkit.Core/DisplayToolkit.Core.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/DisplayToolkit.Automation.Tests/DisplayToolkit.Automation.Tests.csproj" />
     <Project Path="tests/DisplayToolkit.Core.Tests/DisplayToolkit.Core.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">

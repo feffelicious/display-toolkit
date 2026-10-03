@@ -17,6 +17,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DisplayToolkit.Automation\DisplayToolkit.Automation.csproj" />
     <ProjectReference Include="..\DisplayToolkit.Core\DisplayToolkit.Core.csproj" />
   </ItemGroup>
 
