@@ -18,13 +18,19 @@ public abstract class Feature(string id, string name, byte code)
     public byte Code { get; } = code;
 
     /// <summary>
+    /// False for settings the monitor ignores while it shows HDR content. Not all of them report themselves as locked
+    /// (<c>0xFE</c>): brightness still reads a normal value but writes have no effect.
+    /// </summary>
+    public bool AvailableInHdr { get; init; } = true;
+
+    /// <summary>
     /// True when the feature shares its register with other features, so writes must read the register first and
     /// change only this feature's bits.
     /// </summary>
     public virtual bool IsPartialRegister => false;
 
     /// <summary>How long the monitor may take before a write reads back correctly.</summary>
-    public virtual WriteSettling Settling => WriteSettling.Immediate;
+    public WriteSettling Settling { get; init; } = WriteSettling.Immediate;
 
     public abstract bool IsSupportedBy(MonitorCapabilities capabilities);
 
@@ -49,8 +55,8 @@ public enum WriteSettling
     Immediate,
 
     /// <summary>
-    /// The write switches a panel mode (for example an HDR preset). The monitor may re-enumerate, invalidating handles,
-    /// and report transient values for several seconds.
+    /// The write switches a panel mode (an HDR preset, OLED anti-flicker). Windows re-detects the monitor, which
+    /// invalidates handles, and the monitor reports stale values for several seconds.
     /// </summary>
     ModeSwitch,
 }

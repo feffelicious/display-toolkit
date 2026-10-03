@@ -25,6 +25,12 @@ public sealed class Win32MonitorEnumerator : IMonitorEnumerator
             {
                 var (handle, description) = physicalMonitors[i];
                 var target = i < targets.Count ? targets[i] : null;
+                if (target?.IsInternal == true)
+                {
+                    new Dxva2DdcChannel(handle).Dispose();
+                    continue;
+                }
+
                 var id = target?.Id ?? new MonitorId("UNKNOWN", $"{gdiName}#{i}");
                 var name = string.IsNullOrWhiteSpace(target?.FriendlyName) ? description : target.FriendlyName;
                 connections.Add(new MonitorConnection(id, name, new Dxva2DdcChannel(handle)));
@@ -33,7 +39,13 @@ public sealed class Win32MonitorEnumerator : IMonitorEnumerator
         return connections;
     }
 
-    private sealed record TargetInfo(MonitorId Id, string FriendlyName);
+    private sealed record TargetInfo(MonitorId Id, string FriendlyName, bool IsInternal);
+
+    /// <summary>
+    /// Laptop panels (LVDS, embedded DisplayPort/UDI, "internal") never speak DDC/CI, and trying them costs seconds of
+    /// retries on every rescan.
+    /// </summary>
+    private static bool IsInternalConnection(uint outputTechnology) => outputTechnology is 6 or 11 or 13 or 0x80000000;
 
     private static Dictionary<string, List<TargetInfo>> GetTargetsBySourceName()
     {
@@ -50,7 +62,7 @@ public sealed class Win32MonitorEnumerator : IMonitorEnumerator
             {
                 result[sourceName] = targets = [];
             }
-            targets.Add(new TargetInfo(new MonitorId(model, target.DevicePath), target.FriendlyName));
+            targets.Add(new TargetInfo(new MonitorId(model, target.DevicePath), target.FriendlyName, IsInternalConnection(target.OutputTechnology)));
         }
         return result;
     }

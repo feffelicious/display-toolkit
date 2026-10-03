@@ -75,6 +75,32 @@ public sealed class MonitorSessionTests : IDisposable
     }
 
     [Fact]
+    public async Task Settings_unavailable_in_hdr_are_locked_while_an_hdr_preset_is_active()
+    {
+        // In HDR the PG32UCWM still reports brightness normally, but ignores writes to it.
+        _monitor.SetRegister(Vcp.AsusHdrMode, 0x0102, 0x0207);
+        _monitor.SetRegister(Vcp.Brightness, 100, 100);
+
+        var session = await OpenAsync();
+
+        Assert.Equal(FeatureStatus.Locked, session.GetValue(FeatureCatalog.Brightness)!.Status);
+        Assert.Equal(FeatureStatus.Locked, session.GetValue(FeatureCatalog.PictureMode)!.Status);
+        Assert.Equal(FeatureStatus.Confirmed, session.GetValue(FeatureCatalog.Contrast)!.Status);
+    }
+
+    [Fact]
+    public async Task Leaving_hdr_unlocks_settings()
+    {
+        _monitor.SetRegister(Vcp.AsusHdrMode, 0x0102, 0x0207);
+        var session = await OpenAsync();
+
+        _monitor.SetRegister(Vcp.AsusHdrMode, 0, 0x0207);
+        await session.RefreshAsync([FeatureCatalog.HdrMode]);
+
+        Assert.Equal(new FeatureValue(FeatureCatalog.Brightness, 70, 100, FeatureStatus.Confirmed), session.GetValue(FeatureCatalog.Brightness));
+    }
+
+    [Fact]
     public async Task Write_that_does_not_take_effect_fails_and_reverts()
     {
         var session = await OpenAsync();

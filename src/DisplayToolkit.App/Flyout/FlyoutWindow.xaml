@@ -147,11 +147,14 @@
           </DockPanel>
 
           <controls:BrightnessBand x:Name="Band" Margin="0,14,0,0"
-                                   Visibility="{Binding Brightness, Converter={StaticResource VisibleWhenNotNull}}"
+                                   Visibility="{Binding Brightness.IsAvailable, Converter={StaticResource VisibleWhenTrue}, FallbackValue=Collapsed}"
                                    Value="{Binding Brightness.SliderValue, Mode=TwoWay}"
                                    Maximum="{Binding Brightness.Maximum}"
                                    IsPending="{Binding Brightness.IsPending}"
                                    HasFailed="{Binding Brightness.HasFailed}" />
+          <TextBlock Margin="0,14,0,0" Style="{StaticResource CaptionText}"
+                     Visibility="{Binding Brightness.IsLocked, Converter={StaticResource VisibleWhenTrue}, FallbackValue=Collapsed}"
+                     Text="In HDR the monitor sets brightness itself." />
 
           <ItemsControl Margin="-6,20,-6,-14" ItemsSource="{Binding Tiles}" Focusable="False">
             <ItemsControl.ItemsPanel>

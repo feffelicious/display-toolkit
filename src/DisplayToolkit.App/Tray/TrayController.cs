@@ -4,11 +4,14 @@ using System.Windows.Controls.Primitives;
 using DisplayToolkit.App.Flyout;
 using DisplayToolkit.App.Native;
 using DisplayToolkit.App.Services;
+using DisplayToolkit.App.ViewModels;
+using Microsoft.Extensions.Logging;
 
 namespace DisplayToolkit.App.Tray;
 
 /// <summary>Connects the tray icon to the flyout and the context menu, and display changes to monitor rescans.</summary>
-internal sealed class TrayController(MonitorService monitors, FlyoutWindow flyout) : IDisposable
+internal sealed class TrayController(MonitorService monitors, FlyoutWindow flyout, FlyoutViewModel flyoutViewModel, ILogger<TrayController> logger)
+    : IDisposable
 {
     /// <summary>
     /// Clicking the tray icon while the flyout is open first deactivates (and hides) the flyout, then delivers the
@@ -24,7 +27,7 @@ internal sealed class TrayController(MonitorService monitors, FlyoutWindow flyou
         _icon = new TrayIcon();
         _icon.Invoked += (_, _) => ToggleFlyout();
         _icon.ContextMenuRequested += (_, _) => ShowMenu();
-        _icon.DisplaysChanged += (_, _) => _ = monitors.RescanAsync();
+        _icon.DisplaysChanged += (_, _) => OnDisplaysChanged();
         monitors.Changed += (_, _) => UpdateTooltip();
     }
 
@@ -41,6 +44,13 @@ internal sealed class TrayController(MonitorService monitors, FlyoutWindow flyou
     }
 
     public void Dispose() => _icon?.Dispose();
+
+    private async void OnDisplaysChanged()
+    {
+        logger.LogInformation("Displays changed");
+        await monitors.RescanAsync();
+        await flyoutViewModel.OnDisplaysChangedAsync();
+    }
 
     private void ShowMenu()
     {

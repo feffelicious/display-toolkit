@@ -15,6 +15,40 @@
   <converters:BoolToVisibilityConverter x:Key="VisibleWhenTrue" />
   <converters:BoolToVisibilityConverter x:Key="VisibleWhenFalse" Invert="True" />
 
+  <!--
+    Focus rings. FocusVisualStyle is drawn only for keyboard navigation, never after a mouse click,
+    which is exactly the Fluent behaviour. Generic.xaml refers to these with DynamicResource.
+  -->
+  <Style x:Key="FocusRing" TargetType="Control">
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate>
+          <Border Margin="-3" CornerRadius="6" BorderThickness="2" BorderBrush="{DynamicResource FocusStrokeColorOuterBrush}" />
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style x:Key="FocusRingLarge" TargetType="Control">
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate>
+          <Border Margin="-3" CornerRadius="9" BorderThickness="2" BorderBrush="{DynamicResource FocusStrokeColorOuterBrush}" />
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style x:Key="FocusRingPill" TargetType="Control">
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate>
+          <Border Margin="-3" CornerRadius="13" BorderThickness="2" BorderBrush="{DynamicResource FocusStrokeColorOuterBrush}" />
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
   <!-- ============================================================ Text -->
 
   <Style x:Key="CaptionText" TargetType="TextBlock">
@@ -39,7 +73,7 @@
 
   <Style x:Key="ToggleSwitch" TargetType="CheckBox">
     <Setter Property="OverridesDefaultStyle" Value="True" />
-    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRingPill}" />
     <Setter Property="Cursor" Value="Hand" />
     <Setter Property="Template">
       <Setter.Value>
@@ -54,7 +88,6 @@
                 <TranslateTransform x:Name="KnobOffset" />
               </Ellipse.RenderTransform>
             </Ellipse>
-            <Border x:Name="Focus" Margin="-3" CornerRadius="13" BorderThickness="2" BorderBrush="Transparent" />
           </Grid>
           <ControlTemplate.Triggers>
             <Trigger Property="IsChecked" Value="True">
@@ -81,9 +114,6 @@
               <Setter TargetName="Knob" Property="Height" Value="14" />
               <Setter TargetName="Knob" Property="Margin" Value="3,0" />
             </Trigger>
-            <Trigger Property="IsKeyboardFocused" Value="True">
-              <Setter TargetName="Focus" Property="BorderBrush" Value="{DynamicResource FocusStrokeColorOuterBrush}" />
-            </Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>
       </Setter.Value>
@@ -95,7 +125,7 @@
   <!-- Square subtle button with one glyph (back, settings). -->
   <Style x:Key="IconButton" TargetType="Button">
     <Setter Property="OverridesDefaultStyle" Value="True" />
-    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
     <Setter Property="Width" Value="32" />
     <Setter Property="Height" Value="32" />
     <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
@@ -113,9 +143,6 @@
             <Trigger Property="IsPressed" Value="True">
               <Setter TargetName="Body" Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
             </Trigger>
-            <Trigger Property="IsKeyboardFocused" Value="True">
-              <Setter TargetName="Body" Property="BorderBrush" Value="{DynamicResource FocusStrokeColorOuterBrush}" />
-            </Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>
       </Setter.Value>
@@ -125,7 +152,7 @@
   <!-- A selectable list row: name on the left, check on the right, accent pill when selected. Tag = IsSelected. -->
   <Style x:Key="OptionRow" TargetType="Button">
     <Setter Property="OverridesDefaultStyle" Value="True" />
-    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
     <Setter Property="Height" Value="36" />
     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
     <Setter Property="Template">
@@ -153,9 +180,6 @@
             <Trigger Property="IsPressed" Value="True">
               <Setter TargetName="Body" Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
             </Trigger>
-            <Trigger Property="IsKeyboardFocused" Value="True">
-              <Setter TargetName="Body" Property="BorderBrush" Value="{DynamicResource FocusStrokeColorOuterBrush}" />
-            </Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>
       </Setter.Value>
@@ -165,7 +189,7 @@
   <!-- One cell of a segmented control (levels 1–4). Tag = IsSelected. -->
   <Style x:Key="Segment" TargetType="Button">
     <Setter Property="OverridesDefaultStyle" Value="True" />
-    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
     <Setter Property="Height" Value="32" />
     <Setter Property="Template">
       <Setter.Value>
@@ -184,9 +208,6 @@
               <Setter TargetName="Body" Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
               <Setter TargetName="Body" Property="BorderBrush" Value="Transparent" />
               <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
-            </Trigger>
-            <Trigger Property="IsKeyboardFocused" Value="True">
-              <Setter TargetName="Body" Property="BorderBrush" Value="{DynamicResource FocusStrokeColorOuterBrush}" />
             </Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>

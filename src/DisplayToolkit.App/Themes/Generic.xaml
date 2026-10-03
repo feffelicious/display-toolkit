@@ -15,7 +15,7 @@
   <Style TargetType="controls:BrightnessBand">
     <Setter Property="Height" Value="40" />
     <Setter Property="Minimum" Value="0" />
-    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="FocusVisualStyle" Value="{DynamicResource FocusRingLarge}" />
     <Setter Property="AutomationProperties.Name" Value="Brightness" />
     <Setter Property="Template">
       <Setter.Value>
@@ -53,10 +53,6 @@
             <Border x:Name="Stroke" CornerRadius="6" BorderThickness="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" />
           </Grid>
           <ControlTemplate.Triggers>
-            <Trigger Property="IsKeyboardFocused" Value="True">
-              <Setter TargetName="Stroke" Property="BorderThickness" Value="2" />
-              <Setter TargetName="Stroke" Property="BorderBrush" Value="{DynamicResource FocusStrokeColorOuterBrush}" />
-            </Trigger>
             <Trigger Property="HasFailed" Value="True">
               <Setter TargetName="FailedGlyph" Property="Visibility" Value="Visible" />
             </Trigger>
@@ -91,7 +87,7 @@
   <Style x:Key="TilePartButton" TargetType="Button">
     <Setter Property="OverridesDefaultStyle" Value="True" />
     <Setter Property="Focusable" Value="True" />
-    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="FocusVisualStyle" Value="{DynamicResource FocusRing}" />
     <Setter Property="Tag">
       <Setter.Value>
         <CornerRadius>4</CornerRadius>
@@ -102,7 +98,6 @@
         <ControlTemplate TargetType="Button">
           <Grid>
             <Border x:Name="Overlay" Background="Transparent" CornerRadius="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" />
-            <Border x:Name="Focus" BorderThickness="2" BorderBrush="Transparent" CornerRadius="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" />
             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
           </Grid>
           <ControlTemplate.Triggers>
@@ -111,9 +106,6 @@
             </Trigger>
             <Trigger Property="IsPressed" Value="True">
               <Setter TargetName="Overlay" Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
-            </Trigger>
-            <Trigger Property="IsKeyboardFocused" Value="True">
-              <Setter TargetName="Focus" Property="BorderBrush" Value="{DynamicResource FocusStrokeColorOuterBrush}" />
             </Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>

@@ -27,6 +27,9 @@ public sealed class MonitorSession : IDisposable
     private readonly Dictionary<string, long> _latestWrite = [];
     private long _writeSequence;
 
+    /// <summary>True while the monitor reports an HDR preset, which disables some settings (see <see cref="Feature.AvailableInHdr"/>).</summary>
+    private bool _isHdr;
+
     private MonitorSession(MonitorConnection connection, IMonitorEnumerator enumerator, MonitorSessionOptions options)
     {
         Id = connection.Id;
@@ -275,18 +278,43 @@ public sealed class MonitorSession : IDisposable
             foreach (var feature in Features.Where(feature => feature.Code == code))
             {
                 var status = reply.IsLocked ? FeatureStatus.Locked : FeatureStatus.Confirmed;
-                var value = new FeatureValue(feature, feature.Decode(reply), feature.DecodeMaximum(reply), status);
-                _confirmed[feature.Id] = value;
+                _confirmed[feature.Id] = new FeatureValue(feature, feature.Decode(reply), feature.DecodeMaximum(reply), status);
+                UpdateVisible(feature, changed);
+            }
 
-                // Keep showing the optimistic value while a write for this feature is still in flight.
-                if (!_latestWrite.ContainsKey(feature.Id) && _visible.GetValueOrDefault(feature.Id) != value)
+            // Entering or leaving HDR changes which other settings are usable.
+            if (code == Vcp.AsusHdrMode && (reply.Current != 0) != _isHdr)
+            {
+                _isHdr = reply.Current != 0;
+                foreach (var feature in Features.Where(feature => !feature.AvailableInHdr))
                 {
-                    _visible[feature.Id] = value;
-                    changed.Add(value);
+                    UpdateVisible(feature, changed);
                 }
             }
         }
         RaiseChanged(changed);
+    }
+
+    /// <summary>
+    /// Derives the visible value from the confirmed one, unless a write for the feature is still in flight (then the
+    /// optimistic value stays). Call with <see cref="_stateGate"/> held.
+    /// </summary>
+    private void UpdateVisible(Feature feature, List<FeatureValue> changed)
+    {
+        if (_latestWrite.ContainsKey(feature.Id) || _confirmed.GetValueOrDefault(feature.Id) is not { } confirmed)
+        {
+            return;
+        }
+
+        var visible = _isHdr && !feature.AvailableInHdr && confirmed.Status == FeatureStatus.Confirmed
+            ? confirmed with { Status = FeatureStatus.Locked }
+            : confirmed;
+
+        if (_visible.GetValueOrDefault(feature.Id) != visible)
+        {
+            _visible[feature.Id] = visible;
+            changed.Add(visible);
+        }
     }
 
     private bool IsLatestWrite(Feature feature, long sequence) =>

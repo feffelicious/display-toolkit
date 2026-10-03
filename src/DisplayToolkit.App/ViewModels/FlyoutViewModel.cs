@@ -18,6 +18,8 @@ internal sealed partial class FlyoutViewModel : ObservableObject
         FeatureCatalog.BlueLightFilter, FeatureCatalog.ShadowBoost, FeatureCatalog.Crosshair, FeatureCatalog.OledAntiFlicker,
     ];
 
+    private static readonly TimeSpan DisplayChangeSettleTime = TimeSpan.FromSeconds(2);
+
     private readonly MonitorService _monitors;
     private readonly Dispatcher _dispatcher;
 
@@ -69,6 +71,19 @@ internal sealed partial class FlyoutViewModel : ObservableObject
 
     public void OnClosed() => Back();
 
+    /// <summary>
+    /// Displays changed: possibly an HDR switch from Windows (Win+Alt+B). Re-read once things have settled, which also
+    /// restores the picture mode the monitor forgets when it leaves HDR.
+    /// </summary>
+    public async Task OnDisplaysChangedAsync()
+    {
+        await Task.Delay(DisplayChangeSettleTime);
+        if (Monitor is { } monitor)
+        {
+            await monitor.RefreshAsync(QuickFeatures);
+        }
+    }
+
     [RelayCommand]
     private void Back()
     {
@@ -113,6 +128,7 @@ internal sealed partial class FlyoutViewModel : ObservableObject
         {
             Page?.Close();
             Page = null;
+            FailedFeature = null;
             Monitor?.Dispose();
             Monitor = session is null ? null : new MonitorViewModel(session, _dispatcher);
             Tiles = Monitor is null ? [] : CreateTiles(Monitor);

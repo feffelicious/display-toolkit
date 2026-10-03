@@ -20,7 +20,14 @@ public enum MonitorDiscoveryState
 internal sealed class MonitorService(IMonitorEnumerator enumerator, CapabilitiesCache capabilitiesCache, ILogger<MonitorService> logger)
     : IDisposable
 {
+    /// <summary>
+    /// Some writes (HDR presets, OLED anti-flicker) make Windows drop the monitor for a few seconds. A session survives
+    /// that long, reconnecting in place, instead of being torn down and reopened.
+    /// </summary>
+    private static readonly TimeSpan DisconnectGracePeriod = TimeSpan.FromSeconds(10);
+
     private readonly List<MonitorSession> _sessions = [];
+    private readonly Dictionary<MonitorId, DateTime> _missingSince = [];
     private Task? _rescan;
     private bool _rescanRequested;
 
@@ -67,6 +74,12 @@ internal sealed class MonitorService(IMonitorEnumerator enumerator, Capabilities
         _sessions.Clear();
     }
 
+    private async Task RescanAfterGracePeriodAsync()
+    {
+        await Task.Delay(DisconnectGracePeriod);
+        await RescanAsync();
+    }
+
     private async Task RunRescansAsync()
     {
         do
@@ -82,11 +95,24 @@ internal sealed class MonitorService(IMonitorEnumerator enumerator, Capabilities
         var connections = await Task.Run(enumerator.Enumerate);
         var anyFailed = false;
 
-        foreach (var gone in _sessions.Where(session => connections.All(connection => connection.Id != session.Id)).ToList())
+        foreach (var session in _sessions.ToList())
         {
-            logger.LogInformation("Monitor {Id} disconnected", gone.Id);
-            _sessions.Remove(gone);
-            gone.Dispose();
+            if (connections.Any(connection => connection.Id == session.Id))
+            {
+                _missingSince.Remove(session.Id);
+            }
+            else if (!_missingSince.TryGetValue(session.Id, out var since))
+            {
+                _missingSince[session.Id] = DateTime.UtcNow;
+                _ = RescanAfterGracePeriodAsync();
+            }
+            else if (DateTime.UtcNow - since >= DisconnectGracePeriod)
+            {
+                logger.LogInformation("Monitor {Id} disconnected", session.Id);
+                _missingSince.Remove(session.Id);
+                _sessions.Remove(session);
+                session.Dispose();
+            }
         }
 
         foreach (var connection in connections)

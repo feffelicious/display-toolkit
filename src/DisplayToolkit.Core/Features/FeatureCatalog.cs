@@ -7,7 +7,9 @@ namespace DisplayToolkit.Core.Features;
 public static class FeatureCatalog
 {
     // Picture
-    public static readonly RangeFeature Brightness = new("brightness", "Brightness", Vcp.Brightness);
+    // Settings marked AvailableInHdr = false are greyed out by ASUS DisplayWidget Center in HDR, and brightness
+    // writes were verified to have no effect in HDR on a PG32UCWM.
+    public static readonly RangeFeature Brightness = new("brightness", "Brightness", Vcp.Brightness) { AvailableInHdr = false };
     public static readonly RangeFeature Contrast = new("contrast", "Contrast", Vcp.Contrast);
     public static readonly RangeFeature Sharpness = new("sharpness", "Sharpness", Vcp.Sharpness);
     public static readonly RangeFeature Saturation = new("saturation", "Saturation", Vcp.Saturation);
@@ -24,7 +26,11 @@ public static class FeatureCatalog
         new(8, "MOBA"),
         new(9, "Night vision"),
         new(10, "sRGB Cal"),
-    ]);
+    ])
+    {
+        // In HDR the register reads 5 (Racing in SDR) regardless of the preset.
+        AvailableInHdr = false,
+    };
 
     // Group/preset pairs. HDR10 presets are hardware-verified; the Dolby Vision pairing (group 2 with presets 5–7)
     // follows the capabilities string and still needs verification with Dolby Vision content.
@@ -37,7 +43,10 @@ public static class FeatureCatalog
         new(0x0205, "Dolby Vision Bright"),
         new(0x0206, "Dolby Vision Dark"),
         new(0x0207, "Dolby Vision Gaming"),
-    ]);
+    ])
+    {
+        Settling = WriteSettling.ModeSwitch,
+    };
 
     // Color
     public static readonly EnumFeature ColorTemperature = new("color-temperature", "Color temperature", Vcp.ColorPreset,
@@ -73,8 +82,8 @@ public static class FeatureCatalog
     public static readonly RangeFeature SaturationMagenta = new("saturation-magenta", "Magenta saturation", Vcp.SaturationMagenta);
 
     // Gaming and comfort
-    public static readonly RangeFeature BlueLightFilter = new("blue-light", "Blue light filter", Vcp.AsusBlueLightFilter);
-    public static readonly RangeFeature ShadowBoost = new("shadow-boost", "Shadow boost", Vcp.AsusShadowBoost);
+    public static readonly RangeFeature BlueLightFilter = new("blue-light", "Blue light filter", Vcp.AsusBlueLightFilter) { AvailableInHdr = false };
+    public static readonly RangeFeature ShadowBoost = new("shadow-boost", "Shadow boost", Vcp.AsusShadowBoost) { AvailableInHdr = false };
     public static readonly FlagFeature VariableRefreshRate = new("vrr", "Variable refresh rate", Vcp.AsusToggles2, bit: 0);
     public static readonly FlagFeature FrameRateBoost = new("frame-rate-boost", "Frame-rate boost", Vcp.AsusToggles2, bit: 8);
     public static readonly SwitchFeature Elmb = new("elmb", "ELMB", Vcp.AsusElmb);
@@ -122,7 +131,11 @@ public static class FeatureCatalog
     /// <summary>Writing 1 starts pixel cleaning: the screen goes dark for about 6 minutes.</summary>
     public static readonly FlagFeature PixelCleaning = new("pixel-cleaning", "Pixel cleaning", Vcp.AsusToggles2, bit: 4);
 
-    public static readonly SwitchFeature OledAntiFlicker = new("oled-anti-flicker", "OLED anti-flicker", Vcp.AsusOledAntiFlicker);
+    // Changes the panel timing: Windows drops and re-detects the monitor (verified on a PG32UCWM).
+    public static readonly SwitchFeature OledAntiFlicker = new("oled-anti-flicker", "OLED anti-flicker", Vcp.AsusOledAntiFlicker)
+    {
+        Settling = WriteSettling.ModeSwitch,
+    };
 
     public static readonly EnumFeature ScreenMove = new("screen-move", "Screen move", Vcp.AsusScreenMove,
     [

@@ -9,7 +9,7 @@ namespace DisplayToolkit.Core.Features;
 /// <remarks>
 /// The capabilities string lists groups and presets separately (<c>0000 0100 0200 01 02 …</c>), so an option is
 /// supported when both its group and its preset number are advertised.
-/// Switching to some presets (True Black 400) makes Windows re-enumerate the display, hence
+/// Switching to some presets (True Black 400) makes Windows re-enumerate the display; the catalog declares it with
 /// <see cref="WriteSettling.ModeSwitch"/>.
 /// </remarks>
 public sealed class HdrModeFeature(string id, string name, byte code, IReadOnlyList<FeatureOption> options)
@@ -17,8 +17,6 @@ public sealed class HdrModeFeature(string id, string name, byte code, IReadOnlyL
 {
     public const uint Hdr10Group = 0x01;
     public const uint DolbyVisionGroup = 0x02;
-
-    public override WriteSettling Settling => WriteSettling.ModeSwitch;
 
     public static uint GroupOf(uint value) => (value >> 8) & 0xFF;
 

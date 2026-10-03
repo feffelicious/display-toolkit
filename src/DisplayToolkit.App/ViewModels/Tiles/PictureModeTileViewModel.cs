@@ -31,11 +31,14 @@ public sealed class PictureModeTileViewModel : TileViewModel
 
     private FeatureState? HdrMode => _monitor[FeatureCatalog.HdrMode];
 
-    /// <summary>The monitor reports an HDR preset only while it receives an HDR signal.</summary>
-    private FeatureState? Active => HdrMode is { Value: not 0 } hdr ? hdr : PictureMode;
+    /// <summary>
+    /// Windows' HDR state decides, not the monitor's registers: right after a switch the monitor briefly reports no HDR
+    /// preset, and in HDR its picture-mode register reads 5, which would show as "Racing".
+    /// </summary>
+    private FeatureState? Active => _monitor.IsHdrActive && HdrMode is { } hdr ? hdr : PictureMode;
 
     public override string Label => Active is { } state && state.Feature is EnumFeature feature
-        ? feature.FindOption(state.Value)?.Name ?? Name
+        ? feature.FindOption(state.Value)?.Name ?? (state == HdrMode ? "HDR" : Name)
         : Name;
 
     public override bool IsOn => false;
