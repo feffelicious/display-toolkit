@@ -10,7 +10,11 @@ internal static partial class Win32
     /// <summary><c>BATTERY_FLAG_NO_BATTERY</c>.</summary>
     public const byte BatteryFlagNoBattery = 128;
 
+    /// <summary><c>WS_CAPTION</c>: a title bar (border and dialog frame bits together).</summary>
+    public const long WsCaption = 0x00C00000;
+
     private const uint MonitorDefaultToNearest = 2;
+    private const int GwlStyle = -16;
 
     [StructLayout(LayoutKind.Sequential)]
     public struct Rect
@@ -49,8 +53,17 @@ internal static partial class Win32
         return monitor != 0 && GetMonitorInfoW(monitor, ref info) ? info.Monitor : null;
     }
 
+    public static long GetWindowStyle(nint window) => GetWindowLongPtrW(window, GwlStyle);
+
     [LibraryImport("user32.dll")]
     public static partial nint GetForegroundWindow();
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool IsZoomed(nint window);
+
+    [LibraryImport("user32.dll")]
+    private static partial nint GetWindowLongPtrW(nint window, int index);
 
     [LibraryImport("user32.dll")]
     public static partial nint GetShellWindow();

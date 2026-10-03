@@ -41,8 +41,8 @@ public static class SystemSampler
     }
 
     /// <summary>
-    /// An exclusive full-screen Direct3D app, or a foreground window covering its whole screen (borderless games)
-    /// that isn't a known non-game.
+    /// An exclusive full-screen Direct3D app, or a borderless foreground window covering its whole screen (borderless
+    /// full-screen games) that isn't a known non-game.
     /// </summary>
     public static bool IsFullscreenGameRunning()
     {
@@ -58,9 +58,21 @@ public static class SystemSampler
             return false;
         }
 
+        return IsBorderlessFullscreen(Win32.GetWindowStyle(window), Win32.IsZoomed(window), bounds, screen)
+            && ProcessNameOf(window) is { } name && !NotGames.Contains(name);
+    }
+
+    /// <summary>
+    /// A window drawn edge to edge without a title bar, the way borderless full-screen games are. Maximized windows
+    /// don't count: with the taskbar hidden they cover the screen too, but they keep their title bar and are
+    /// maximized in Windows' sense.
+    /// </summary>
+    internal static bool IsBorderlessFullscreen(long style, bool isMaximized, Win32.Rect bounds, Win32.Rect screen)
+    {
         var coversScreen = bounds.Left <= screen.Left && bounds.Top <= screen.Top
             && bounds.Right >= screen.Right && bounds.Bottom >= screen.Bottom;
-        return coversScreen && ProcessNameOf(window) is { } name && !NotGames.Contains(name);
+        var hasTitleBar = (style & Win32.WsCaption) == Win32.WsCaption;
+        return coversScreen && !hasTitleBar && !isMaximized;
     }
 
     /// <summary>Null on devices without a battery, where the power source never changes.</summary>
