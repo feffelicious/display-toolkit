@@ -1,6 +1,7 @@
 using DisplayToolkit.Automation.Profiles;
 using DisplayToolkit.Automation.Rules;
 using DisplayToolkit.Automation.Storage;
+using DisplayToolkit.Automation.Sun;
 
 namespace DisplayToolkit.Automation.Tests.Storage;
 
@@ -36,5 +37,35 @@ public sealed class AutomationJsonTests
         var profile = Assert.Single(restored.Profiles);
         Assert.Equal(night with { Settings = profile.Settings }, profile);
         Assert.Equal(night.Settings, profile.Settings);
+    }
+
+    [Fact]
+    public void Settings_missing_from_older_files_keep_their_defaults()
+    {
+        const string Json = """
+            {
+              "AUSAA6A": {
+                "profiles": [ { "id": "11111111-1111-1111-1111-111111111111", "name": "Night" } ],
+                "rules": [ { "id": "22222222-2222-2222-2222-222222222222", "profileId": "11111111-1111-1111-1111-111111111111", "trigger": { "type": "fullscreen-game" } } ]
+              }
+            }
+            """;
+
+        var automation = AutomationJson.Deserialize(Json)["AUSAA6A"];
+
+        Assert.Equal(SunCycle.Default, automation.SunCycle);
+        Assert.True(automation.Rules[0].IsEnabled);
+        var profile = automation.Profiles[0];
+        Assert.True(profile.ShowInQuickSettings);
+        Assert.Equal(Profile.DefaultGlyph, profile.Glyph);
+        Assert.Empty(profile.Settings);
+    }
+
+    [Fact]
+    public void A_partial_sun_cycle_keeps_the_other_defaults()
+    {
+        const string Json = """{ "AUSAA6A": { "sunCycle": { "isEnabled": true } } }""";
+
+        Assert.Equal(SunCycle.Default with { IsEnabled = true }, AutomationJson.Deserialize(Json)["AUSAA6A"].SunCycle);
     }
 }

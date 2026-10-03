@@ -2,17 +2,24 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using DisplayToolkit.Automation.Profiles;
 using DisplayToolkit.Automation.Rules;
+using DisplayToolkit.Automation.Sun;
 
 namespace DisplayToolkit.Automation.Storage;
 
 /// <summary>The profiles and rules of one monitor model. Rules are in priority order.</summary>
+/// <remarks>
+/// Properties with defaults are settable rather than init-only: the JSON source generator assigns every init-only
+/// property when reading, so a file written by an older version would replace the defaults with empty values.
+/// </remarks>
 public sealed record MonitorAutomation
 {
     public static MonitorAutomation Empty { get; } = new();
 
-    public IReadOnlyList<Profile> Profiles { get; init; } = [];
+    public IReadOnlyList<Profile> Profiles { get; set; } = [];
 
-    public IReadOnlyList<Rule> Rules { get; init; } = [];
+    public IReadOnlyList<Rule> Rules { get; set; } = [];
+
+    public SunCycle SunCycle { get; set; } = SunCycle.Default;
 
     public Profile? FindProfile(Guid id) => Profiles.FirstOrDefault(profile => profile.Id == id);
 }

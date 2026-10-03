@@ -6,6 +6,8 @@ using DisplayToolkit.Automation.Engine;
 using DisplayToolkit.Automation.Profiles;
 using DisplayToolkit.Automation.Rules;
 using DisplayToolkit.Automation.Storage;
+using DisplayToolkit.Automation.Sun;
+using DisplayToolkit.Core.Features;
 using DisplayToolkit.Core.Monitors;
 using Microsoft.Extensions.Logging;
 
@@ -28,6 +30,15 @@ internal sealed class AutomationService : IDisposable
     private static readonly TimeSpan LocationRefreshInterval = TimeSpan.FromHours(6);
 
     private const int FirstProfileHotkeyId = 100;
+
+    /// <summary>The <see cref="FeatureCatalog.ColorTemperature"/> value that lets the RGB gains set the white point.</summary>
+    private const uint CustomColorTemperature = 11;
+
+    /// <summary>Settings a time or sun rule's profile leaves alone while the sun cycle controls them.</summary>
+    private static readonly string[] SunBrightnessSettings = [FeatureCatalog.Brightness.Id];
+
+    private static readonly string[] SunWarmthSettings =
+        [FeatureCatalog.ColorTemperature.Id, FeatureCatalog.RedGain.Id, FeatureCatalog.GreenGain.Id, FeatureCatalog.BlueGain.Id];
 
     private readonly MonitorContext _context;
     private readonly AutomationStore _store;
@@ -55,6 +66,9 @@ internal sealed class AutomationService : IDisposable
     /// more (the app closed and there's no schedule), so a rule like "while VLC is open" undoes itself.
     /// </summary>
     private Dictionary<string, uint>? _restorePoint;
+
+    /// <summary>What the sun cycle last wrote; null while it isn't driving the monitor (so it writes in full next time).</summary>
+    private SunCycleTarget? _sunWritten;
 
     public AutomationService(MonitorContext context, AutomationStore store, LocationService location, GlobalHotkeys hotkeys, Dispatcher dispatcher,
         ILogger<AutomationService> logger)
@@ -100,6 +114,12 @@ internal sealed class AutomationService : IDisposable
     /// <summary>The last application that didn't fully work, until the next one or until dismissed.</summary>
     public ProfileApplyResult? LastFailure { get; private set; }
 
+    /// <summary>Where the sun cycle is now, when it's on and the location is known (even while something else wins).</summary>
+    public SunCycleTarget? SunTarget { get; private set; }
+
+    /// <summary>The sun cycle is setting brightness and warmth right now.</summary>
+    public bool IsSunCycleDriving => _sunWritten is not null;
+
     /// <summary>Profiles whose shortcut is taken by Windows or another app.</summary>
     public IReadOnlySet<Guid> ShortcutConflicts => _shortcutConflicts;
 
@@ -139,6 +159,12 @@ internal sealed class AutomationService : IDisposable
             ? [.. automation.Rules.Select(existing => existing.Id == rule.Id ? rule : existing)]
             : [.. automation.Rules, rule],
     });
+
+    public void SaveSunCycle(SunCycle cycle)
+    {
+        _sunWritten = null; // New values: write everything again.
+        Update(automation => automation with { SunCycle = cycle });
+    }
 
     public void DeleteRule(Guid id) => Update(automation => automation with
     {
@@ -222,6 +248,7 @@ internal sealed class AutomationService : IDisposable
         _store.Set(monitor.Session.Id.Model, Automation);
         RegisterShortcuts();
         Configure();
+        UpdateSunCycle();
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
@@ -236,6 +263,7 @@ internal sealed class AutomationService : IDisposable
         _monitor = _context.Current;
         _appliedProfileId = null;
         _restorePoint = null;
+        _sunWritten = null;
         Automation = _monitor is { } monitor ? _store.Get(monitor.Session.Id.Model) : MonitorAutomation.Empty;
         if (_monitor is not null)
         {
@@ -275,6 +303,7 @@ internal sealed class AutomationService : IDisposable
     private void Tick()
     {
         _engine.Tick();
+        UpdateSunCycle();
         ScheduleWake();
         Changed?.Invoke(this, EventArgs.Empty); // Relative times in the status ("since 18:21") stay current.
     }
@@ -326,8 +355,80 @@ internal sealed class AutomationService : IDisposable
             _appliedProfileId = null;
             _ = ApplyProfileAsync(new Profile { Id = Guid.Empty, Name = "Previous settings", Settings = restore }, byAutomation: false);
         }
+        UpdateSunCycle();
         Changed?.Invoke(this, EventArgs.Empty);
     }
+
+    /// <summary>
+    /// Moves brightness and warmth along the sun cycle. It runs underneath everything: while a condition rule, a
+    /// manual choice or a pause is in charge, or HDR is on (the monitor ignores both there), it steps aside and
+    /// writes in full when it takes over again. Otherwise it writes only what changed, so a tweak made in the
+    /// middle of the day lasts until the next fade.
+    /// </summary>
+    private void UpdateSunCycle()
+    {
+        var cycle = Automation.SunCycle;
+        if (!cycle.IsEnabled || _location.Current is not { } location)
+        {
+            SunTarget = null;
+            _sunWritten = null;
+            return;
+        }
+
+        var night = SunCycleCalculator.NightAmount(DateTimeOffset.Now, location, TimeZoneInfo.Local, TimeSpan.FromMinutes(cycle.TransitionMinutes));
+        var target = SunCycleCalculator.Target(cycle, night);
+        SunTarget = target;
+
+        if (_monitor is not { } monitor || monitor.IsHdrActive
+            || State.Reason is AutomationReason.Condition or AutomationReason.Manual or AutomationReason.Paused)
+        {
+            _sunWritten = null;
+            return;
+        }
+
+        var previous = _sunWritten;
+        if (previous is { } written && written.Brightness == target.Brightness && written.Kelvin == target.Kelvin)
+        {
+            return;
+        }
+        _sunWritten = target;
+        _ = WriteSunTargetAsync(monitor, target, previous);
+    }
+
+    private async Task WriteSunTargetAsync(MonitorViewModel monitor, SunCycleTarget target, SunCycleTarget? previous)
+    {
+        await _applyGate.WaitAsync();
+        _isApplying = true;
+        try
+        {
+            var session = monitor.Session;
+            if (target.Brightness is { } brightness && brightness != previous?.Brightness && session.Supports(FeatureCatalog.Brightness))
+            {
+                await session.WriteAsync(FeatureCatalog.Brightness, Math.Min(brightness, monitor[FeatureCatalog.Brightness]!.Maximum));
+            }
+
+            if (target.Kelvin is { } kelvin && kelvin != previous?.Kelvin && session.Supports(FeatureCatalog.RedGain))
+            {
+                if (monitor[FeatureCatalog.ColorTemperature] is { } temperature && temperature.Value != CustomColorTemperature)
+                {
+                    await session.WriteAsync(FeatureCatalog.ColorTemperature, CustomColorTemperature);
+                }
+                var (red, green, blue) = ColorTemperature.Gains(kelvin);
+                await Task.WhenAll(
+                    WriteGainAsync(monitor, FeatureCatalog.RedGain, red),
+                    WriteGainAsync(monitor, FeatureCatalog.GreenGain, green),
+                    WriteGainAsync(monitor, FeatureCatalog.BlueGain, blue));
+            }
+        }
+        finally
+        {
+            _isApplying = false;
+            _applyGate.Release();
+        }
+    }
+
+    private static Task<FeatureValue> WriteGainAsync(MonitorViewModel monitor, RangeFeature gain, double fraction) =>
+        monitor.Session.WriteAsync(gain, (uint)Math.Round(fraction * (monitor[gain]?.Maximum ?? 100)));
 
     private async Task ApplyProfileAsync(Profile profile, bool byAutomation)
     {
@@ -337,6 +438,14 @@ internal sealed class AutomationService : IDisposable
         }
 
         _appliedProfileId = profile.Id == Guid.Empty ? null : profile.Id;
+
+        // A time or sun rule's profile leaves brightness and warmth to the sun cycle.
+        if (byAutomation && State.Reason == AutomationReason.Schedule && Automation.SunCycle is { IsEnabled: true } cycle)
+        {
+            var skipped = (cycle.ControlsBrightness ? SunBrightnessSettings : []).Concat(cycle.ControlsWarmth ? SunWarmthSettings : []).ToHashSet();
+            profile = profile with { Settings = profile.Settings.Where(setting => !skipped.Contains(setting.Key)).ToDictionary() };
+        }
+
         await _applyGate.WaitAsync();
         try
         {

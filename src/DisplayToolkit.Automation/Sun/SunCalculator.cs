@@ -1,7 +1,10 @@
 namespace DisplayToolkit.Automation.Sun;
 
-/// <summary>Sunrise and sunset in local time. Null when the sun doesn't rise or set that day (polar day or night).</summary>
-public readonly record struct SunTimes(DateTimeOffset? Sunrise, DateTimeOffset? Sunset);
+/// <summary>
+/// Sunrise and sunset in local time. Both are null when the sun doesn't rise or set that day; then
+/// <see cref="IsUpAllDay"/> tells polar day from polar night.
+/// </summary>
+public readonly record struct SunTimes(DateTimeOffset? Sunrise, DateTimeOffset? Sunset, bool IsUpAllDay = false);
 
 /// <summary>
 /// Sunrise and sunset from the sunrise equation with the standard corrections for refraction and the sun's disc
@@ -40,7 +43,7 @@ public static class SunCalculator
         // Outside [-1, 1] the sun stays above (polar day) or below (polar night) the horizon all day.
         if (cosHourAngle is < -1 or > 1)
         {
-            return default;
+            return new SunTimes(null, null, IsUpAllDay: cosHourAngle < -1);
         }
 
         var hourAngle = Degrees(Math.Acos(cosHourAngle)) / 360;

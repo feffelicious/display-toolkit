@@ -371,6 +371,66 @@
       </StackPanel>
     </Border>
 
+    <!-- ======================================================== Follow the sun -->
+    <controls:SettingsExpander Margin="0,8,0,0" Header="Follow the sun" HeaderIcon="&#xE706;" DataContext="{Binding SunCycle}"
+                               Description="{Binding Status}" IsExpanded="{Binding IsEnabled, Mode=OneTime}">
+      <controls:SettingsExpander.HeaderContent>
+        <CheckBox Style="{StaticResource ToggleSwitch}" Tag="Labeled" IsChecked="{Binding IsEnabled, Mode=TwoWay}"
+                  AutomationProperties.Name="Follow the sun" />
+      </controls:SettingsExpander.HeaderContent>
+      <StackPanel IsEnabled="{Binding IsEnabled}">
+        <controls:SettingsCard IsNested="True" Header="Brightness" Description="Brighter by day, dimmer at night.">
+          <CheckBox Style="{StaticResource ToggleSwitch}" Tag="Labeled" IsChecked="{Binding ControlsBrightness, Mode=TwoWay}"
+                    AutomationProperties.Name="Brightness follows the sun" />
+        </controls:SettingsCard>
+        <controls:SettingsCard IsNested="True" Header="Warmth"
+                               Description="Cooler by day, warmer at night. Uses the Custom color temperature and replaces its red, green and blue.">
+          <CheckBox Style="{StaticResource ToggleSwitch}" Tag="Labeled" IsChecked="{Binding ControlsWarmth, Mode=TwoWay}"
+                    AutomationProperties.Name="Warmth follows the sun" />
+        </controls:SettingsCard>
+        <controls:SettingsCard IsNested="True" Header="During the day" HeaderIcon="&#xE706;">
+          <StackPanel Width="320">
+            <DockPanel IsEnabled="{Binding ControlsBrightness}">
+              <TextBlock DockPanel.Dock="Right" Width="56" VerticalAlignment="Center" TextAlignment="Right"
+                         Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding DayBrightnessText}" />
+              <TextBlock Width="80" VerticalAlignment="Center" Style="{StaticResource CaptionText}" Text="Brightness" />
+              <Slider VerticalAlignment="Center" Minimum="0" Maximum="100" IsSnapToTickEnabled="True" TickFrequency="1" IsMoveToPointEnabled="True"
+                      Value="{Binding DayBrightness, Mode=TwoWay}" AutomationProperties.Name="Day brightness" />
+            </DockPanel>
+            <DockPanel Margin="0,8,0,0" IsEnabled="{Binding ControlsWarmth}">
+              <TextBlock DockPanel.Dock="Right" Width="56" VerticalAlignment="Center" TextAlignment="Right"
+                         Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding DayKelvinText}" />
+              <TextBlock Width="80" VerticalAlignment="Center" Style="{StaticResource CaptionText}" Text="Warmth" />
+              <Slider VerticalAlignment="Center" Minimum="2700" Maximum="8000" IsSnapToTickEnabled="True" TickFrequency="100" IsMoveToPointEnabled="True"
+                      IsDirectionReversed="True" Value="{Binding DayKelvin, Mode=TwoWay}" AutomationProperties.Name="Day warmth" />
+            </DockPanel>
+          </StackPanel>
+        </controls:SettingsCard>
+        <controls:SettingsCard IsNested="True" Header="At night" HeaderIcon="&#xE708;">
+          <StackPanel Width="320">
+            <DockPanel IsEnabled="{Binding ControlsBrightness}">
+              <TextBlock DockPanel.Dock="Right" Width="56" VerticalAlignment="Center" TextAlignment="Right"
+                         Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding NightBrightnessText}" />
+              <TextBlock Width="80" VerticalAlignment="Center" Style="{StaticResource CaptionText}" Text="Brightness" />
+              <Slider VerticalAlignment="Center" Minimum="0" Maximum="100" IsSnapToTickEnabled="True" TickFrequency="1" IsMoveToPointEnabled="True"
+                      Value="{Binding NightBrightness, Mode=TwoWay}" AutomationProperties.Name="Night brightness" />
+            </DockPanel>
+            <DockPanel Margin="0,8,0,0" IsEnabled="{Binding ControlsWarmth}">
+              <TextBlock DockPanel.Dock="Right" Width="56" VerticalAlignment="Center" TextAlignment="Right"
+                         Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding NightKelvinText}" />
+              <TextBlock Width="80" VerticalAlignment="Center" Style="{StaticResource CaptionText}" Text="Warmth" />
+              <Slider VerticalAlignment="Center" Minimum="2700" Maximum="8000" IsSnapToTickEnabled="True" TickFrequency="100" IsMoveToPointEnabled="True"
+                      IsDirectionReversed="True" Value="{Binding NightKelvin, Mode=TwoWay}" AutomationProperties.Name="Night warmth" />
+            </DockPanel>
+          </StackPanel>
+        </controls:SettingsCard>
+        <controls:SettingsCard IsNested="True" Header="Fade length" Description="Centered on sunrise and sunset.">
+          <ComboBox MinWidth="160" ItemsSource="{Binding Transitions}" DisplayMemberPath="Name" SelectedItem="{Binding Transition, Mode=TwoWay}"
+                    AutomationProperties.Name="Fade length" />
+        </controls:SettingsCard>
+      </StackPanel>
+    </controls:SettingsExpander>
+
     <!-- ======================================================== Rules -->
     <DockPanel Margin="0,26,0,8">
       <Button DockPanel.Dock="Right" Padding="12,5" Command="{Binding AddRuleCommand}" IsEnabled="{Binding HasProfiles}">

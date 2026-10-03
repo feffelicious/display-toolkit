@@ -16,15 +16,19 @@ public enum AppTheme
 public sealed record SavedLocation(double Latitude, double Longitude);
 
 /// <summary>User preferences that aren't stored elsewhere (start with Windows lives in the registry).</summary>
+/// <remarks>
+/// Properties with defaults are settable rather than init-only: the JSON source generator assigns every init-only
+/// property when reading, so a file written by an older version would replace the defaults with empty values.
+/// </remarks>
 public sealed record AppSettingsData
 {
-    public AppTheme Theme { get; init; } = AppTheme.System;
+    public AppTheme Theme { get; set; } = AppTheme.System;
 
     /// <summary>Show a small overlay when a shortcut switches a profile.</summary>
-    public bool ShowShortcutOverlay { get; init; } = true;
+    public bool ShowShortcutOverlay { get; set; } = true;
 
     /// <summary>Use the location from Windows for sunrise and sunset; otherwise <see cref="ManualLocation"/>.</summary>
-    public bool UseWindowsLocation { get; init; } = true;
+    public bool UseWindowsLocation { get; set; } = true;
 
     public SavedLocation? ManualLocation { get; init; }
 

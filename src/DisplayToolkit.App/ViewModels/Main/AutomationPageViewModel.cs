@@ -36,6 +36,7 @@ internal sealed partial class AutomationPageViewModel : MainPageViewModel
         _automation = automation;
         _location = location;
         _host = host;
+        SunCycle = new SunCycleViewModel(automation, location);
         automation.Changed += OnAutomationChanged;
         location.Changed += OnAutomationChanged;
         Refresh();
@@ -67,6 +68,8 @@ internal sealed partial class AutomationPageViewModel : MainPageViewModel
 
     [ObservableProperty]
     public partial bool IsPaused { get; private set; }
+
+    public SunCycleViewModel SunCycle { get; }
 
     public ObservableCollection<RuleItemViewModel> Rules { get; } = [];
 
@@ -174,6 +177,7 @@ internal sealed partial class AutomationPageViewModel : MainPageViewModel
         Day = new DayStripViewModel(_automation.Engine, _automation.Automation, DateTimeOffset.Now);
         IsPaused = _automation.Engine.IsPaused;
         Status = StatusLine();
+        SunCycle.UpdateStatus();
     }
 
     private string StatusLine()
