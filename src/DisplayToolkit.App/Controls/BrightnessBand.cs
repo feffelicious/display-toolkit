@@ -21,6 +21,11 @@ public sealed class BrightnessBand : RangeBase
     public static readonly DependencyProperty HasFailedProperty =
         DependencyProperty.Register(nameof(HasFailed), typeof(bool), typeof(BrightnessBand));
 
+    private static readonly DependencyPropertyKey IsFocusVisiblePropertyKey =
+        DependencyProperty.RegisterReadOnly(nameof(IsFocusVisible), typeof(bool), typeof(BrightnessBand), new PropertyMetadata(false));
+
+    public static readonly DependencyProperty IsFocusVisibleProperty = IsFocusVisiblePropertyKey.DependencyProperty;
+
     private const string FillPartName = "PART_Fill";
 
     /// <summary>The fill never gets narrower than this, so the glyph always sits on the accent color.</summary>
@@ -56,6 +61,24 @@ public sealed class BrightnessBand : RangeBase
         set => SetValue(HasFailedProperty, value);
     }
 
+    /// <summary>
+    /// Whether to draw the focus ring: focused, and reached by keyboard (or <see cref="FocusFromKeyboard"/>), not by a
+    /// click. The ring is part of the template rather than a FocusVisualStyle adorner, because adorners lag behind the
+    /// flyout's opening slide and WPF doesn't count a global hotkey as keyboard input.
+    /// </summary>
+    public bool IsFocusVisible
+    {
+        get => (bool)GetValue(IsFocusVisibleProperty);
+        private set => SetValue(IsFocusVisiblePropertyKey, value);
+    }
+
+    /// <summary>Focuses the band and shows its focus ring, as if reached with the keyboard.</summary>
+    public void FocusFromKeyboard()
+    {
+        Keyboard.Focus(this);
+        IsFocusVisible = IsKeyboardFocused;
+    }
+
     public override void OnApplyTemplate()
     {
         base.OnApplyTemplate();
@@ -83,10 +106,23 @@ public sealed class BrightnessBand : RangeBase
         UpdateFill();
     }
 
+    protected override void OnGotKeyboardFocus(KeyboardFocusChangedEventArgs e)
+    {
+        base.OnGotKeyboardFocus(e);
+        IsFocusVisible = InputManager.Current.MostRecentInputDevice is KeyboardDevice;
+    }
+
+    protected override void OnLostKeyboardFocus(KeyboardFocusChangedEventArgs e)
+    {
+        base.OnLostKeyboardFocus(e);
+        IsFocusVisible = false;
+    }
+
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
         base.OnMouseLeftButtonDown(e);
         Focus();
+        IsFocusVisible = false;
         CaptureMouse();
         SetValueFromPointer(e);
         e.Handled = true;
@@ -117,6 +153,7 @@ public sealed class BrightnessBand : RangeBase
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
+        IsFocusVisible = true;
         e.Handled = true;
         switch (e.Key)
         {

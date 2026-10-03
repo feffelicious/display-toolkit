@@ -16,14 +16,19 @@
   <converters:BoolToVisibilityConverter x:Key="VisibleWhenFalse" Invert="True" />
 
   <!--
-    Focus rings. FocusVisualStyle is drawn only for keyboard navigation, never after a mouse click,
-    which is exactly the Fluent behaviour. Generic.xaml refers to these with DynamicResource.
+    Focus rings. FocusVisualStyle is drawn only for keyboard navigation, never after a mouse click, which is the
+    Fluent behaviour. Fluent's double stroke: 2 px outer ring 3 px outside the control, 1 px inner ring just outside it.
+    Layout rounding keeps both on whole pixels at fractional scaling (125%, 150%).
+    Generic.xaml refers to these with DynamicResource.
   -->
   <Style x:Key="FocusRing" TargetType="Control">
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate>
-          <Border Margin="-3" CornerRadius="6" BorderThickness="2" BorderBrush="{DynamicResource FocusStrokeColorOuterBrush}" />
+          <Grid UseLayoutRounding="True" SnapsToDevicePixels="True">
+            <Border Margin="-3" CornerRadius="7" BorderThickness="2" BorderBrush="{DynamicResource FocusStrokeColorOuterBrush}" />
+            <Border Margin="-1" CornerRadius="5" BorderThickness="1" BorderBrush="{DynamicResource FocusStrokeColorInnerBrush}" />
+          </Grid>
         </ControlTemplate>
       </Setter.Value>
     </Setter>
@@ -33,7 +38,10 @@
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate>
-          <Border Margin="-3" CornerRadius="9" BorderThickness="2" BorderBrush="{DynamicResource FocusStrokeColorOuterBrush}" />
+          <Grid UseLayoutRounding="True" SnapsToDevicePixels="True">
+            <Border Margin="-3" CornerRadius="9" BorderThickness="2" BorderBrush="{DynamicResource FocusStrokeColorOuterBrush}" />
+            <Border Margin="-1" CornerRadius="7" BorderThickness="1" BorderBrush="{DynamicResource FocusStrokeColorInnerBrush}" />
+          </Grid>
         </ControlTemplate>
       </Setter.Value>
     </Setter>
@@ -43,7 +51,10 @@
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate>
-          <Border Margin="-3" CornerRadius="13" BorderThickness="2" BorderBrush="{DynamicResource FocusStrokeColorOuterBrush}" />
+          <Grid UseLayoutRounding="True" SnapsToDevicePixels="True">
+            <Border Margin="-3" CornerRadius="13" BorderThickness="2" BorderBrush="{DynamicResource FocusStrokeColorOuterBrush}" />
+            <Border Margin="-1" CornerRadius="11" BorderThickness="1" BorderBrush="{DynamicResource FocusStrokeColorInnerBrush}" />
+          </Grid>
         </ControlTemplate>
       </Setter.Value>
     </Setter>

@@ -64,7 +64,7 @@ internal sealed partial class FlyoutWindow : Window
         AnimateOpen();
         if (focusBand)
         {
-            Dispatcher.BeginInvoke(() => Keyboard.Focus(Band), System.Windows.Threading.DispatcherPriority.Input);
+            Dispatcher.BeginInvoke(Band.FocusFromKeyboard, System.Windows.Threading.DispatcherPriority.Input);
         }
         _ = _viewModel.OnOpenedAsync();
     }

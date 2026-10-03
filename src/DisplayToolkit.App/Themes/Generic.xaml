@@ -15,7 +15,8 @@
   <Style TargetType="controls:BrightnessBand">
     <Setter Property="Height" Value="40" />
     <Setter Property="Minimum" Value="0" />
-    <Setter Property="FocusVisualStyle" Value="{DynamicResource FocusRingLarge}" />
+    <!-- The ring is drawn by the template (see BrightnessBand.IsFocusVisible). -->
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
     <Setter Property="AutomationProperties.Name" Value="Brightness" />
     <Setter Property="Template">
       <Setter.Value>
@@ -51,10 +52,17 @@
               </StackPanel>
             </Grid>
             <Border x:Name="Stroke" CornerRadius="6" BorderThickness="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" />
+            <Grid x:Name="FocusRing" Visibility="Collapsed" IsHitTestVisible="False" UseLayoutRounding="True" SnapsToDevicePixels="True">
+              <Border Margin="-3" CornerRadius="9" BorderThickness="2" BorderBrush="{DynamicResource FocusStrokeColorOuterBrush}" />
+              <Border Margin="-1" CornerRadius="7" BorderThickness="1" BorderBrush="{DynamicResource FocusStrokeColorInnerBrush}" />
+            </Grid>
           </Grid>
           <ControlTemplate.Triggers>
             <Trigger Property="HasFailed" Value="True">
               <Setter TargetName="FailedGlyph" Property="Visibility" Value="Visible" />
+            </Trigger>
+            <Trigger Property="IsFocusVisible" Value="True">
+              <Setter TargetName="FocusRing" Property="Visibility" Value="Visible" />
             </Trigger>
             <Trigger Property="IsPending" Value="True">
               <Trigger.EnterActions>
