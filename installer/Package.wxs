@@ -1,0 +1,80 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <!--
+    A per-user install: no administrator rights, no UAC prompt. Files go to %LocalAppData%\Programs\Display Toolkit.
+    Never change the UpgradeCode: it's how a newer version finds and replaces an installed one.
+  -->
+  <Package Name="Display Toolkit"
+           Manufacturer="Feffelicious"
+           Version="$(var.Version)"
+           UpgradeCode="b30137de-7b03-4996-b274-3f88ff5726ba"
+           Scope="perUser"
+           Language="1033">
+
+    <MajorUpgrade AllowSameVersionUpgrades="yes"
+                  DowngradeErrorMessage="A newer version of Display Toolkit is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Installed apps: icon and link. (The minimal UI already hides "Modify": there's nothing to choose.) -->
+    <Icon Id="DisplayToolkit.ico" SourceFile="$(var.IconPath)" />
+    <Property Id="ARPPRODUCTICON" Value="DisplayToolkit.ico" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/feffelicious/display-toolkit" />
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="ProgramsFolder" Name="Programs">
+        <Directory Id="INSTALLFOLDER" Name="Display Toolkit" />
+      </Directory>
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder" />
+
+    <!--
+      Per-user components must use a registry value as their key path (Windows Installer can't track files in the
+      user's profile otherwise), and remove the folders they create.
+    -->
+    <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
+      <Component Id="Executable" Guid="a1a91c51-d01a-41e1-8eb4-3d23e024cf58">
+        <File Id="DisplayToolkitExe" Source="$(var.PublishDir)DisplayToolkit.exe" KeyPath="no" />
+        <File Id="License" Source="$(var.PublishDir)LICENSE.txt" KeyPath="no" />
+        <RegistryValue Root="HKCU" Key="Software\Display Toolkit\Installer" Name="Files" Type="integer" Value="1" KeyPath="yes" />
+        <RemoveFolder Id="RemoveInstallFolder" Directory="INSTALLFOLDER" On="uninstall" />
+        <RemoveFolder Id="RemoveProgramsFolder" Directory="ProgramsFolder" On="uninstall" />
+      </Component>
+      <Component Id="StartMenuShortcut" Directory="ProgramMenuFolder">
+        <Shortcut Id="StartMenuShortcut" Name="Display Toolkit" Description="Brightness, picture modes, HDR and profiles for ASUS monitors"
+                  Target="[#DisplayToolkitExe]" WorkingDirectory="INSTALLFOLDER" />
+        <RegistryValue Root="HKCU" Key="Software\Display Toolkit\Installer" Name="Shortcut" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <Feature Id="Main">
+      <ComponentGroupRef Id="AppFiles" />
+    </Feature>
+
+    <!-- The app sits in the tray: close it before replacing or removing its files. -->
+    <util:CloseApplication Id="CloseDisplayToolkit" Target="DisplayToolkit.exe" CloseMessage="yes" TerminateProcess="0" RebootPrompt="no" />
+
+    <!-- "Start with Windows" is a Run entry the app writes itself; take it away with the app (not on upgrades). -->
+    <SetProperty Id="RemoveStartupEntry" Sequence="execute" Before="RemoveStartupEntry"
+                 Value="&quot;[System64Folder]reg.exe&quot; delete &quot;HKCU\Software\Microsoft\Windows\CurrentVersion\Run&quot; /v DisplayToolkit /f" />
+    <CustomAction Id="RemoveStartupEntry" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Execute="deferred" Impersonate="yes" Return="ignore" />
+    <InstallExecuteSequence>
+      <Custom Action="RemoveStartupEntry" After="RemoveFiles" Condition="REMOVE=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+    </InstallExecuteSequence>
+
+    <!-- Welcome with the license, progress, and a finish page that offers to start the app. -->
+    <ui:WixUI Id="WixUI_Minimal" />
+    <WixVariable Id="WixUILicenseRtf" Value="$(var.AssetsDir)License.rtf" />
+    <WixVariable Id="WixUIBannerBmp" Value="$(var.AssetsDir)Banner.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value="$(var.AssetsDir)Dialog.bmp" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Start Display Toolkit" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <Property Id="WixShellExecTarget" Value="[#DisplayToolkitExe]" />
+    <CustomAction Id="LaunchApplication" BinaryRef="Wix4UtilCA_X64" DllEntry="WixShellExec" Impersonate="yes" Return="ignore" />
+    <UI>
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchApplication"
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" />
+    </UI>
+  </Package>
+</Wix>

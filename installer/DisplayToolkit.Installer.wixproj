@@ -1,0 +1,21 @@
+<Project Sdk="WixToolset.Sdk/6.0.2">
+
+  <!--
+    The Windows Installer package. It packs a published DisplayToolkit.exe, so build it through build/publish.ps1
+    (which publishes first and passes PublishDir and Version) rather than on its own.
+  -->
+  <PropertyGroup>
+    <OutputName>DisplayToolkit</OutputName>
+    <Platform>x64</Platform>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <Version Condition="'$(Version)' == ''">0.0.0</Version>
+    <PublishDir Condition="'$(PublishDir)' == ''">..\artifacts\publish\</PublishDir>
+    <DefineConstants>Version=$(Version);PublishDir=$(PublishDir);AssetsDir=$(MSBuildThisFileDirectory)Assets\;IconPath=$(MSBuildThisFileDirectory)..\src\DisplayToolkit.App\Assets\DisplayToolkit.ico</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="6.0.2" />
+    <PackageReference Include="WixToolset.Util.wixext" Version="6.0.2" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,3 @@
+<Project>
+  <!-- The installer is not a .NET project: keep the repository-wide C# settings and central package versions out. -->
+</Project>

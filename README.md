@@ -39,9 +39,14 @@ brightness and warmth that follow the sun.
 
 ## Install
 
-Download `DisplayToolkit-<version>-win-x64.zip` from [Releases](../../releases), unzip it anywhere and run
-`DisplayToolkit.exe`. It's one self-contained file: no installer, no .NET to install, no admin rights. To start it
-with Windows, turn that on in Settings.
+Download from [Releases](../../releases):
+
+- **`DisplayToolkit-<version>-win-x64.msi`**: the installer. It installs for your account only (no admin rights),
+  adds Display Toolkit to the Start menu and to Installed apps, and updates an older version in place.
+- **`DisplayToolkit-<version>-win-x64.zip`**: the portable version. Unzip it anywhere and run `DisplayToolkit.exe`.
+
+Either way it's one self-contained app: no .NET or anything else to install. To start it with Windows, turn that on
+in Settings.
 
 Requirements:
 
@@ -76,7 +81,7 @@ Requires the .NET 10 SDK. The solution is `DisplayToolkit.slnx`:
 | `DisplayToolkit.App` | WPF tray app, flyout and main window. |
 | `tools/DisplayToolkit.Probe` | Console tool that dumps what a monitor reports. Handy for bug reports and new models. |
 
-`./build/publish.ps1` builds the release zip into `artifacts/`. Pushing a tag like `v0.2.0` makes GitHub Actions
+`./build/publish.ps1` builds the release zip and the installer (WiX, restored from NuGet) into `artifacts/`. Pushing a tag like `v0.2.0` makes GitHub Actions
 build, test and publish a release.
 
 See [docs/architecture.md](docs/architecture.md) for the design and [docs/design](docs/design/design-spec.md) for the UI spec.
