@@ -108,9 +108,9 @@ public static class FeatureCatalog
         new(12, "Green heavy duplex"),
 
         // Not in the monitor's menu, but advertised and working (PG32UCWM).
-        new(13, "Blue dot (alternate)"),
-        new(14, "Adaptive, small"),
-        new(15, "Adaptive, large"),
+        new(13, "Adaptive dot"),
+        new(14, "Adaptive crosshair, small"),
+        new(15, "Adaptive crosshair, large"),
     ]);
 
     public static readonly EnumFeature FpsCounter = new("fps-counter", "FPS counter", Vcp.AsusFpsCounter,

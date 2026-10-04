@@ -78,7 +78,7 @@ the single value is the **supported-bits mask**.
 | `0xE0` | Overdrive | |
 | `0xE1` | Power saving (v2) | 0/1 |
 | `0xE2` | **HDR mode** (v2) | high byte = group (0x00 off, 0x01 HDR10, 0x02 Dolby Vision), low byte = preset: 1 Cinema HDR, 2 Gaming HDR, 3 Console HDR, 4 HDR400 / True Black, 5 DV Bright, 6 DV Dark, 7 DV Gaming |
-| `0xE3` | Crosshair | 0 off, 7–15 styles. 13–15 aren't in the menu but work (verified): 13 blue dot, 14 small and 15 large crosshair whose color adapts to the background |
+| `0xE3` | Crosshair | 0 off, 7–15 styles. 13–15 aren't in the menu but work (verified): 13 dot, 14 small and 15 large crosshair, all adapting their color to the background |
 | `0xE4` | GamePlus timer | 0 off, 1–5 = 30/40/50/60/90 s |
 | `0xE5` | Shadow Boost | 0–4 ✅ |
 | `0xE6` | Blue light filter | 0–4 ✅ |
@@ -226,7 +226,7 @@ Without confirmation the prompt times out and nothing changes. Write it once and
 
 `0xE3` crosshair, "new" style set (caps contains 07+): 7 Blue Dot, 8 Green Dot, 9 Blue Mini Duplex, 10 Green Mini Duplex,
 11 Blue Heavy Duplex, 12 Green Heavy Duplex. Legacy set (1–6): red/green point, dial, crosshair. Caps also lists 13–15, which
-the monitor's menu doesn't offer. They work: 13 a blue dot, 14 a small and 15 a large crosshair whose color adapts to the
+the monitor's menu doesn't offer. They work: 13 a dot, 14 a small and 15 a large crosshair, all with a color that adapts to the
 background.
 
 ## Availability caveats (observed)
