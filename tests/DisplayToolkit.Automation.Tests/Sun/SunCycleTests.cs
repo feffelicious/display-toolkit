@@ -83,6 +83,47 @@ public sealed class SunCycleTests
         Assert.InRange(blue, 0.5, 0.6);
     }
 
+    [Fact]
+    public void The_sun_is_highest_at_solar_noon()
+    {
+        // Midsummer in Stockholm: solar noon about 13:13 CEST, at 90 - 59.33 + 23.44 = 54.1 degrees.
+        var (elevation, noon) = SunCalculator.Elevation(new DateTimeOffset(2024, 6, 21, 13, 13, 0, TimeSpan.FromHours(2)), Stockholm);
+
+        Assert.InRange(elevation, 53.6, 54.6);
+        Assert.InRange(noon, 53.6, 54.6);
+    }
+
+    [Fact]
+    public void The_sun_is_on_the_horizon_at_sunset()
+    {
+        // Published sunset includes refraction and the sun's disc, which put the center about 0.83 degrees below.
+        var (elevation, _) = SunCalculator.Elevation(Today.Sunset!.Value, Stockholm);
+
+        Assert.InRange(elevation, -1.3, -0.4);
+    }
+
+    [Fact]
+    public void Sun_height_mode_follows_the_whole_day()
+    {
+        var cycle = SunCycle.Default with { Mode = SunCycleMode.SunHeight };
+        double At(int hour) => SunCycleCalculator.NightAmount(cycle, new DateTimeOffset(2026, 10, 7, hour, 0, 0, TimeSpan.FromHours(2)), Stockholm, Zone);
+
+        Assert.Equal(1, At(1));
+        Assert.InRange(At(13), 0, 0.02); // Solar noon is about 12:46 CEST.
+        Assert.InRange(At(16), 0.3, 0.7);
+        Assert.True(At(10) > At(12));
+        Assert.Equal(1, At(21));
+    }
+
+    [Fact]
+    public void Sun_height_mode_stays_night_in_polar_winter()
+    {
+        var cycle = SunCycle.Default with { Mode = SunCycleMode.SunHeight };
+        var svalbard = new GeoCoordinate(78.22, 15.65);
+
+        Assert.Equal(1, SunCycleCalculator.NightAmount(cycle, new DateTimeOffset(2026, 12, 21, 12, 0, 0, TimeSpan.FromHours(1)), svalbard, Zone));
+    }
+
     private static double Night(DateTimeOffset moment) => SunCycleCalculator.NightAmount(moment, Stockholm, Zone, Hour);
 
     private static DateTimeOffset At(int hour, int minute) => new(2026, 10, 7, hour, minute, 0, TimeSpan.FromHours(2));

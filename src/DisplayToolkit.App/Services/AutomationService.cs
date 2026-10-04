@@ -439,7 +439,7 @@ internal sealed class AutomationService : IDisposable
             return;
         }
 
-        var night = SunCycleCalculator.NightAmount(DateTimeOffset.Now, location, TimeZoneInfo.Local, TimeSpan.FromMinutes(cycle.TransitionMinutes));
+        var night = SunCycleCalculator.NightAmount(cycle, DateTimeOffset.Now, location, TimeZoneInfo.Local);
         var target = SunCycleCalculator.Target(cycle, night);
         SunTarget = target;
 

@@ -14,6 +14,8 @@ public sealed record SunCycle
 
     public bool IsEnabled { get; init; }
 
+    public SunCycleMode Mode { get; set; } = SunCycleMode.SunriseAndSunset;
+
     public bool ControlsBrightness { get; set; } = true;
 
     public bool ControlsWarmth { get; set; } = true;
@@ -33,3 +35,12 @@ public sealed record SunCycle
 /// <summary>What the sun cycle wants right now; null for what it doesn't control.</summary>
 /// <param name="Night">0 by day, 1 by night.</param>
 public readonly record struct SunCycleTarget(double Night, uint? Brightness, int? Kelvin);
+
+public enum SunCycleMode
+{
+    /// <summary>Day values all day, night values all night, and a fade of <see cref="SunCycle.TransitionMinutes"/> between.</summary>
+    SunriseAndSunset,
+
+    /// <summary>Follows the sun's height all day: day values at solar noon, night values from civil dusk to dawn.</summary>
+    SunHeight,
+}

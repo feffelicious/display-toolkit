@@ -432,7 +432,13 @@
             </DockPanel>
           </StackPanel>
         </controls:SettingsCard>
-        <controls:SettingsCard IsNested="True" Header="Fade length" Description="Centered on sunrise and sunset.">
+        <controls:SettingsCard IsNested="True" Header="Changes"
+                               Description="Only around sunrise and sunset, or a little all day, brightest and coolest at midday.">
+          <ComboBox MinWidth="240" ItemsSource="{Binding Modes}" DisplayMemberPath="Name" SelectedItem="{Binding Mode, Mode=TwoWay}"
+                    AutomationProperties.Name="Changes" />
+        </controls:SettingsCard>
+        <controls:SettingsCard IsNested="True" Header="Fade length" Description="Centered on sunrise and sunset."
+                               Visibility="{Binding UsesFade, Converter={StaticResource VisibleWhenTrue}}">
           <ComboBox MinWidth="160" ItemsSource="{Binding Transitions}" DisplayMemberPath="Name" SelectedItem="{Binding Transition, Mode=TwoWay}"
                     AutomationProperties.Name="Fade length" />
         </controls:SettingsCard>

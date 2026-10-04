@@ -50,6 +50,31 @@ public static class SunCalculator
         return new SunTimes(ToLocal(transit - hourAngle, zone), ToLocal(transit + hourAngle, zone));
     }
 
+    /// <summary>
+    /// The sun's height above the horizon in degrees (negative below it) at <paramref name="moment"/>, and the height it
+    /// reaches at solar noon that day. Low-precision solar coordinates: within a few hundredths of a degree.
+    /// </summary>
+    public static (double Elevation, double NoonElevation) Elevation(DateTimeOffset moment, GeoCoordinate location)
+    {
+        ArgumentNullException.ThrowIfNull(location);
+
+        var days = moment.UtcDateTime.ToOADate() + 2415018.5 - J2000; // Days since J2000, with the time of day
+        var meanAnomaly = Radians(Normalize(357.529 + (0.98560028 * days)));
+        var meanLongitude = Normalize(280.459 + (0.98564736 * days));
+        var eclipticLongitude = Radians(meanLongitude + (1.915 * Math.Sin(meanAnomaly)) + (0.020 * Math.Sin(2 * meanAnomaly)));
+        var obliquity = Radians(23.439 - (0.00000036 * days));
+
+        var rightAscension = Degrees(Math.Atan2(Math.Cos(obliquity) * Math.Sin(eclipticLongitude), Math.Cos(eclipticLongitude)));
+        var declination = Math.Asin(Math.Sin(obliquity) * Math.Sin(eclipticLongitude));
+        var siderealDegrees = Normalize((280.46061837 + (360.98564736629 * days)) + location.Longitude);
+        var hourAngle = Radians(siderealDegrees - rightAscension);
+
+        var latitude = Radians(location.Latitude);
+        var elevation = Math.Asin((Math.Sin(latitude) * Math.Sin(declination)) + (Math.Cos(latitude) * Math.Cos(declination) * Math.Cos(hourAngle)));
+        var noon = 90 - Math.Abs(location.Latitude - Degrees(declination));
+        return (Degrees(elevation), Math.Min(90, noon));
+    }
+
     private static DateTimeOffset ToLocal(double julian, TimeZoneInfo zone)
     {
         var utc = DateTimeOffset.UnixEpoch.AddDays(julian - UnixEpochJulian);

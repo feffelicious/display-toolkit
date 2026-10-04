@@ -9,6 +9,9 @@ namespace DisplayToolkit.App.ViewModels.Automation;
 /// <summary>A transition length in the Follow the sun card.</summary>
 public sealed record TransitionChoice(int Minutes, string Name);
 
+/// <summary>How the sun cycle changes over the day.</summary>
+public sealed record SunCycleModeChoice(SunCycleMode Mode, string Name);
+
 /// <summary>The Follow the sun card: day and night brightness and warmth, and how long the fade takes.</summary>
 internal sealed partial class SunCycleViewModel : ObservableObject
 {
@@ -29,6 +32,7 @@ internal sealed partial class SunCycleViewModel : ObservableObject
         DayKelvin = cycle.DayKelvin;
         NightKelvin = cycle.NightKelvin;
         Transition = Transitions.FirstOrDefault(choice => choice.Minutes == cycle.TransitionMinutes) ?? Transitions[1];
+        Mode = Modes.First(choice => choice.Mode == cycle.Mode);
         _isLoading = false;
         UpdateStatus();
     }
@@ -41,6 +45,19 @@ internal sealed partial class SunCycleViewModel : ObservableObject
         new(120, "2 hours"),
         new(180, "3 hours"),
     ];
+
+    public IReadOnlyList<SunCycleModeChoice> Modes { get; } =
+    [
+        new(SunCycleMode.SunriseAndSunset, "Around sunrise and sunset"),
+        new(SunCycleMode.SunHeight, "All day, with the sun's height"),
+    ];
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(UsesFade))]
+    public partial SunCycleModeChoice Mode { get; set; }
+
+    /// <summary>The fade length only matters around sunrise and sunset.</summary>
+    public bool UsesFade => Mode.Mode == SunCycleMode.SunriseAndSunset;
 
     [ObservableProperty]
     public partial bool IsEnabled { get; set; }
@@ -110,6 +127,8 @@ internal sealed partial class SunCycleViewModel : ObservableObject
 
     partial void OnTransitionChanged(TransitionChoice value) => Save();
 
+    partial void OnModeChanged(SunCycleModeChoice value) => Save();
+
     private static string Now(SunCycleTarget target)
     {
         var parts = new List<string>();
@@ -135,6 +154,7 @@ internal sealed partial class SunCycleViewModel : ObservableObject
         _automation.SaveSunCycle(new SunCycle
         {
             IsEnabled = IsEnabled,
+            Mode = Mode.Mode,
             ControlsBrightness = ControlsBrightness,
             ControlsWarmth = ControlsWarmth,
             DayBrightness = (uint)Math.Round(DayBrightness),
