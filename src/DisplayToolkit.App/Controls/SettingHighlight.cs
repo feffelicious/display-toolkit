@@ -21,9 +21,11 @@ public static class SettingHighlight
     public static bool Reveal(DependencyObject root, string title)
     {
         // Realized elements first (this also covers cards generated from lists), then the logical tree, which also
-        // has the rows of collapsed expanders.
+        // has the rows of collapsed expanders. The page is built from a template, so the logical search starts inside
+        // the page view itself.
+        var page = FindVisual(root, element => element is UserControl) ?? root;
         var target = FindVisual(root, element => IsCard(element, title))
-            ?? FindLogical(root, element => IsCard(element, title))
+            ?? FindLogical(page, element => IsCard(element, title))
             ?? FindVisual(root, element => element is TextBlock text && text.Text == title);
         if (target is null)
         {

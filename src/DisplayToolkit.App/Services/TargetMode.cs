@@ -20,9 +20,16 @@ public sealed unsafe partial class TargetMode : ObservableObject, IDisposable
     private static readonly TimeSpan FadeStep = TimeSpan.FromMilliseconds(15);
     private const int FadeSteps = 10;
 
-    /// <summary>Windows that never become the target: the taskbar and the desktop. Clicking them keeps the last target.</summary>
+    /// <summary>
+    /// Windows that never become the target, so clicking them keeps the last one: the taskbar, the desktop, and the
+    /// shell's own pop-ups (Start, search, quick settings, Alt+Tab). Those draw above every app window anyway, and
+    /// their windows span the whole screen, which would leave nothing dimmed.
+    /// </summary>
     private static readonly HashSet<string> ShellClasses =
-        ["Shell_TrayWnd", "Shell_SecondaryTrayWnd", "Progman", "WorkerW", "NotifyIconOverflowWindow", "TopLevelWindowForOverflowXamlIsland"];
+    [
+        "Shell_TrayWnd", "Shell_SecondaryTrayWnd", "Progman", "WorkerW", "NotifyIconOverflowWindow", "TopLevelWindowForOverflowXamlIsland",
+        "Windows.UI.Core.CoreWindow", "XamlExplorerHostIslandWindow", "ForegroundStaging", "MultitaskingViewFrame",
+    ];
 
     /// <summary>The window events arrive in static callbacks; there is one Target mode per app.</summary>
     private static TargetMode? s_instance;
@@ -83,10 +90,21 @@ public sealed unsafe partial class TargetMode : ObservableObject, IDisposable
     {
         if (_overlay != 0)
         {
-            _screen = User32.VirtualScreen;
+            _screen = OverlayBounds();
             User32.SetWindowPos(_overlay, User32.HwndTopmost, _screen.Left, _screen.Top, _screen.Width, _screen.Height, User32.SwpNoActivate);
             UpdateHole();
         }
+    }
+
+    /// <summary>
+    /// Every screen, minus the bottom row of pixels. A topmost window that covers a whole monitor counts as a full-screen
+    /// app to Windows, which then keeps an auto-hidden taskbar from appearing.
+    /// </summary>
+    private static User32.Rect OverlayBounds()
+    {
+        var screen = User32.VirtualScreen;
+        screen.Bottom -= 1;
+        return screen;
     }
 
     public void Dispose()
@@ -100,7 +118,7 @@ public sealed unsafe partial class TargetMode : ObservableObject, IDisposable
         if (_overlay == 0)
         {
             RegisterWindowClass();
-            _screen = User32.VirtualScreen;
+            _screen = OverlayBounds();
             _overlay = User32.CreateWindowEx(
                 User32.WsExLayered | User32.WsExTransparentStyle | User32.WsExToolWindowStyle | User32.WsExNoActivateStyle | User32.WsExTopmost,
                 WindowClassName, "Target mode", User32.WsPopup,

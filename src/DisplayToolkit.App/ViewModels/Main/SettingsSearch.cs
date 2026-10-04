@@ -10,8 +10,10 @@ namespace DisplayToolkit.App.ViewModels.Main;
 /// <param name="Feature">The monitor feature it needs; it's left out for monitors without it.</param>
 /// <param name="NeedsMonitor">Only on a monitor page (no feature of its own, but the page needs a monitor).</param>
 /// <param name="Card">The card to point at, when the setting is part of another card; otherwise <paramref name="Title"/>.</param>
+/// <param name="SubPage">The sub-page it's on, such as <see cref="SettingsSearch.SixAxis"/>; null for the page itself.</param>
 public sealed record SearchEntry(
-    string Title, string Page, string Keywords = "", Feature? Feature = null, bool NeedsMonitor = false, string? Card = null);
+    string Title, string Page, string Keywords = "", Feature? Feature = null, bool NeedsMonitor = false, string? Card = null,
+    string? SubPage = null);
 
 /// <summary>
 /// The search box in the main window. Every entry names a card on a page; choosing one opens the page and points at
@@ -24,6 +26,9 @@ public static class SettingsSearch
     private const string OledCare = "OLED care";
     private const string GamePlus = "GamePlus";
     private const string Settings = "Settings";
+
+    /// <summary>The Display page's six-axis color sub-page.</summary>
+    public const string SixAxis = "six-axis";
 
     public static IReadOnlyList<SearchEntry> All { get; } =
     [
@@ -40,6 +45,12 @@ public static class SettingsSearch
         new("Saturation", Display, "vibrance color", FeatureCatalog.Saturation),
         new("Sharpness", Display, "", FeatureCatalog.Sharpness),
         new("Six-axis color", Display, "hue saturation colors", FeatureCatalog.SaturationRed),
+        new("Red saturation", Display, "six-axis color", FeatureCatalog.SaturationRed, Card: "Red", SubPage: SixAxis),
+        new("Yellow saturation", Display, "six-axis color", FeatureCatalog.SaturationYellow, Card: "Yellow", SubPage: SixAxis),
+        new("Green saturation", Display, "six-axis color", FeatureCatalog.SaturationGreen, Card: "Green", SubPage: SixAxis),
+        new("Cyan saturation", Display, "six-axis color", FeatureCatalog.SaturationCyan, Card: "Cyan", SubPage: SixAxis),
+        new("Blue saturation", Display, "six-axis color", FeatureCatalog.SaturationBlue, Card: "Blue", SubPage: SixAxis),
+        new("Magenta saturation", Display, "six-axis color pink purple", FeatureCatalog.SaturationMagenta, Card: "Magenta", SubPage: SixAxis),
         new("Reset picture mode", Display, "factory defaults restore", FeatureCatalog.PictureMode, Card: "Picture mode"),
         new("Blue light filter", Display, "night eye care tüv low blue light", FeatureCatalog.BlueLightFilter),
         new("Shadow boost", Display, "dark black detail", FeatureCatalog.ShadowBoost),

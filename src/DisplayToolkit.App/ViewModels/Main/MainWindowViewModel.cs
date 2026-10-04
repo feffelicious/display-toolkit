@@ -129,6 +129,10 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IMainWindo
         // Open the page fresh, also when it's already showing (it may be on a sub-page, or scrolled away).
         SelectedNavItem = null;
         SelectedNavItem = item;
+        if (entry.SubPage == SettingsSearch.SixAxis && Page is DisplayPageViewModel display)
+        {
+            display.OpenSixAxisCommand.Execute(null);
+        }
         RevealRequested?.Invoke(this, entry.Card ?? entry.Title);
     }
 
