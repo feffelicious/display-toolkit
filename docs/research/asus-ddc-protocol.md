@@ -1,11 +1,14 @@
-# ASUS monitor control protocol — research notes
+# ASUS monitor control protocol: notes
 
-Status: research, 2026-10-03. Verified against a **ROG Swift PG32UCWM** (MCCS 2.2, ASUS VCP v2 rev 0x17).
+What ASUS monitors understand over DDC/CI, worked out by talking to a **ROG Swift PG32UCWM** (MCCS 2.2, ASUS VCP v2
+rev 0x17): reading registers, changing settings in the monitor's own menu and watching what changed, and writing values
+to see the effect. Enum names agree with ASUS's public, Apache-2.0
+[CLI property reference](https://github.com/ASUS-Display/asus-display-control/blob/main/cli/docs/CLI_REFERENCE.md).
 
 ## TL;DR
 
-ASUS DisplayWidget Center (DWC, v1.5.2.8) does **not** use a driver, service or secret channel.
-Everything goes through standard **DDC/CI over the Windows `dxva2.dll` Monitor Configuration API**:
+No driver, service or special channel is needed. Everything goes through standard **DDC/CI over the Windows
+`dxva2.dll` Monitor Configuration API**:
 
 - `GetPhysicalMonitorsFromHMONITOR` → physical monitor handle
 - `CapabilitiesRequestAndCapabilitiesReply` → MCCS capabilities string (self-describing feature list)
@@ -15,16 +18,12 @@ ASUS features live in standard MCCS codes plus the manufacturer range `0xE0–0x
 Some codes are **bitmask registers** (`0xFC`, `0xFD`), so you have to read, modify, then write them.
 **Feature support is advertised by the monitor itself** in the capabilities string, so no per-model database is required.
 
-DWC itself is a .NET Framework 4.7.2 WPF app. The native DLLs (`AsusDisplayTracker`, `EncryptoCore`, `ScreenLightBarHid`, …)
-are for side features (window tracking, log encryption, light bars, ASUS account), not core monitor control.
-It also talks to ASUS account and product-registration endpoints, telemetry (`proart-record.azurewebsites.net`) and update/download CDNs.
-
 ## Transport notes
 
-- DWC sleeps **20 ms before every DDC call** and serializes all calls behind one global lock. DDC/CI is slow and fragile,
-  so one worker per monitor with spacing between calls is mandatory.
-- DWC retries failed reads up to three times.
-- Write `0xEB` (EZ-OSD) **without** the pre-delay. It drives the OSD joystick (see below).
+- DDC/CI is slow and fragile. One call at a time per monitor, with about **20 ms** between calls, works reliably;
+  calls that arrive faster get dropped now and then.
+- Reads fail occasionally for no visible reason. Retrying (a couple of times, briefly) is enough.
+- `0xEB` (EZ-OSD) drives the OSD joystick (see below), so its writes are time-sensitive.
 
 ## Capabilities string (PG32UCWM, raw)
 
@@ -43,7 +42,7 @@ the single value is the **supported-bits mask**.
 
 ## VCP map
 
-✅ = read back from the PG32UCWM and matched the DWC UI state.
+✅ = read back from the PG32UCWM and matched what the monitor's menu showed.
 
 ### Standard MCCS
 
@@ -110,10 +109,10 @@ PG32UCWM: current `0x0811`, supported `0x089F`. Decoded by toggling OSD options 
 | 0 | `0x0001` | Power indicator LED | ✅ observed |
 | 1 | `0x0002` | Power key lock | ✅ observed |
 | 2 | `0x0004` | Key lock (OSD buttons) | ✅ observed |
-| 3 | `0x0008` | Sound mute | DWC capability parser |
+| 3 | `0x0008` | Sound mute | not verified |
 | 4 | `0x0010` | Input auto-detection | ✅ observed |
 | 7 | `0x0080` | unknown | |
-| 8 / 9 | `0x0100` / `0x0200` | Ambient-light brightness / color temp (sensor models) | DWC |
+| 8 / 9 | `0x0100` / `0x0200` | Ambient-light brightness / color temp (sensor models) | not verified |
 | 11 | `0x0800` | unknown (currently on) | |
 
 ### `0xFD` toggle register 2
@@ -137,27 +136,14 @@ PG32UCWM: current `0x6829`, supported `0x6979`. All bits marked ✅ match the OL
 | 13 | `0x2000` | Outer dimming control | ✅ on |
 | 14 | `0x4000` | Global dimming control | ✅ on |
 
-On other product lines (ProArt, AirVision glasses) the same bits mean different things, so meaning depends on product line.
-
-### Product lines
-
-DWC branches on product line, inferred from model-name prefix (`PG`/`XG`/`VG` gaming, `PA` ProArt, `MB`/`MQ` portable/ZenScreen,
-everything else mainstream). The main difference is the preset code. ProArt uses `0xE3` for presets with values `(mode << 8) | 0xFF`,
-and gaming/mainstream use `0xDC`. We can target the **gaming/OLED line first** and add the others later.
-
-## Software-only DWC features (no monitor protocol involved)
-
-- **Target Mode**: a topmost, click-through dimming overlay window with a cut-out for the pinned window.
-- **App Tweaker / App Sync**: polls the foreground window's process name and sets a GameVisual mode per app.
-- **HotKey**: global keyboard hook.
-- **MultiScreen**: window-snapping layouts.
-- The per-mode slider capability JSON in `AppConfig/` is plain JSON listing which settings each preset allows.
+These meanings are for the gaming/OLED line. Other ASUS product lines (ProArt, portable monitors) may use some codes
+differently; they aren't covered here yet.
 
 ## Public reference
 
-ASUS publishes an Apache-2.0 **property reference** (not source) for its closed `dwc.exe` CLI:
+ASUS publishes an Apache-2.0 **property reference** (not source) for its `dwc.exe` command-line tool:
 <https://github.com/ASUS-Display/asus-display-control/blob/main/cli/docs/CLI_REFERENCE.md>.
-It agrees with the map above and is a citable, license-clean source for enum semantics.
+It agrees with the map above and is a citable source for enum names.
 
 ## Write verification (2026-10-03, PG32UCWM)
 
@@ -187,9 +173,9 @@ Toggling Windows HDR (Win+Alt+B), with no DDC writes from us:
 
 All values restored on their own when HDR turned off.
 
-HDR presets observed via the DWC UI: `0x0101` Cinema HDR, `0x0102` Gaming HDR. Selecting Console HDR / HDR400 in DWC did **not**
-change `0xE2`, and DWC then showed "Racing": `0xDC` reads 5 in HDR, which DWC maps to the SDR Racing preset. My watcher was polling
-the bus at the same time, which may have caused collisions. Direct-write test pending.
+HDR presets seen while switching in ASUS DisplayWidget Center (DWC): `0x0101` Cinema HDR, `0x0102` Gaming HDR. Selecting
+Console HDR / HDR400 there did **not** change `0xE2`, and DWC then showed "Racing" (`0xDC` reads 5 in HDR). A watcher was
+polling the bus at the same time, which may have caused collisions.
 
 **Direct-write test** (DWC closed, Windows HDR on):
 
@@ -203,7 +189,7 @@ the bus at the same time, which may have caused collisions. Direct-write test pe
 App rules that follow from this:
 1. On DDC failure, re-enumerate monitors and retry with fresh handles. Also listen for `WM_DISPLAYCHANGE` / device-change events.
 2. After writing `0xE2`, verify only after a settle delay with retries. Never trust an immediate read-back.
-3. In HDR, `0xDC` reads 5. Don't interpret it as the SDR Racing preset (that's DWC's "falls back to Racing" bug).
+3. In HDR, `0xDC` reads 5. Don't interpret it as the SDR Racing preset (DWC shows "Racing" there).
 
 `0x52` (MCCS Active Control) did **not** update on any `0xE2` change (stayed `0x14`), so it is not a reliable change notification.
 Refresh by re-reading on flyout or window open, plus light polling. The app should treat `0xFE` as "locked", and profiles need separate SDR and HDR parts.
@@ -229,18 +215,18 @@ into that preset's stored settings in the monitor.
 ## Neo proximity sensor & crosshair styles
 
 `0xED` = `(screenOffMinutes << 8) | distance`. Distance: 0 off, 3 = max 60 cm, 2 = max 90 cm, 1 = max 120 cm, 0xFF = Tailored mode.
-Screen-off minutes come from the caps high bytes (`0500 0A00 0F00` → 5/10/15). PG32UCWM read `0x0501` = 5 min @ 120 cm ✅ (matches DWC).
+Screen-off minutes come from the caps high bytes (`0500 0A00 0F00` → 5/10/15). PG32UCWM read `0x0501` = 5 min @ 120 cm ✅.
 Sensitivity = `0x47` (levels 1–5 in the OSD, max 5), only meaningful when distance ≠ 0. Changing it in the OSD reads back
 correctly (1, 2, 3 …), but **any DDC/CI write resets it to 0**: values 1, 3, 5 and `0x0300` all read back as 0, and so did
-DWC's own slider. Treat it as read-only.
+a change from DWC's slider. Treat it as read-only.
 
 **Tailored (`0xFF`) needs confirmation on the monitor.** Writing it opens an OSD prompt; the register keeps the old distance
 until the user confirms, then the monitor calibrates (about 10 s, DDC reads fail intermittently) and reports `0xFF`.
 Without confirmation the prompt times out and nothing changes. Write it once and poll; re-sending restarts the prompt.
 
 `0xE3` crosshair, "new" style set (caps contains 07+): 7 Blue Dot, 8 Green Dot, 9 Blue Mini Duplex, 10 Green Mini Duplex,
-11 Blue Heavy Duplex, 12 Green Heavy Duplex. Legacy set (1–6): red/green point, dial, crosshair. Caps also lists 13–15, which DWC
-never uses. Test them.
+11 Blue Heavy Duplex, 12 Green Heavy Duplex. Legacy set (1–6): red/green point, dial, crosshair. Caps also lists 13–15, which
+the monitor's menu doesn't offer. Untested.
 
 ## Availability caveats (observed)
 
@@ -266,7 +252,7 @@ never uses. Test them.
 
 ## Open questions
 
-- `0xFC` bit meanings (test by toggling OSD options and diffing).
-- `0xDC` / `0xE2` high-byte entries `0x0100` / `0x0200` in the capabilities string. Likely SDR/HDR10/DV mode groups: in HDR,
-  `0xDC` probably isn't writable and `0xE2` takes over. Needs testing with Windows HDR on.
-- Whether `0xE2` is writable while Windows HDR is off (probably not: HDR presets only apply with an HDR signal).
+- Crosshair styles 13–15 (`0xE3`): advertised, not in the menu, untested.
+- Dolby Vision presets (`0xE2` group 2): need a Dolby Vision signal to test.
+- When pixel cleaning (`0xFD` bit 4) finishes: the bit doesn't clear reliably, so the app uses the ~6 minute duration.
+- `0xFC` bits 7 and 11.

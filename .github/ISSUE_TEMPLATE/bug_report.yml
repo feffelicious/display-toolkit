@@ -1,0 +1,50 @@
+name: Bug report
+description: Something doesn't work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. The diagnostics below make most bugs quick to find.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+      placeholder: |
+        1. Opened quick settings
+        2. Picked the Cinema picture mode
+        3. The tile showed an error and the monitor stayed on User
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: |
+        In Display Toolkit, open **Display › Monitor information**, use **Copy diagnostics**, then paste here.
+        It lists the monitor model, firmware, its capabilities and current settings. It contains no personal data.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log (optional)
+      description: |
+        **Settings › About › Log and settings folder** opens the folder. Attach `display-toolkit.log`, or paste the lines
+        from around the time it happened.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: Display Toolkit version
+      description: Shown in Settings › About.
+      placeholder: "1.1.0"
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: "Windows 11 24H2"

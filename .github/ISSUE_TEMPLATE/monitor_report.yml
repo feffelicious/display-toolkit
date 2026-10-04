@@ -1,0 +1,46 @@
+name: Monitor report
+description: Tell us how Display Toolkit works with your ASUS monitor, especially one other than the ROG Swift PG32UCWM.
+labels: [monitor]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Display Toolkit is built on one monitor. Reports from other models show what works, what doesn't, and what's missing.
+  - type: input
+    id: model
+    attributes:
+      label: Monitor model
+      placeholder: "ROG Swift PG27AQDM"
+    validations:
+      required: true
+  - type: dropdown
+    id: overall
+    attributes:
+      label: How well does it work?
+      options:
+        - Everything I tried works
+        - Mostly works, a few things don't
+        - Barely works
+        - The monitor isn't found or doesn't respond
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: What doesn't work, or is missing?
+      description: Settings that are missing, show wrong values, or don't change the monitor. Settings the monitor's own menu has that the app doesn't.
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: |
+        In Display Toolkit, open **Display › Monitor information**, use **Copy diagnostics**, then paste here.
+        If the app doesn't find your monitor, say so; make sure DDC/CI is turned on in the monitor's menu first.
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: connection
+    attributes:
+      label: Connection
+      placeholder: "DisplayPort to an NVIDIA RTX 4080"

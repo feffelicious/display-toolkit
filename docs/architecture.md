@@ -1,172 +1,126 @@
-# Display Toolkit: architecture & implementation plan
+# Display Toolkit: architecture
 
-Status: proposal for review, 2026-10-03.
-Inputs: [protocol research](research/asus-ddc-protocol.md) · [design spec](design/design-spec.md) (§13 holds the product decisions).
+How the code is organized and why. For the monitor protocol see the [protocol notes](research/asus-ddc-protocol.md); for the
+UI see the [design spec](design/design-spec.md).
 
 ## 1. Goals and constraints
 
-- A tray-first Windows 11 app that replaces ASUS DisplayWidget Center. v1 targets the **ROG Swift PG32UCWM**, but the code
-  is driven by capabilities, so other ASUS gaming/OLED models mostly work automatically.
-- **Users need nothing pre-installed.** Publish self-contained. NuGet packages are fine when they earn their place.
-- Code quality, readability and maintainability come first. It's open source, so outsiders must be able to find their way around.
-- No ASUS code in the repo. We implement from our own protocol notes, the MCCS standard and ASUS's Apache-2.0 CLI reference.
+- A tray-first Windows 11 app that replaces ASUS DisplayWidget Center. Built and tested on the **ROG Swift PG32UCWM**, but
+  driven by the capabilities the monitor reports, so other ASUS gaming/OLED models mostly work without changes.
+- **Users need nothing pre-installed.** Releases are self-contained. NuGet packages are fine when they earn their place.
+- Readability and maintainability come first: it's open source, so newcomers must be able to find their way around.
+- No ASUS code. The app is written from our own protocol notes, the MCCS standard and ASUS's Apache-2.0 CLI reference.
 
 ## 2. Tech stack
 
 | Concern | Choice | Why |
 |---|---|---|
-| Runtime | **.NET 10** (LTS), `net10.0-windows10.0.22621.0` | LTS; the Windows TFM gives WinRT projections (geolocation) without packages |
-| UI | **WPF** with the built-in **Fluent theme** (`ThemeMode="System"`) | Native Windows 11 look with no UI library; proven by Legion Toolkit |
-| MVVM | **CommunityToolkit.Mvvm** (source generators) | Removes INotifyPropertyChanged/command boilerplate at compile time; widely known |
-| DI / hosting | **Microsoft.Extensions.Hosting** | Standard composition, logging and lifetime; keeps services testable |
-| Logging | Microsoft.Extensions.Logging + a small rolling **file logger of our own** | One log file for bug reports, no Serilog needed |
-| Interop | `LibraryImport` source-generated P/Invoke, `SafeHandle`s | AOT-friendly, no marshalling surprises, handles can't leak |
-| Settings | System.Text.Json with **source-generated** contexts, JSON in `%AppData%\DisplayToolkit\` | Human-readable, diffable, trim-safe |
-| Tests | **xUnit v3** + hand-written fakes (no mocking library) | Fakes of the DDC bus are clearer than mocks |
-| Packaging | `dotnet publish` self-contained, win-x64 (arm64 later), zip first; installer (Inno Setup or Velopack) later | No prerequisites for users |
+| Runtime | **.NET 10**, `net10.0-windows10.0.22621.0` | LTS; the Windows target gives WinRT projections (geolocation) without packages |
+| UI | **WPF** with the built-in **Fluent theme** | Native Windows 11 look without a UI library |
+| MVVM | **CommunityToolkit.Mvvm** (source generators) | No property-changed or command boilerplate |
+| Hosting | **Microsoft.Extensions.Hosting** | Dependency injection, logging and lifetime in the standard way |
+| Logging | Microsoft.Extensions.Logging with a small file logger of our own | One log file to attach to bug reports |
+| Interop | `LibraryImport` source-generated P/Invoke | No runtime marshalling surprises |
+| Storage | System.Text.Json with source-generated contexts, files in `%AppData%\DisplayToolkit` | Readable, diffable JSON |
+| Tests | **xUnit v3** on Microsoft.Testing.Platform, hand-written fakes | A simulated monitor is clearer than mocks |
+| Release | Self-contained single-file exe, zip and **WiX** MSI (WiX from NuGet) | Nothing to install for users or for the build |
 
-Everything else is written in-house: tray icon, global hotkeys, Windows HDR toggle, sunrise/sunset maths, window backdrop.
-Each piece is a small Win32 wrapper; none needs a dependency.
+The tray icon, global hotkeys, the Windows HDR switch, sunrise and sunset, and window backdrops are small Win32 wrappers of
+our own rather than dependencies.
 
 ## 3. Solution layout
 
 ```
 display-toolkit/
 ├─ DisplayToolkit.slnx
-├─ Directory.Build.props        # nullable, warnings-as-errors, analyzers, LangVersion, common metadata
+├─ Directory.Build.props        # target, nullable, analyzers as errors, metadata
 ├─ Directory.Packages.props     # central package versions
-├─ .editorconfig                # style + analyzer severities
 ├─ src/
-│  ├─ DisplayToolkit.Core/          # monitor control. No UI, no WPF.
-│  ├─ DisplayToolkit.Automation/    # profiles, rules, triggers. No UI.
-│  └─ DisplayToolkit.App/           # WPF: tray, flyout, main window, HUD, hotkeys, settings storage
+│  ├─ DisplayToolkit.Core/          # talking to monitors. No UI.
+│  ├─ DisplayToolkit.Automation/    # profiles, rules, sun, arbitration. No UI.
+│  └─ DisplayToolkit.App/           # WPF: tray, quick settings, main window, services
 ├─ tests/
-│  ├─ DisplayToolkit.Core.Tests/
-│  └─ DisplayToolkit.Automation.Tests/
-├─ docs/  (research, design, architecture)
-└─ .github/workflows/ci.yml     # build + test on push/PR
+│  ├─ DisplayToolkit.Core.Tests/        # against a simulated PG32UCWM
+│  └─ DisplayToolkit.Automation.Tests/  # against a hand-driven clock
+├─ tools/DisplayToolkit.Probe/      # console dump of what a monitor reports
+├─ installer/                       # WiX package (built by build/publish.ps1)
+├─ build/publish.ps1                # release build: exe, zip, msi
+└─ .github/workflows/               # CI on push, release on v* tags
 ```
 
-The dependency direction is strictly `App → Automation → Core`. Core and Automation never reference WPF, so they're
-unit-testable and could later back a CLI or service without changes.
+Dependencies point one way: `App → Automation → Core`. Core and Automation never reference WPF, so they're unit-tested
+directly.
 
 ## 4. Core: talking to the monitor
 
-### 4.1 Layers
-
 ```
-Monitor (public, per physical monitor)      typed API: monitor.SetAsync(Features.Brightness, 40)
-  └─ MonitorSession                          one worker thread + command queue, coalescing, verify, retry, reconnect
-       └─ IDdcChannel                        Get(code) / Set(code, value) / GetCapabilities()
-            ├─ Dxva2DdcChannel               real: dxva2.dll Monitor Configuration API
-            └─ FakeDdcChannel (tests)        simulated PG32UCWM incl. 0xFE locks, bitmasks, handle invalidation
+MonitorSession          per monitor: capabilities, current values, verified writes, ValueChanged events
+  └─ DdcWorker          one thread per monitor; work items with the same key coalesce (latest wins)
+       └─ ResilientChannel   spacing between calls, retries, re-finds the monitor when its handle goes stale
+            └─ IDdcChannel   Get(code) / Set(code, value) / GetCapabilities()
+                 └─ Dxva2DdcChannel   the Windows Monitor Configuration API (dxva2.dll)
 ```
 
-- **`IDdcChannel`** is the only seam to hardware. It is synchronous and blocking, which is fine because only the session's
-  worker thread calls it.
-- **`MonitorSession`** owns one dedicated background thread per physical monitor (DDC calls block for ~40–80 ms) and a
-  `Channel<Command>`. Its rules come straight from our measurements:
-  - **Spacing**: a configurable delay between commands (default 20 ms).
-  - **Coalescing**: a newer write to the same code replaces a queued older one, so the latest value wins.
-  - **Verify**: after a write, read it back once after a short delay. A mismatch counts as a failure → 2 retries → `Failed`.
-  - **Bitmask registers** (`0xFC`, `0xFD`): read-modify-write happens inside the worker, atomically with respect to other commands.
-  - **Settle-sensitive writes** (`0xE2` HDR presets, input switch): longer settle and verify window, tolerating transient values.
-  - **Reconnect**: any call failing with an invalid handle triggers re-enumeration (HDR400 does this). The worker matches the
-    monitor by stable identity (below), swaps in the fresh handle and retries the command once.
-- **`Monitor`** exposes typed operations and an observable **`MonitorState`**. Each feature's value carries a status:
-  `Confirmed`, `Pending`, `Failed`, `Locked` (the monitor returned `0xFE`) or `Unsupported`.
+- **`MonitorSession`** keeps a confirmed and a visible value per feature. A write shows up at once as `Pending`, then
+  becomes `Confirmed`, `Failed` (with the last confirmed value back) or `AwaitingConfirmation` (the monitor asks the user to
+  confirm in its menu). `Locked` means the monitor reports `0xFE`, or the setting is ignored while HDR is on. Writes are read
+  back; how long to wait depends on the feature (`WriteSettling`): picture-mode-like switches make Windows re-detect the
+  monitor and need patience.
+- **Features** are declared once, as data, in `FeatureCatalog`: `RangeFeature`, `EnumFeature`, `SwitchFeature`,
+  `FlagFeature` (one bit of a bitmask register), `ByteFieldFeature` (one byte of a two-setting register) and
+  `HdrModeFeature`. A feature exists for a monitor only if its capabilities say so. Everything above Core refers to
+  features by **stable string id**, never by VCP code. `Vcp` names every code; it's the only place raw numbers appear.
+- **`CapabilitiesParser`** turns the MCCS capabilities string into `MonitorCapabilities` (codes, allowed values, supported
+  bits). It's pure and tested against the real PG32UCWM string.
+- **Discovery** (`Win32MonitorEnumerator`) joins the physical monitors with the display configuration (CCD) API for the
+  friendly name, EDID model and device path. `MonitorId` (model + instance) keys caches, layouts and profiles. Built-in
+  laptop panels are skipped.
+- **`WindowsHdr`** reads and switches Windows HDR for one display; **`DisplayLink`** reports how it's connected
+  ("DisplayPort, 240 Hz").
 
-### 4.2 Capabilities → features
+## 5. Automation: profiles, rules and the sun
 
-- `CapabilitiesParser` parses the MCCS string into `MonitorCapabilities`: supported codes, allowed values per code, and the
-  supported-bits mask for bitmask registers. It's pure, so it can be thoroughly unit-tested against real capability strings.
-- `FeatureCatalog` declares every feature **once**, as data:
-  ```csharp
-  public static readonly RangeFeature Brightness   = new("brightness",   Vcp.Brightness);
-  public static readonly EnumFeature<GameVisual> PictureMode = new("picture-mode", Vcp.AsusGameVisual);
-  public static readonly FlagFeature UniformBrightness = new("uniform-brightness", Vcp.AsusToggles2, bit: 6);
-  ```
-  Feature kinds: `RangeFeature` (0–max), `EnumFeature<T>` (advertised values only), `FlagFeature` (one bit of a bitmask
-  register), plus a few composites such as `ProximityFeature` (the minutes and distance fields in one code).
-  A feature is supported only if the capabilities say so. The UI and profiles reference features by **stable string id**,
-  never by VCP code.
-- `Vcp` holds named constants for every code in the protocol notes. It's the only place raw numbers appear.
-
-### 4.3 Monitor discovery and identity
-
-- `MonitorEnumerator`: `EnumDisplayMonitors` → `GetPhysicalMonitorsFromHMONITOR`, joined with **`QueryDisplayConfig` /
-  `DisplayConfigGetDeviceInfo`**. That gives the friendly name, EDID manufacturer and product code, and the device path.
-- `MonitorId` = EDID manufacturer + product code + connector instance. It's stable across reboots and handle changes, and it's
-  the key for profiles and layouts.
-- `DisplayChangeWatcher` reacts to `WM_DISPLAYCHANGE`, device arrival/removal and resume from sleep by re-enumerating.
-
-### 4.4 Windows HDR
-
-`WindowsHdr` uses `DisplayConfigGetDeviceInfo(ADVANCED_COLOR_INFO)` to read HDR state and `DISPLAYCONFIG_DEVICE_INFO_SET_HDR_STATE`
-to switch it (Win11 24H2+; on older builds it falls back to `SET_ADVANCED_COLOR_STATE`). An `HdrChanged` event feeds both the UI
-(swap picture mode for HDR presets) and automation.
-
-## 5. Automation: profiles and rules
-
-- **`Profile`**: id, name, glyph, optional hotkey, `ShowInFlyout`, and a list of `(featureId, value)` entries containing only
-  the ticked settings. Profiles are per `MonitorId`.
-- **`ProfileApplier`** writes entries in dependency order: Windows HDR → picture/HDR mode → colour temp → RGB → everything
-  else. It reports per-setting success, so the UI can say "Night applied, except Colour temperature". This order is required
-  because the monitor stores settings per preset (verified): a preset switch would overwrite overrides written before it.
-- **Triggers** produce events or states. Each is a small class behind `ITrigger`:
-  - `TimeOfDayTrigger` and `SunTrigger`: events. `SunCalculator` is the NOAA algorithm with no I/O.
-  - `ForegroundAppTrigger`: `SetWinEventHook(EVENT_SYSTEM_FOREGROUND)`, process name and path.
-  - `FullscreenGameTrigger`: `SHQueryUserNotificationState` plus foreground window covering the monitor.
-  - `PowerSourceTrigger` and `HdrTrigger`.
-- **`AutomationEngine`** implements the arbitration rules in design spec §5.6 (schedule baseline, condition rules by list
-  order, manual override until the next rule event, pause). It's pure logic over a `TimeProvider`, so tests can simulate a
-  whole day in milliseconds.
-- **Location**: `Windows.Devices.Geolocation`, with a manual city/latitude-longitude fallback stored in settings.
+- **`Profile`**: name, glyph, optional `Shortcut`, whether it's in quick settings, and only the settings it includes
+  (`ProfileSettings` lists what a profile can hold, Windows HDR included). **`ProfileApplier`** writes them in stages,
+  Windows HDR, then picture or HDR mode, then color temperature, then the rest, because the monitor stores settings per
+  mode. It reports which settings failed.
+- **Rules** pair a `Trigger` with a profile. Schedule triggers (`TimeTrigger`, `SunTrigger`) are moments; condition
+  triggers (`AppTrigger`, `FullscreenGameTrigger`, `PowerTrigger`, `HdrTrigger`) are states.
+- **`AutomationEngine`** decides which profile applies (design spec §5.6): the most recent schedule rule sets the
+  baseline, the highest active condition rule wins over it, a manual choice holds until the next rule event, and a pause
+  stops everything. It's pure logic over a `TimeProvider`, so tests run whole days in milliseconds.
+- **Conditions** come from `SystemSampler` (running apps, borderless or exclusive full-screen games, power source) and are
+  matched by `ConditionEvaluator`.
+- **The sun**: `SunCalculator` gives sunrise, sunset and the sun's height. `SunCycle` and `SunCycleCalculator` drive
+  Follow the sun (brightness, and warmth via RGB gains from `ColorTemperature`), either around sunrise and sunset or all
+  day by the sun's height.
+- **`AutomationJson`** stores profiles, rules and the sun cycle per monitor model.
 
 ## 6. App (WPF)
 
-- **Startup**: generic host; single instance via a named mutex plus a named pipe that tells the running instance to show
-  itself. Start with Windows via `HKCU\…\Run` (no elevation needed; DDC/CI works as a normal user).
-- **Tray**: own `NotifyIcon` on `Shell_NotifyIconW` with a message-only `HwndSource`: left click opens the flyout, right
-  click the menu, wheel changes brightness, theme-aware icon.
-- **Flyout**: borderless, Acrylic via `DwmSetWindowAttribute`, positioned from `SHAppBarMessage(ABM_GETTASKBARPOS)`. Tiles
-  come from `layout.json` (spec §4.5) filtered by capabilities.
-- **Main window**: Mica, custom navigation pane, settings-card pages (Display, Profiles & automation, OLED care, GamePlus,
-  Settings).
-- **Custom controls** (spec §11): BrightnessBand, Tile/TileGrid (drag reorder), SettingsCard/Expander, SegmentedControl,
-  InfoBar, DayTimeline, HUD window. Each control is a lookless control with its theme in its own `Themes/*.xaml`.
-- **ViewModels** bind to `MonitorState` through a thin adapter that marshals to the dispatcher. Sliders apply the throttle and
-  debounce rules from spec §6.1. ViewModels never touch DDC directly.
-- **Hotkeys**: `RegisterHotKey` on the message-only window; conflicts surface in the shortcut recorder.
+- **Startup** (`App.xaml.cs`): single instance (a named mutex, and an event that asks the running instance to open quick
+  settings), generic host, then the tray, the monitor scan, automation and the update check.
+- **Services**: `MonitorService` (sessions, rescans after display changes), `MonitorContext` (the monitor the UI shows),
+  `AutomationService` (runs the engine against the monitor: applies profiles, samples conditions, the sun cycle, profile
+  shortcuts), `LocationService`, `UpdateService` (GitHub releases), `SettingsTransfer` (export and import), and small stores
+  for settings, layouts and the capabilities cache.
+- **Tray** (`TrayIcon`, `TrayController`): `Shell_NotifyIconW` with its own message window; left click opens quick
+  settings, right click the menu; display changes and resume trigger a rescan. The icon is drawn from `IconArt`.
+- **Quick settings** (`Flyout/`): Acrylic, anchored by the taskbar; brightness band, profiles row and a tile grid the user
+  arranges.
+- **Main window** (`Views/`): Mica, a navigation pane and settings-card pages: Display, Profiles & automation, OLED care,
+  GamePlus, Settings.
+- **ViewModels** wrap each feature in a `FeatureState` that the controls bind to; nothing in the UI talks to DDC directly.
+- **Controls** (`Controls/`, themes in `Themes/`): brightness band, tiles, settings cards and expanders, focus ring,
+  shortcut recorder, and the panel behind the day strip.
 
 ## 7. Code quality guardrails
 
-- `Nullable` enabled, `TreatWarningsAsErrors`, `AnalysisLevel=latest-recommended`, `.editorconfig` enforced in the build.
-- File-scoped namespaces, one type per file, `sealed` by default, records for immutable data, no static mutable state.
-- Interop isolated in `Native/` folders: one `static partial class` per DLL, everything `internal`.
-- Tests: the capabilities parser and catalog against the real PG32UCWM string; `MonitorSession` behaviour (coalescing,
-  bitmask read-modify-write, `0xFE` lock, verify mismatch, reconnect after handle loss) against `FakeDdcChannel`; automation
-  arbitration and sun maths with a fake `TimeProvider`.
-- A **hardware smoke test** project, excluded from CI and run manually: it reads all features and does reversible writes,
-  like the scripts from this research session.
-- CI on GitHub Actions: restore, build, test, and a `publish` artifact on tags.
-
-## 8. Milestones
-
-| # | Milestone | Done when |
-|---|---|---|
-| M0 | Repo scaffolding | Solution, props, editorconfig, CI, README, license; empty projects build green |
-| M1 | Core DDC | Enumerate + identify the PG32UCWM, parse capabilities, typed get/set for all v1 features, session worker with coalescing, verify, reconnect; unit tests + hardware smoke test pass |
-| M2 | Tray + flyout | Tray icon, flyout with brightness band, picture mode, HDR (incl. Windows HDR toggle), tile grid with sub-pages, live state, failure states |
-| M3 | Main window | Display, OLED care, GamePlus, Settings (incl. Settings › Monitor for `0xFC` toggles), Monitor information page |
-| M4 | Profiles & automation | Profile editor, rules, day strip, app/game/time/sun/power/HDR triggers, hotkeys, HUD |
-| M5 | Polish & ship | Flyout edit mode, start with Windows, export/import, logging, self-contained publish, first GitHub release |
-
-Each milestone ends with something runnable on your monitor.
-
-## 9. Decisions needed before M0
-
-1. **License**: MIT (permissive; anyone can reuse it, including commercially) or GPL-3.0 (forks must stay open, like Legion Toolkit)?
-2. **Git/GitHub**: should I `git init` here and create a GitHub repo (name: `display-toolkit`)? Public now, or private until v1?
-3. **Distribution**: a single `.exe` (self-contained single-file, ~70 MB, slower first start) or a zip folder (faster start)?
-   I recommend zip first and an installer at M5.
+- Nullable on, analyzers at `latest-recommended` with warnings as errors, `.editorconfig` enforced in the build.
+- File-scoped namespaces, `sealed` by default, records for data, interop in `Native/` folders.
+- Persisted records use settable properties for anything with a default: the JSON source generator would otherwise reset
+  missing values when reading files from older versions.
+- Tests cover the capabilities parser and feature catalog, `MonitorSession` behavior (coalescing, bitmask writes, locks,
+  failed writes, reconnects, confirmations), the automation engine, sun maths, conditions, profile application and storage.
+- Debug builds have `--snapshot <folder>` to render every page to PNG, and `DISPLAYTOOLKIT_DATA` to run on sample data.
+  Runs on sample data never write to the monitor.
