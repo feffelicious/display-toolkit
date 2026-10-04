@@ -95,6 +95,8 @@ public sealed partial class DisplayPageViewModel : MainPageViewModel
         : [];
 
     // Color
+    public FeatureState? ColorGamut => Monitor[FeatureCatalog.ColorGamut];
+
     public FeatureState? ColorTemperature => Monitor[FeatureCatalog.ColorTemperature];
 
     /// <summary>Red/green/blue only apply with the Custom color temperature (or always, without presets).</summary>
@@ -102,7 +104,7 @@ public sealed partial class DisplayPageViewModel : MainPageViewModel
 
     /// <summary>The Color section has at least one setting on this monitor.</summary>
     public bool HasColorSettings =>
-        new[] { ColorTemperature, RedGain, GreenGain, BlueGain, Gamma, Saturation, Sharpness }.Any(state => state is not null);
+        new[] { ColorGamut, ColorTemperature, RedGain, GreenGain, BlueGain, Gamma, Saturation, Sharpness }.Any(state => state is not null);
 
     public FeatureState? RedGain => Monitor[FeatureCatalog.RedGain];
 

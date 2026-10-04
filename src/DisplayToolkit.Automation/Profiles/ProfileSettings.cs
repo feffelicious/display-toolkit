@@ -18,6 +18,7 @@ public static class ProfileSettings
         Of(FeatureCatalog.Brightness, common: true),
         Of(FeatureCatalog.PictureMode, common: true, ApplyStage.Mode),
         Of(FeatureCatalog.ColorTemperature, common: true, ApplyStage.ColorTemperature),
+        Of(FeatureCatalog.ColorGamut, common: false, ApplyStage.ColorTemperature),
         Of(FeatureCatalog.BlueLightFilter, common: true),
         Of(FeatureCatalog.Contrast, common: true),
         WindowsHdr,

@@ -58,6 +58,21 @@ public sealed class MonitorSessionTests : IDisposable
     }
 
     [Fact]
+    public async Task Picture_mode_keeps_the_color_gamut()
+    {
+        _monitor.SetRegister(Vcp.AsusGameVisual, 0x0105, 0x020A);
+        var session = await OpenAsync();
+
+        Assert.Equal(5u, session.GetValue(FeatureCatalog.PictureMode)!.Value);
+        Assert.Equal(1u, session.GetValue(FeatureCatalog.ColorGamut)!.Value);
+
+        await session.WriteAsync(FeatureCatalog.PictureMode, 4);
+
+        Assert.Equal(0x0104u, _monitor.Current(Vcp.AsusGameVisual));
+        Assert.Equal(1u, session.GetValue(FeatureCatalog.ColorGamut)!.Value);
+    }
+
+    [Fact]
     public async Task Leaving_aura_sync_goes_through_off()
     {
         _monitor.SetRegister(Vcp.AsusAura, 0x0001, 0x0606);

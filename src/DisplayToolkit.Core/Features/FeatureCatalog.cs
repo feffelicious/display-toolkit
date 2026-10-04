@@ -14,7 +14,8 @@ public static class FeatureCatalog
     public static readonly RangeFeature Sharpness = new("sharpness", "Sharpness", Vcp.Sharpness);
     public static readonly RangeFeature Saturation = new("saturation", "Saturation", Vcp.Saturation);
 
-    public static readonly EnumFeature PictureMode = new("picture-mode", "Picture mode", Vcp.AsusGameVisual,
+    /// <summary>The GameVisual preset, in the low byte of its register; the high byte is <see cref="ColorGamut"/>.</summary>
+    public static readonly ByteFieldFeature PictureMode = new("picture-mode", "Picture mode", Vcp.AsusGameVisual, highByte: false,
     [
         new(1, "Cinema"),
         new(2, "Scenery"),
@@ -29,6 +30,20 @@ public static class FeatureCatalog
     ])
     {
         // In HDR the register reads 5 (Racing in SDR) regardless of the preset.
+        AvailableInHdr = false,
+    };
+
+    /// <summary>
+    /// The range of colors the current picture mode uses, in the high byte of the picture mode register. Only on
+    /// monitors that advertise the high-byte choices (ASUS calls it Color Richness).
+    /// </summary>
+    public static readonly ByteFieldFeature ColorGamut = new("color-gamut", "Color gamut", Vcp.AsusGameVisual, highByte: true,
+    [
+        new(0, "Native (wide gamut)"),
+        new(1, "sRGB"),
+        new(2, "DCI-P3"),
+    ])
+    {
         AvailableInHdr = false,
     };
 
@@ -240,7 +255,7 @@ public static class FeatureCatalog
 
     public static IReadOnlyList<Feature> All { get; } =
     [
-        Brightness, Contrast, Sharpness, Saturation, PictureMode, HdrMode,
+        Brightness, Contrast, Sharpness, Saturation, PictureMode, ColorGamut, HdrMode,
         ColorTemperature, RedGain, GreenGain, BlueGain, Gamma,
         SaturationRed, SaturationYellow, SaturationGreen, SaturationCyan, SaturationBlue, SaturationMagenta,
         BlueLightFilter, ShadowBoost, VariableRefreshRate, FrameRateBoost, Elmb,

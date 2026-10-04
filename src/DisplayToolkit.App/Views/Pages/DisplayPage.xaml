@@ -121,9 +121,15 @@
 
     <!-- Color: SDR only. -->
     <StackPanel Visibility="{Binding IsSdr, Converter={StaticResource VisibleWhenTrue}}">
-      <controls:SettingsExpander Header="Color" HeaderIcon="&#xE9CA;" Description="Temperature, gamma, saturation and sharpness for the current picture mode"
+      <controls:SettingsExpander Header="Color" HeaderIcon="&#xE9CA;" Description="Gamut, temperature, gamma, saturation and sharpness for the current picture mode"
                                  Visibility="{Binding HasColorSettings, Converter={StaticResource VisibleWhenTrue}}">
         <StackPanel>
+          <controls:SettingsCard IsNested="True" Header="Color gamut" Description="sRGB matches most content; native shows the panel's full range."
+                                 Visibility="{Binding ColorGamut, Converter={StaticResource VisibleWhenNotNull}}">
+            <ComboBox MinWidth="200" ItemsSource="{Binding ColorGamut.Options}" DisplayMemberPath="Name"
+                      SelectedItem="{Binding ColorGamut.SelectedOption, Mode=TwoWay}" AutomationProperties.Name="Color gamut" />
+          </controls:SettingsCard>
+
           <controls:SettingsCard IsNested="True" Header="Color temperature" Visibility="{Binding ColorTemperature, Converter={StaticResource VisibleWhenNotNull}}">
             <ComboBox MinWidth="200" ItemsSource="{Binding ColorTemperature.Options}" DisplayMemberPath="Name"
                       SelectedItem="{Binding ColorTemperature.SelectedOption, Mode=TwoWay}" AutomationProperties.Name="Color temperature" />

@@ -74,13 +74,13 @@ the single value is the **supported-bits mask**.
 | `0x47` | OLED motion sensitivity | |
 | `0x4B` | Triple mode | |
 | `0xC5` | OLED anti-flicker | 0/1 |
-| `0xDC` | **GameVisual mode** | 1 Cinema, 2 Scenery, 3 sRGB, 4 User ✅, 5 Racing, 6 RTS/RPG, 7 FPS, 8 MOBA, 9 Night Vision, 10 sRGB Cal |
+| `0xDC` | **GameVisual mode** + color gamut | low byte = mode: 1 Cinema, 2 Scenery, 3 sRGB, 4 User ✅, 5 Racing, 6 RTS/RPG, 7 FPS, 8 MOBA, 9 Night Vision, 10 sRGB Cal. High byte = DWC's "Color Richness" (verified by watching DWC): 0 Wide Gamut, 1 Natural / sRGB, 2 Vivid / DCI-P3. Write only the low byte to change the mode. |
 | `0xE0` | Overdrive | |
 | `0xE1` | Power saving (v2) | 0/1 |
 | `0xE2` | **HDR mode** (v2) | high byte = group (0x00 off, 0x01 HDR10, 0x02 Dolby Vision), low byte = preset: 1 Cinema HDR, 2 Gaming HDR, 3 Console HDR, 4 HDR400 / True Black, 5 DV Bright, 6 DV Dark, 7 DV Gaming |
 | `0xE3` | Crosshair | 0 off, 7–15 styles. 13–15 aren't in the menu but work (verified): 13 dot, 14 small and 15 large crosshair, all adapting their color to the background |
 | `0xE4` | GamePlus timer | 0 off, 1–5 = 30/40/50/60/90 s |
-| `0xE5` | Shadow Boost | 0–4 ✅ |
+| `0xE5` | Shadow Boost | 0–4 ✅. On the PG32UCWM, DWC shows 1–3 as levels and 4 as its "Dynamic Shadow Boost" switch. ASUS's reference only says 1–max. |
 | `0xE6` | Blue light filter | 0–4 ✅ |
 | `0xE7` | Display alignment | 0/1 |
 | `0xE8` | GamePlus overlay position? | PG32UCWM: never answers reads; writes nudged the FPS counter within the top left and once opened the OSD. Behaves like an input, not a setting. Don't use. |
