@@ -7,8 +7,12 @@ It replaces ASUS DisplayWidget Center with something calmer: brightness, picture
 GamePlus overlays one click away in the tray, plus profiles that switch by game, app, time of day or sunset, and
 brightness and warmth that follow the sun.
 
-> **Status:** early development. The first target is the ROG Swift PG32UCWM; other ASUS gaming/OLED monitors that
-> speak the same protocol should mostly work, because the app only shows what the monitor reports it supports.
+<p align="center">
+  <img src="docs/images/quick-settings.png" width="360" alt="Quick settings from the tray: brightness, profiles and tiles">
+</p>
+
+> **Supported monitors:** built and tested on the ROG Swift PG32UCWM. Other ASUS gaming and OLED monitors that speak
+> the same protocol should mostly work, because the app only shows what the monitor reports it supports.
 
 ## Features
 
@@ -17,11 +21,21 @@ brightness and warmth that follow the sun.
 - **The full set of monitor settings** in the main window: picture and color (including six-axis saturation), OLED
   care (pixel cleaning, panel protection, proximity sensor), GamePlus, and the monitor's own system options.
 - **Profiles**: a named set of settings, applied in the right order (HDR, then picture mode, then color, then the
-  rest). Pick one in quick settings or the tray menu, or give it a shortcut.
+  rest). Pick one in quick settings or the tray menu, or give it a shortcut; press the shortcut again to go back to
+  automatic.
 - **Rules** switch profiles for you: at a time, at sunrise or sunset, while an app or a full-screen game runs, on
   battery, or while HDR is on. A day strip shows what today will look like.
 - **Follow the sun**: brightness and warmth fade between day and night values around sunrise and sunset.
 - **Export and import** everything to move to a new PC.
+
+## Screenshots
+
+| | |
+|---|---|
+| ![All monitor settings in the main window](docs/images/display.png) | ![Profiles with the settings each one includes](docs/images/profiles.png) |
+| **Display**: every setting the monitor offers, grouped the way Windows Settings does it. | **Profiles**: pick which settings a profile includes and give it a shortcut. |
+| ![Today's schedule and Follow the sun](docs/images/automation.png) | ![Adding a rule](docs/images/add-rule.png) |
+| **Automation**: what the schedule does today, and brightness and warmth that follow the sun. | **Rules**: switch profiles at a time, at sunset, or while an app or game runs. |
 
 ## Install
 

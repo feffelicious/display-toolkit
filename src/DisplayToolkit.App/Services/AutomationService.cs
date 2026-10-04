@@ -114,6 +114,11 @@ internal sealed class AutomationService : IDisposable
 
     public MonitorViewModel? Monitor => _monitor;
 
+    /// <summary>
+    /// Decide everything but write nothing to the monitor. For screenshots with sample rules (the DEBUG snapshot run).
+    /// </summary>
+    public bool IsDryRun { get; set; }
+
     /// <summary>A profile is being written to the monitor.</summary>
     public bool IsApplying { get; private set; }
 
@@ -456,6 +461,10 @@ internal sealed class AutomationService : IDisposable
 
     private async Task WriteSunTargetAsync(MonitorViewModel monitor, SunCycleTarget target, SunCycleTarget? previous)
     {
+        if (IsDryRun)
+        {
+            return;
+        }
         await _applyGate.WaitAsync();
         _isApplying = true;
         try
@@ -497,6 +506,10 @@ internal sealed class AutomationService : IDisposable
         }
 
         _appliedProfileId = profile.Id == Guid.Empty ? null : profile.Id;
+        if (IsDryRun)
+        {
+            return;
+        }
 
         // A time or sun rule's profile leaves brightness and warmth to the sun cycle.
         if (byAutomation && State.Reason == AutomationReason.Schedule && Automation.SunCycle is { IsEnabled: true } cycle)

@@ -57,7 +57,7 @@ public partial class App : Application
         // Screenshots must never change the monitor, whatever the sample rules say.
         if (DebugSnapshot.RequestedFolder(e.Args) is not null)
         {
-            automation.Pause(null);
+            automation.IsDryRun = true;
         }
 #endif
         automation.Start();
@@ -122,6 +122,14 @@ public partial class App : Application
                     await Task.Delay(500);
                     DebugSnapshot.Save(window.PageHost, folder, "main-profiles-all-settings");
                     editor.ToggleAllSettingsCommand.Execute(null);
+                    await Task.Delay(300);
+                }
+                if (window.PageHost.Parent is System.Windows.Controls.ScrollViewer scroller)
+                {
+                    scroller.ScrollToVerticalOffset(760);
+                    await Task.Delay(500);
+                    DebugSnapshot.Save((FrameworkElement)window.Content, folder, "window-automation");
+                    scroller.ScrollToTop();
                 }
                 automationPage.AddRuleCommand.Execute(null);
                 await Task.Delay(800);
