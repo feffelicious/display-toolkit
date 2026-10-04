@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DisplayToolkit.Core.Features;
 
@@ -13,12 +14,15 @@ public sealed record InputChoice(string Name, IRelayCommand SwitchCommand);
 public sealed partial class DisplayPageViewModel : MainPageViewModel
 {
     private readonly IMainWindowHost _host;
+    private readonly Func<bool> _isSunCycleOn;
 
-    public DisplayPageViewModel(MonitorViewModel monitor, IMainWindowHost host)
+    /// <param name="isSunCycleOn">Whether Follow the sun is on, which sets brightness and warmth again after a reset.</param>
+    public DisplayPageViewModel(MonitorViewModel monitor, IMainWindowHost host, Func<bool> isSunCycleOn)
         : base("Display")
     {
         Monitor = monitor;
         _host = host;
+        _isSunCycleOn = isSunCycleOn;
         Observe(monitor, (_, e) =>
         {
             if (e.PropertyName is nameof(MonitorViewModel.WindowsHdr) or nameof(MonitorViewModel.Link))
@@ -33,6 +37,10 @@ public sealed partial class DisplayPageViewModel : MainPageViewModel
         if (ColorTemperature is { } colorTemperature)
         {
             Observe(colorTemperature, (_, _) => OnPropertyChanged(nameof(ShowRgbGains)));
+        }
+        if (PictureMode is { } pictureMode)
+        {
+            Observe(pictureMode, (_, _) => OnPropertyChanged(nameof(ResetModeDescription)));
         }
         if (HdrMode is { } hdrMode)
         {
@@ -94,6 +102,18 @@ public sealed partial class DisplayPageViewModel : MainPageViewModel
 
     public bool HasSixAxis => Monitor[FeatureCatalog.SaturationRed] is not null;
 
+    /// <summary>The monitor can put the current picture mode back to factory settings.</summary>
+    public bool CanResetMode => Monitor.Session.CanResetCurrentMode;
+
+    private string ModeName => PictureMode?.SelectedOption?.Name ?? "this mode";
+
+    public string ResetModeDescription => $"Puts {ModeName}'s brightness, color and picture settings back the way they came. Other modes stay as they are.";
+
+    /// <summary>The reset is being sent and the monitor read again.</summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ResetModeCommand))]
+    public partial bool IsResetting { get; private set; }
+
     // Gaming and comfort
     public FeatureState? BlueLight => Monitor[FeatureCatalog.BlueLightFilter];
 
@@ -117,6 +137,32 @@ public sealed partial class DisplayPageViewModel : MainPageViewModel
     public IReadOnlyList<InputChoice> InputChoices { get; }
 
     public override Task OnShownAsync() => Monitor.RefreshAsync();
+
+    [RelayCommand(CanExecute = nameof(CanStartReset))]
+    private async Task ResetMode()
+    {
+        var confirmed = await _host.ConfirmAsync(new ConfirmationViewModel(
+            $"Reset {ModeName}?",
+            $"Brightness, contrast, color temperature, gamma and the other settings of {ModeName} go back to their factory values.",
+            "Reset",
+            _isSunCycleOn() ? "Follow the sun sets brightness and warmth again at its next change." : null));
+        if (!confirmed)
+        {
+            return;
+        }
+
+        IsResetting = true;
+        try
+        {
+            await Monitor.Session.ResetCurrentModeAsync();
+        }
+        finally
+        {
+            IsResetting = false;
+        }
+    }
+
+    private bool CanStartReset() => !IsResetting;
 
     [RelayCommand]
     private void OpenSixAxis() => _host.Navigate(new SixAxisPageViewModel(Monitor) { Parent = this });

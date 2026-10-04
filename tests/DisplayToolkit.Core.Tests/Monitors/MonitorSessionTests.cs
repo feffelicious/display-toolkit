@@ -39,6 +39,25 @@ public sealed class MonitorSessionTests : IDisposable
     }
 
     [Fact]
+    public async Task Resetting_the_mode_sends_the_reset_and_reads_the_factory_values()
+    {
+        var session = await OpenAsync();
+        _monitor.OnSet = (code, _) =>
+        {
+            if (code == Vcp.AsusResetMode)
+            {
+                _monitor.SetRegister(Vcp.Brightness, 80, 100);
+            }
+        };
+
+        Assert.True(session.CanResetCurrentMode);
+        Assert.True(await session.ResetCurrentModeAsync());
+
+        Assert.Contains((Vcp.AsusResetMode, 1u), _monitor.Writes);
+        Assert.Equal(80u, session.GetValue(FeatureCatalog.Brightness)!.Value);
+    }
+
+    [Fact]
     public async Task Write_shows_pending_value_immediately()
     {
         var session = await OpenAsync();

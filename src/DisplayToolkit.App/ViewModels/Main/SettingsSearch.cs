@@ -38,6 +38,7 @@ public static class SettingsSearch
         new("Saturation", Display, "vibrance color", FeatureCatalog.Saturation),
         new("Sharpness", Display, "", FeatureCatalog.Sharpness),
         new("Six-axis color", Display, "hue saturation colors", FeatureCatalog.SaturationRed),
+        new("Reset this mode", Display, "factory defaults restore picture mode", NeedsMonitor: true),
         new("Blue light filter", Display, "night eye care tüv low blue light", FeatureCatalog.BlueLightFilter),
         new("Shadow boost", Display, "dark black detail", FeatureCatalog.ShadowBoost),
         new("Variable refresh rate", Display, "vrr g-sync freesync adaptive-sync", FeatureCatalog.VariableRefreshRate),

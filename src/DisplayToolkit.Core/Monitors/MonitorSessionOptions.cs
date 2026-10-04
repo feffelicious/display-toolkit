@@ -29,6 +29,9 @@ public sealed record MonitorSessionOptions
 
     public TimeSpan ConfirmationPollInterval { get; init; } = TimeSpan.FromSeconds(1);
 
+    /// <summary>How long the monitor takes to apply a picture mode reset before its settings are read again.</summary>
+    public TimeSpan ResetSettling { get; init; } = TimeSpan.FromSeconds(1);
+
     /// <summary>Attempts for the capabilities request, which is slower and more fragile than single reads.</summary>
     public int CapabilitiesAttempts { get; init; } = 5;
 
@@ -45,5 +48,6 @@ public sealed record MonitorSessionOptions
         ConfirmationTimeout = TimeSpan.FromMilliseconds(200),
         ConfirmationPollInterval = TimeSpan.FromMilliseconds(10),
         CapabilitiesRetryDelay = TimeSpan.Zero,
+        ResetSettling = TimeSpan.Zero,
     };
 }

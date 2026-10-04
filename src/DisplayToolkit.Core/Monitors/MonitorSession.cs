@@ -116,6 +116,41 @@ public sealed class MonitorSession : IDisposable
         }
     });
 
+    /// <summary>The monitor can put its active picture mode back to factory settings (ASUS <c>0xEC</c> = 1).</summary>
+    public bool CanResetCurrentMode => Capabilities.ValuesOf(Vcp.AsusResetMode).Contains(1u);
+
+    /// <summary>
+    /// Puts the active picture mode's settings (brightness, color and so on) back to factory values, then re-reads
+    /// everything. Other picture modes and the monitor's system settings stay as they are. Returns false if the
+    /// monitor didn't answer.
+    /// </summary>
+    public async Task<bool> ResetCurrentModeAsync()
+    {
+        if (!CanResetCurrentMode)
+        {
+            throw new NotSupportedException("This monitor can't reset its picture mode.");
+        }
+
+        var sent = await _worker.Enqueue(() =>
+        {
+            try
+            {
+                _channel.Set(Vcp.AsusResetMode, 1);
+                return true;
+            }
+            catch (DdcException)
+            {
+                return false;
+            }
+        });
+        if (sent)
+        {
+            await Task.Delay(_options.ResetSettling);
+            await RefreshAsync();
+        }
+        return sent;
+    }
+
     public async Task<FeatureValue?> ReadAsync(Feature feature)
     {
         EnsureSupported(feature);

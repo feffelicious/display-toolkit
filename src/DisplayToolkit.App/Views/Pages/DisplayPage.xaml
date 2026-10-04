@@ -172,6 +172,11 @@
       <controls:SettingsCard Header="Six-axis color" HeaderIcon="&#xE9E9;" Description="Saturation of red, yellow, green, cyan, blue and magenta"
                              IsClickEnabled="True" Command="{Binding OpenSixAxisCommand}"
                              Visibility="{Binding HasSixAxis, Converter={StaticResource VisibleWhenTrue}}" />
+
+      <controls:SettingsCard Header="Reset this mode" HeaderIcon="&#xE7A7;" Description="{Binding ResetModeDescription}"
+                             Visibility="{Binding CanResetMode, Converter={StaticResource VisibleWhenTrue}}">
+        <Button Padding="12,4" Content="Reset…" Command="{Binding ResetModeCommand}" />
+      </controls:SettingsCard>
     </StackPanel>
 
     <Border Margin="0,8,0,0" Style="{StaticResource InfoInfoBar}" Visibility="{Binding IsHdrActive, Converter={StaticResource VisibleWhenTrue}}">

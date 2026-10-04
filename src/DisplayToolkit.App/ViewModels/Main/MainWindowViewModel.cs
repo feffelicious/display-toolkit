@@ -221,7 +221,7 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IMainWindo
         var keepSettings = SelectedNavItem == SettingsItem && NavItems.Count > 0;
         NavItems = Monitor is { } monitor
             ? [
-                new("Display", "", () => new DisplayPageViewModel(monitor, this)),
+                new("Display", "", () => new DisplayPageViewModel(monitor, this, () => _automation.Automation.SunCycle.IsEnabled)),
                 new("Profiles & automation", "", () => new AutomationPageViewModel(monitor, _automation, _location, this)),
                 new("OLED care", "", () => new OledCarePageViewModel(monitor, this)),
                 new("GamePlus", "", () => new GamePlusPageViewModel(monitor, _targetMode, _settings)),
