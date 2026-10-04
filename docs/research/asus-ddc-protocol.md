@@ -86,7 +86,7 @@ the single value is the **supported-bits mask**.
 | `0xE8` | GamePlus overlay position | 1–8 (directions) |
 | `0xEA` | FPS counter | 0 off, 1 number, 2 bar |
 | `0xEB` | **EZ-OSD** (drive the OSD) | 0 close, 1 show, 2 up, 3 down, 4 right, 5 left, 6 enter, 7 back, 8 input select, … |
-| `0xEC` | Reset current mode | |
+| `0xEC` | Reset current mode | write 1: the active picture mode gets its factory settings back at once, no OSD prompt; other modes and system settings untouched (verified, User mode: brightness 80, R/G/B 100) |
 | `0xED` | Neo proximity sensor | `(minutes << 8) \| distance` |
 | `0xEE` | ELMB | 0/1 |
 | `0xEF` | ASUS VCP version (read) | max = `(version << 8) \| revision` → `0x0217` |
