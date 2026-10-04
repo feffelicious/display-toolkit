@@ -9,7 +9,9 @@ namespace DisplayToolkit.App.ViewModels.Main;
 /// <param name="Keywords">Other words people may type for it.</param>
 /// <param name="Feature">The monitor feature it needs; it's left out for monitors without it.</param>
 /// <param name="NeedsMonitor">Only on a monitor page (no feature of its own, but the page needs a monitor).</param>
-public sealed record SearchEntry(string Title, string Page, string Keywords = "", Feature? Feature = null, bool NeedsMonitor = false);
+/// <param name="Card">The card to point at, when the setting is part of another card; otherwise <paramref name="Title"/>.</param>
+public sealed record SearchEntry(
+    string Title, string Page, string Keywords = "", Feature? Feature = null, bool NeedsMonitor = false, string? Card = null);
 
 /// <summary>
 /// The search box in the main window. Every entry names a card on a page; choosing one opens the page and points at
@@ -38,7 +40,7 @@ public static class SettingsSearch
         new("Saturation", Display, "vibrance color", FeatureCatalog.Saturation),
         new("Sharpness", Display, "", FeatureCatalog.Sharpness),
         new("Six-axis color", Display, "hue saturation colors", FeatureCatalog.SaturationRed),
-        new("Reset this mode", Display, "factory defaults restore picture mode", NeedsMonitor: true),
+        new("Reset picture mode", Display, "factory defaults restore", FeatureCatalog.PictureMode, Card: "Picture mode"),
         new("Blue light filter", Display, "night eye care tüv low blue light", FeatureCatalog.BlueLightFilter),
         new("Shadow boost", Display, "dark black detail", FeatureCatalog.ShadowBoost),
         new("Variable refresh rate", Display, "vrr g-sync freesync adaptive-sync", FeatureCatalog.VariableRefreshRate),

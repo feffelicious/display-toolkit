@@ -98,8 +98,14 @@
 
     <controls:SettingsCard Header="Picture mode" HeaderIcon="&#xE790;" Description="Each mode keeps its own brightness and color settings."
                            Visibility="{Binding PictureMode.IsAvailable, Converter={StaticResource VisibleWhenTrue}, FallbackValue=Collapsed}">
-      <ComboBox MinWidth="200" ItemsSource="{Binding PictureMode.Options}" DisplayMemberPath="Name"
-                SelectedItem="{Binding PictureMode.SelectedOption, Mode=TwoWay}" AutomationProperties.Name="Picture mode" />
+      <StackPanel Orientation="Horizontal">
+        <!-- Reset sits with the mode it resets. -->
+        <Button Margin="0,0,8,0" VerticalAlignment="Center" Style="{StaticResource IconButton}" Content="&#xE7A7;"
+                Command="{Binding ResetModeCommand}" ToolTip="{Binding ResetModeTooltip}" AutomationProperties.Name="{Binding ResetModeTooltip}"
+                Visibility="{Binding CanResetMode, Converter={StaticResource VisibleWhenTrue}}" />
+        <ComboBox MinWidth="200" ItemsSource="{Binding PictureMode.Options}" DisplayMemberPath="Name"
+                  SelectedItem="{Binding PictureMode.SelectedOption, Mode=TwoWay}" AutomationProperties.Name="Picture mode" />
+      </StackPanel>
     </controls:SettingsCard>
 
     <controls:SettingsCard Header="Use HDR" HeaderIcon="HDR" Description="Windows HDR for this display. The monitor offers its own HDR modes while it's on."
@@ -172,11 +178,6 @@
       <controls:SettingsCard Header="Six-axis color" HeaderIcon="&#xE9E9;" Description="Saturation of red, yellow, green, cyan, blue and magenta"
                              IsClickEnabled="True" Command="{Binding OpenSixAxisCommand}"
                              Visibility="{Binding HasSixAxis, Converter={StaticResource VisibleWhenTrue}}" />
-
-      <controls:SettingsCard Header="Reset this mode" HeaderIcon="&#xE7A7;" Description="{Binding ResetModeDescription}"
-                             Visibility="{Binding CanResetMode, Converter={StaticResource VisibleWhenTrue}}">
-        <Button Padding="12,4" Content="Reset…" Command="{Binding ResetModeCommand}" />
-      </controls:SettingsCard>
     </StackPanel>
 
     <Border Margin="0,8,0,0" Style="{StaticResource InfoInfoBar}" Visibility="{Binding IsHdrActive, Converter={StaticResource VisibleWhenTrue}}">

@@ -40,7 +40,7 @@ public sealed partial class DisplayPageViewModel : MainPageViewModel
         }
         if (PictureMode is { } pictureMode)
         {
-            Observe(pictureMode, (_, _) => OnPropertyChanged(nameof(ResetModeDescription)));
+            Observe(pictureMode, (_, _) => OnPropertyChanged(nameof(ResetModeTooltip)));
         }
         if (HdrMode is { } hdrMode)
         {
@@ -107,7 +107,8 @@ public sealed partial class DisplayPageViewModel : MainPageViewModel
 
     private string ModeName => PictureMode?.SelectedOption?.Name ?? "this mode";
 
-    public string ResetModeDescription => $"Puts {ModeName}'s brightness, color and picture settings back the way they came. Other modes stay as they are.";
+    /// <summary>"Reset User to factory settings": the reset button's tooltip and accessible name.</summary>
+    public string ResetModeTooltip => $"Reset {ModeName} to factory settings";
 
     /// <summary>The reset is being sent and the monitor read again.</summary>
     [ObservableProperty]
@@ -143,7 +144,7 @@ public sealed partial class DisplayPageViewModel : MainPageViewModel
     {
         var confirmed = await _host.ConfirmAsync(new ConfirmationViewModel(
             $"Reset {ModeName}?",
-            $"Brightness, contrast, color temperature, gamma and the other settings of {ModeName} go back to their factory values.",
+            $"Brightness, contrast, color temperature, gamma and the other settings of {ModeName} go back to their factory values. Other modes stay as they are.",
             "Reset",
             _isSunCycleOn() ? "Follow the sun sets brightness and warmth again at its next change." : null));
         if (!confirmed)
