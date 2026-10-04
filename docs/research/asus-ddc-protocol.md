@@ -53,9 +53,9 @@ the single value is the **supported-bits mask**.
 | `0x12` | Contrast | ✅ 80/100 |
 | `0x14` | Color temperature preset | ASUS: 3=4000K … 8=9300K, 9=10000K, 11=User |
 | `0x16/18/1A` | R/G/B gain | high word = factory default on some models |
-| `0x6C/6E/70` | R/G/B offset (black level) | |
+| `0x6C/6E/70` | R/G/B offset (black level) | PG32UCWM: not advertised, reads 80/100 and accepts writes, but no visible effect and no menu entry. Ignore. |
 | `0x59–0x5E` | Six-axis saturation R,Y,G,C,B,M | low word = OSD value, high word = "physical" value |
-| `0x9B–0xA0` | Six-axis hue R,Y,G,C,B,M | same split-word encoding |
+| `0x9B–0xA0` | Six-axis hue R,Y,G,C,B,M | same split-word encoding. PG32UCWM: max 0, not supported |
 | `0x60` | Input source | 0x0F DP1, 0x11 HDMI1, 0x12 HDMI2, 0x1A USB-C1 |
 | `0x62` | Audio volume | |
 | `0x72` | Gamma | 0x50=1.8, 0x64=2.0, 0x78=2.2, 0x8C=2.4, 0xA0=2.6 |
@@ -78,19 +78,19 @@ the single value is the **supported-bits mask**.
 | `0xE0` | Overdrive | |
 | `0xE1` | Power saving (v2) | 0/1 |
 | `0xE2` | **HDR mode** (v2) | high byte = group (0x00 off, 0x01 HDR10, 0x02 Dolby Vision), low byte = preset: 1 Cinema HDR, 2 Gaming HDR, 3 Console HDR, 4 HDR400 / True Black, 5 DV Bright, 6 DV Dark, 7 DV Gaming |
-| `0xE3` | Crosshair | 0 off, 7–15 styles |
+| `0xE3` | Crosshair | 0 off, 7–15 styles. 13–15 aren't in the menu but work (verified): 13 blue dot, 14 small and 15 large crosshair whose color adapts to the background |
 | `0xE4` | GamePlus timer | 0 off, 1–5 = 30/40/50/60/90 s |
 | `0xE5` | Shadow Boost | 0–4 ✅ |
 | `0xE6` | Blue light filter | 0–4 ✅ |
 | `0xE7` | Display alignment | 0/1 |
-| `0xE8` | GamePlus overlay position | 1–8 (directions) |
+| `0xE8` | GamePlus overlay position? | PG32UCWM: never answers reads; writes nudged the FPS counter within the top left and once opened the OSD. Behaves like an input, not a setting. Don't use. |
 | `0xEA` | FPS counter | 0 off, 1 number, 2 bar |
-| `0xEB` | **EZ-OSD** (drive the OSD) | 0 close, 1 show, 2 up, 3 down, 4 right, 5 left, 6 enter, 7 back, 8 input select, … |
+| `0xEB` | **EZ-OSD** (press the OSD keys) | verified: 0 close, 1 open main menu, 2 up, 3 down, 4 right (into a section), 5 left (out), 6 enter (untested), 7 back, 8 input list, `0x0A` GamePlus quick menu, `0x0B` GameVisual quick menu, `0x0D` volume quick menu, `0x0E` pixel-cleaning prompt (yes/no), `0x0F` **toggles frame-rate boost at once** (resolution change, Windows re-detects the display) |
 | `0xEC` | Reset current mode | write 1: the active picture mode gets its factory settings back at once, no OSD prompt; other modes and system settings untouched (verified, User mode: brightness 80, R/G/B 100) |
 | `0xED` | Neo proximity sensor | `(minutes << 8) \| distance` |
 | `0xEE` | ELMB | 0/1 |
 | `0xEF` | ASUS VCP version (read) | max = `(version << 8) \| revision` → `0x0217` |
-| `0xF2` | Aura / black level / dual display | model-line dependent |
+| `0xF2` | **Aura** (PG32UCWM, verified) | `(color << 8) \| effect`. Effect: 0 off, 1 Aura Sync (driven over USB; dark without software), 2 rainbow, 3 color cycle, 4 static, 5 breathing, 6 strobing. Color (for 4–6): 1 red, 2 green, 3 blue, 4 cyan, 5 magenta, 6 yellow, the OSD's order; picking a color effect with color 0 sets red. Leaving Aura Sync needs a write of 0 first; other changes apply directly. |
 | `0xF3` | KVM | |
 | `0xF4–0xF6` | PiP/PbP mode, source, color | |
 | `0xF8` | OLED pixel-cleaning reminder | hours: 0, 2, 4, 8 ✅ |
@@ -252,7 +252,6 @@ the monitor's menu doesn't offer. Untested.
 
 ## Open questions
 
-- Crosshair styles 13–15 (`0xE3`): advertised, not in the menu, untested.
 - Dolby Vision presets (`0xE2` group 2): need a Dolby Vision signal to test.
 - When pixel cleaning (`0xFD` bit 4) finishes: the bit doesn't clear reliably, so the app uses the ~6 minute duration.
 - `0xFC` bits 7 and 11.
