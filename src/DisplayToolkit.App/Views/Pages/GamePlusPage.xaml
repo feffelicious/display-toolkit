@@ -69,22 +69,5 @@
       </Grid>
     </controls:SettingsCard>
 
-    <!-- ======================================================== Target mode (drawn by the app, not the monitor) -->
-    <TextBlock Style="{StaticResource SettingsGroupHeader}" Text="Focus" />
-
-    <controls:SettingsExpander Header="Target mode" HeaderIcon="&#xE7C4;" IsExpanded="True"
-                               Description="Dims every screen except the window you're using. Also in quick settings and the tray menu.">
-      <controls:SettingsExpander.HeaderContent>
-        <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding IsTargetModeOn, Mode=TwoWay}" AutomationProperties.Name="Target mode" />
-      </controls:SettingsExpander.HeaderContent>
-      <controls:SettingsCard IsNested="True" Header="Dim the rest by">
-        <StackPanel Orientation="Horizontal">
-          <Slider Width="200" VerticalAlignment="Center" Minimum="10" Maximum="95" IsMoveToPointEnabled="True"
-                  IsSnapToTickEnabled="True" TickFrequency="5" Value="{Binding TargetModeDim, Mode=TwoWay}" AutomationProperties.Name="Dim the rest by" />
-          <TextBlock Width="44" VerticalAlignment="Center" TextAlignment="Right" Typography.NumeralAlignment="Tabular"
-                     Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding TargetModeDim, StringFormat={}{0:0} %}" />
-        </StackPanel>
-      </controls:SettingsCard>
-    </controls:SettingsExpander>
   </StackPanel>
 </UserControl>

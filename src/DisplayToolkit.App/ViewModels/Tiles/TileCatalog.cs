@@ -49,7 +49,7 @@ public static class TileCatalog
         Picker("fps-counter", "", FeatureCatalog.FpsCounter, "GamePlus"),
         Picker("timer", "", FeatureCatalog.Timer, "GamePlus"),
         Switch("display-alignment", "", FeatureCatalog.DisplayAlignment, "GamePlus", "Alignment"),
-        new("target-mode", "Target mode", "GamePlus", "Toggle", _ => true, context => new TargetModeTileViewModel(context.TargetMode)),
+        new("target-mode", "Target mode", "Focus", "Toggle", _ => true, context => new TargetModeTileViewModel(context.TargetMode)),
 
         Switch("oled-anti-flicker", "", FeatureCatalog.OledAntiFlicker, "OLED care", "Anti-flicker"),
         Switch("uniform-brightness", "", FeatureCatalog.UniformBrightness, "OLED care"),

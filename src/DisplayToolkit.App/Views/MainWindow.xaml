@@ -168,7 +168,7 @@
           </Popup>
         </Grid>
 
-        <ListBox ItemsSource="{Binding NavItems}" SelectedItem="{Binding SelectedNavItem, Mode=TwoWay}"
+        <ListBox ItemsSource="{Binding NavItems}" SelectedItem="{Binding SelectedListItem, Mode=TwoWay}"
                  ItemContainerStyle="{StaticResource NavListItem}" Background="Transparent" BorderThickness="0"
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
       </DockPanel>

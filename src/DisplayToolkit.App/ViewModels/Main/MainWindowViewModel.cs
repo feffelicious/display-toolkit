@@ -38,7 +38,7 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IMainWindo
         _automation = automation;
         _location = location;
         context.Changed += (_, _) => OnMonitorChanged();
-        SettingsItem = new NavItem("Settings", "", () => new SettingsPageViewModel(_settings, _location, _transfer, _updates, _shortcuts, this, Monitor));
+        SettingsItem = new NavItem("Settings", "", () => new SettingsPageViewModel(_settings, _location, _transfer, _updates, _shortcuts, _targetMode, this, Monitor));
         OnMonitorChanged();
     }
 
@@ -73,8 +73,24 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IMainWindo
     public NavItem SettingsItem { get; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsSettingsSelected))]
+    [NotifyPropertyChangedFor(nameof(IsSettingsSelected), nameof(SelectedListItem))]
     public partial NavItem? SelectedNavItem { get; set; }
+
+    /// <summary>
+    /// The selection of the page list: nothing while Settings (outside the list) is open, so the list doesn't keep
+    /// highlighting the page that was open before.
+    /// </summary>
+    public NavItem? SelectedListItem
+    {
+        get => SelectedNavItem is { } item && NavItems.Contains(item) ? item : null;
+        set
+        {
+            if (value is not null)
+            {
+                SelectedNavItem = value;
+            }
+        }
+    }
 
     /// <summary>Settings sits apart from the list at the bottom of the pane, so its selection is exposed separately.</summary>
     public bool IsSettingsSelected => SelectedNavItem == SettingsItem;
@@ -228,7 +244,7 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IMainWindo
                 new("Display", "", () => new DisplayPageViewModel(monitor, this, () => _automation.Automation.SunCycle.IsEnabled)),
                 new("Profiles & automation", "", () => new AutomationPageViewModel(monitor, _automation, _location, this)),
                 new("OLED care", "", () => new OledCarePageViewModel(monitor, this)),
-                new("GamePlus", "", () => new GamePlusPageViewModel(monitor, _targetMode, _settings)),
+                new("GamePlus", "", () => new GamePlusPageViewModel(monitor)),
             ]
             : [];
 

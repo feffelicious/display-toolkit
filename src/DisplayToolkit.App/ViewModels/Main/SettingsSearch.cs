@@ -83,7 +83,7 @@ public static class SettingsSearch
         new("Timer", GamePlus, "countdown", FeatureCatalog.Timer),
         new("Position", GamePlus, "move fps counter timer overlay gameplus position place", NeedsMonitor: true),
         new("Display alignment", GamePlus, "lines multiple monitors", FeatureCatalog.DisplayAlignment),
-        new("Target mode", GamePlus, "focus dim spotlight", NeedsMonitor: true),
+        new("Target mode", Settings, "focus dim spotlight"),
 
         new("Start with Windows", Settings, "startup login boot autostart"),
         new("App theme", Settings, "dark light mode"),

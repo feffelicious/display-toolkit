@@ -23,12 +23,15 @@ public sealed partial class SettingsPageViewModel : MainPageViewModel
     private readonly IMainWindowHost _host;
     private readonly UpdateService _updates;
     private readonly ShortcutService _shortcuts;
+    private readonly TargetMode _targetMode;
 
     internal SettingsPageViewModel(
         AppSettings settings, LocationService location, SettingsTransfer transfer, UpdateService updates, ShortcutService shortcuts,
-        IMainWindowHost host, MonitorViewModel? monitor)
+        TargetMode targetMode, IMainWindowHost host, MonitorViewModel? monitor)
         : base("Settings")
     {
+        _targetMode = targetMode;
+        Observe(targetMode, (_, _) => OnPropertyChanged(nameof(IsTargetModeOn)));
         _shortcuts = shortcuts;
         var actions = shortcuts.Actions;
         Shortcuts = [.. actions.Where(action => !action.Id.StartsWith("input-", StringComparison.Ordinal)).Select(action => new ShortcutRowViewModel(action, shortcuts))];
@@ -72,6 +75,25 @@ public sealed partial class SettingsPageViewModel : MainPageViewModel
         set
         {
             _settings.Update(current => current with { Theme = value.Theme });
+            OnPropertyChanged();
+        }
+    }
+
+    // Target mode
+
+    public bool IsTargetModeOn
+    {
+        get => _targetMode.IsOn;
+        set => _targetMode.SetOn(value);
+    }
+
+    /// <summary>How dark everything but the window in use gets, in percent.</summary>
+    public double TargetModeDim
+    {
+        get => Math.Round(_settings.Current.TargetModeDim * 100);
+        set
+        {
+            _settings.Update(current => current with { TargetModeDim = Math.Clamp(value, 10, 95) / 100 });
             OnPropertyChanged();
         }
     }

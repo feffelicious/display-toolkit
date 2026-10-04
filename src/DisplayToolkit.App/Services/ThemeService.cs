@@ -7,11 +7,21 @@ namespace DisplayToolkit.App.Services;
 internal sealed class ThemeService
 {
     private readonly AppSettings _settings;
+    private AppTheme? _applied;
 
     public ThemeService(AppSettings settings)
     {
         _settings = settings;
-        settings.Changed += (_, _) => Apply();
+
+        // Only for a theme change: re-applying reloads every control template, which would, for example, drop a
+        // slider that is being dragged while it saves its value.
+        settings.Changed += (_, _) =>
+        {
+            if (settings.Current.Theme != _applied)
+            {
+                Apply();
+            }
+        };
         SystemEvents.UserPreferenceChanged += (_, e) =>
         {
             if (e.Category == UserPreferenceCategory.General)
@@ -34,6 +44,7 @@ internal sealed class ThemeService
 
     public void Apply()
     {
+        _applied = _settings.Current.Theme;
         Application.Current.ThemeMode = _settings.Current.Theme switch
         {
             AppTheme.Dark => ThemeMode.Dark,
