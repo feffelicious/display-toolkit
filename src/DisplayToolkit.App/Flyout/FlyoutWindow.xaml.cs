@@ -256,6 +256,20 @@ internal sealed partial class FlyoutWindow : Window
         Dwm.SetDarkMode(_hwnd, _theme.IsDark);
         Dwm.SetBackdrop(_hwnd, Dwm.Backdrop.Acrylic);
         Dwm.SetRoundCorners(_hwnd);
+
+        // Like Windows' own quick settings: a strong tint over the Acrylic, so whatever is behind only shows as a
+        // faint blur instead of lightening (or darkening) the whole panel.
+        Root.Background = _theme.IsDark ? DarkTint : LightTint;
+    }
+
+    private static readonly SolidColorBrush DarkTint = Frozen(Color.FromArgb(0xD9, 0x20, 0x20, 0x20));
+    private static readonly SolidColorBrush LightTint = Frozen(Color.FromArgb(0xD9, 0xF3, 0xF3, 0xF3));
+
+    private static SolidColorBrush Frozen(Color color)
+    {
+        var brush = new SolidColorBrush(color);
+        brush.Freeze();
+        return brush;
     }
 
     /// <summary>
