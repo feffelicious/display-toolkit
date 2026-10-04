@@ -22,6 +22,7 @@ internal static unsafe partial class Shell32
     internal const int NinKeySelect = 0x401;
     internal const int NinBalloonUserClick = 0x405;
     internal const int WmContextMenu = 0x007B;
+    internal const int WmMouseMove = 0x0200;
 
     [StructLayout(LayoutKind.Sequential)]
     internal struct NotifyIconData
@@ -69,6 +70,19 @@ internal static unsafe partial class Shell32
             text.AsSpan(0, Math.Min(text.Length, destination.Length - 1)).CopyTo(destination);
         }
     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct NotifyIconIdentifier
+    {
+        public uint Size;
+        public nint Window;
+        public uint Id;
+        public Guid Item;
+    }
+
+    /// <summary>Where the icon is on screen, in physical pixels (in the taskbar or the overflow menu).</summary>
+    [LibraryImport("shell32.dll", EntryPoint = "Shell_NotifyIconGetRect")]
+    internal static partial int ShellNotifyIconGetRect(NotifyIconIdentifier* identifier, User32.Rect* rect);
 
     [LibraryImport("shell32.dll", EntryPoint = "Shell_NotifyIconW")]
     [return: MarshalAs(UnmanagedType.Bool)]

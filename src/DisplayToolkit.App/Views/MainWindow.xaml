@@ -119,11 +119,54 @@
           </StackPanel>
         </StackPanel>
 
+        <ComboBox DockPanel.Dock="Top" Margin="8,-6,8,16" HorizontalAlignment="Stretch" ItemsSource="{Binding Monitors}"
+                  DisplayMemberPath="Name" SelectedItem="{Binding SelectedMonitor, Mode=TwoWay}" AutomationProperties.Name="Monitor"
+                  Visibility="{Binding HasSeveralMonitors, Converter={StaticResource VisibleWhenTrue}}" />
+
         <StackPanel DockPanel.Dock="Top" Margin="8,4,8,16" Visibility="{Binding Monitor, Converter={StaticResource VisibleWhenNull}}">
           <TextBlock Style="{StaticResource BodyStrongText}" Text="No monitor" />
           <TextBlock Style="{StaticResource CaptionText}" Text="Turn the monitor on, or check that DDC/CI is on in its menu." />
           <Button Margin="0,8,0,0" HorizontalAlignment="Left" Padding="12,4" Content="Try again" Command="{Binding RetryCommand}" />
         </StackPanel>
+
+        <!-- Find a setting -->
+        <Grid DockPanel.Dock="Top" Margin="8,0,8,12">
+          <TextBox x:Name="SearchBox" Padding="10,5,32,6" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                   AutomationProperties.Name="Find a setting" PreviewKeyDown="OnSearchKeyDown" GotKeyboardFocus="OnSearchFocusChanged" LostKeyboardFocus="OnSearchFocusChanged" />
+          <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False" FontSize="14"
+                     Foreground="{DynamicResource TextFillColorTertiaryBrush}" Text="Find a setting"
+                     Visibility="{Binding Text, ElementName=SearchBox, Converter={StaticResource VisibleWhenNull}}" />
+          <TextBlock Margin="0,0,12,0" HorizontalAlignment="Right" VerticalAlignment="Center" IsHitTestVisible="False"
+                     Style="{StaticResource IconText}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="&#xE721;" />
+
+          <Popup x:Name="SearchPopup" PlacementTarget="{Binding ElementName=SearchBox}" Placement="Bottom" VerticalOffset="4"
+                 AllowsTransparency="True" StaysOpen="True" Width="{Binding ActualWidth, ElementName=SearchBox}">
+            <Border Margin="0,0,8,8" Padding="4" CornerRadius="8" BorderThickness="1"
+                    Background="{DynamicResource SolidBackgroundFillColorQuarternaryBrush}" BorderBrush="{DynamicResource SurfaceStrokeColorFlyoutBrush}">
+              <Border.Effect>
+                <DropShadowEffect BlurRadius="16" ShadowDepth="4" Direction="270" Opacity="0.2" />
+              </Border.Effect>
+              <Grid>
+                <TextBlock Margin="12,10" Style="{StaticResource CaptionText}" Text="No settings match."
+                           Visibility="{Binding HasNoSearchResults, Converter={StaticResource VisibleWhenTrue}}" />
+                <ListBox x:Name="SearchResultList" ItemsSource="{Binding SearchResults}" Background="Transparent" BorderThickness="0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="Search results"
+                         PreviewKeyDown="OnSearchResultKeyDown" PreviewMouseLeftButtonUp="OnSearchResultClick" LostKeyboardFocus="OnSearchFocusChanged"
+                         Visibility="{Binding HasSearchResults, Converter={StaticResource VisibleWhenTrue}}">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type main:SearchEntry}">
+                      <StackPanel Margin="4,4">
+                        <TextBlock FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Title}"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock Style="{StaticResource CaptionText}" Text="{Binding Page}" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </Grid>
+            </Border>
+          </Popup>
+        </Grid>
 
         <ListBox ItemsSource="{Binding NavItems}" SelectedItem="{Binding SelectedNavItem, Mode=TwoWay}"
                  ItemContainerStyle="{StaticResource NavListItem}" Background="Transparent" BorderThickness="0"

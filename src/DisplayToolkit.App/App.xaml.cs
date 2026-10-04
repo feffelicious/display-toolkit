@@ -47,6 +47,9 @@ public partial class App : Application
 
         _host.Services.GetRequiredService<ThemeService>().Apply();
 
+        var hotkeys = _host.Services.GetRequiredService<GlobalHotkeys>();
+        Controls.ShortcutRecorder.RecordingChanged += (_, recording) => hotkeys.SetSuspended(recording);
+
         var tray = _host.Services.GetRequiredService<TrayController>();
         tray.Start();
         _singleInstance.ListenForActivation(() => Dispatcher.BeginInvoke(() => tray.ToggleFlyout()));
@@ -182,7 +185,13 @@ public partial class App : Application
 
         var services = builder.Services;
         services.AddSingleton(dispatcher);
+#if DEBUG
+        services.AddSingleton<IMonitorEnumerator>(DemoMonitorEnumerator.IsRequested
+            ? new DemoMonitorEnumerator(new Win32MonitorEnumerator())
+            : new Win32MonitorEnumerator());
+#else
         services.AddSingleton<IMonitorEnumerator, Win32MonitorEnumerator>();
+#endif
         services.AddSingleton<CapabilitiesCache>();
         services.AddSingleton<LayoutStore>();
         services.AddSingleton<MonitorService>();
@@ -195,6 +204,8 @@ public partial class App : Application
         services.AddSingleton<FlyoutWindow>();
         services.AddSingleton<TrayController>();
         services.AddSingleton<GlobalHotkeys>();
+        services.AddSingleton(provider => new TargetMode(provider.GetRequiredService<AppSettings>(), dispatcher));
+        services.AddSingleton<ShortcutService>();
         services.AddSingleton<AutomationStore>();
         services.AddSingleton<LocationService>();
         services.AddSingleton<AutomationService>();

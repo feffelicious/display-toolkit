@@ -88,6 +88,17 @@
                    Text="Turn on HDR to choose how the monitor shows HDR content." />
       </StackPanel>
     </DataTemplate>
+    <DataTemplate DataType="{x:Type pages:MonitorsPageViewModel}">
+      <ItemsControl ItemsSource="{Binding Options}" Focusable="False">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate DataType="{x:Type pages:OptionItemViewModel}">
+            <Button Style="{StaticResource OptionRow}" Margin="0,0,0,2" Content="{Binding Name}"
+                    Tag="{Binding IsSelected}" Command="{Binding SelectCommand}" />
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </DataTemplate>
+
     <DataTemplate DataType="{x:Type pages:ProfilesPageViewModel}">
       <ItemsControl ItemsSource="{Binding Profiles}" Focusable="False">
         <ItemsControl.ItemTemplate>
@@ -186,6 +197,9 @@
         <!-- Main page -->
         <StackPanel x:Name="MainPage" Visibility="{Binding Page, Converter={StaticResource VisibleWhenNull}}">
           <DockPanel>
+            <Button DockPanel.Dock="Right" VerticalAlignment="Center" Style="{StaticResource IconButton}" Content="&#xE8AB;"
+                    Command="{Binding OpenMonitorsPageCommand}" ToolTip="Switch monitor" AutomationProperties.Name="Switch monitor"
+                    Visibility="{Binding HasSeveralMonitors, Converter={StaticResource VisibleWhenTrue}}" />
             <Border Width="36" Height="36" CornerRadius="6" Background="{DynamicResource SubtleFillColorSecondaryBrush}">
               <TextBlock Style="{StaticResource IconText}" HorizontalAlignment="Center" Text="&#xE7F4;"
                          Foreground="{DynamicResource TextFillColorPrimaryBrush}" />

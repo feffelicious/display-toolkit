@@ -17,7 +17,11 @@ brightness and warmth that follow the sun.
 ## Features
 
 - **Quick settings** from the tray icon or **Ctrl+Alt+D**: brightness, profiles and a tile grid you arrange yourself
-  (picture mode, HDR, blue light filter, shadow boost, crosshair, OLED anti-flicker and more).
+  (picture mode, HDR, blue light filter, shadow boost, crosshair, OLED anti-flicker and more). Scroll over the tray
+  icon to change brightness.
+- **Shortcuts** for brightness, the next picture mode, HDR, Target mode and each input, all changeable in Settings,
+  with a small on-screen confirmation.
+- **Target mode** dims every screen except the window you're using.
 - **The full set of monitor settings** in the main window: picture and color (including six-axis saturation), OLED
   care (pixel cleaning, panel protection, proximity sensor), GamePlus, and the monitor's own system options.
 - **Profiles**: a named set of settings, applied in the right order (HDR, then picture mode, then color, then the
@@ -26,6 +30,7 @@ brightness and warmth that follow the sun.
 - **Rules** switch profiles for you: at a time, at sunrise or sunset, while an app or a full-screen game runs, on
   battery, or while HDR is on. A day strip shows what today will look like.
 - **Follow the sun**: brightness and warmth fade between day and night values around sunrise and sunset.
+- **Find a setting** (Ctrl+F) in the main window, and a monitor switch when several monitors are connected.
 - **Export and import** everything to move to a new PC.
 
 ## Screenshots

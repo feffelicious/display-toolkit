@@ -1,7 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using System.Windows.Input;
 using DisplayToolkit.App.Flyout;
 using DisplayToolkit.App.Native;
 using DisplayToolkit.App.Services;
@@ -16,7 +15,9 @@ internal sealed class TrayController(
     FlyoutWindow flyout,
     FlyoutViewModel flyoutViewModel,
     MainWindowLauncher mainWindow,
-    GlobalHotkeys hotkeys,
+    MonitorContext context,
+    ShortcutService shortcuts,
+    TargetMode targetMode,
     AutomationService automation,
     AppSettings settings,
     UpdateService updates,
@@ -29,8 +30,6 @@ internal sealed class TrayController(
     /// </summary>
     private static readonly TimeSpan ReopenGuard = TimeSpan.FromMilliseconds(400);
 
-    private const int OpenFlyoutHotkey = 1;
-
     private TrayIcon? _icon;
     private Views.HudWindow? _hud;
 
@@ -41,21 +40,19 @@ internal sealed class TrayController(
         _icon.ContextMenuRequested += (_, _) => ShowMenu();
         _icon.DisplaysChanged += (_, _) => OnDisplaysChanged();
         monitors.Changed += (_, _) => UpdateTooltip();
-        automation.ShortcutUsed += (_, feedback) => ShowHud(feedback.Glyph, feedback.Text);
-        updates.Changed += (_, _) => NotifyAboutUpdate();
-        _icon.NotificationClicked += (_, _) => updates.OpenReleasePage();
-
-        hotkeys.Pressed += (_, id) =>
+        _icon.WheelScrolled += (_, notches) =>
         {
-            if (id == OpenFlyoutHotkey)
+            if (settings.Current.ScrollOverTrayIcon)
             {
-                ToggleFlyout(fromKeyboard: true);
+                shortcuts.StepBrightness(notches);
             }
         };
-        if (!hotkeys.Register(OpenFlyoutHotkey, ModifierKeys.Control | ModifierKeys.Alt, Key.D))
-        {
-            logger.LogWarning("Ctrl+Alt+D is already used by another app");
-        }
+        automation.ShortcutUsed += (_, feedback) => ShowHud(feedback);
+        shortcuts.Used += (_, feedback) => ShowHud(feedback);
+        shortcuts.QuickSettingsRequested += (_, _) => ToggleFlyout(fromKeyboard: true);
+        updates.Changed += (_, _) => NotifyAboutUpdate();
+        _icon.NotificationClicked += (_, _) => updates.OpenReleasePage();
+        shortcuts.Start();
     }
 
     /// <param name="fromKeyboard">Opened with a shortcut: focus the brightness band so the arrow keys work at once.</param>
@@ -80,6 +77,7 @@ internal sealed class TrayController(
     private async void OnDisplaysChanged()
     {
         logger.LogInformation("Displays changed");
+        targetMode.OnDisplaysChanged();
         await monitors.RescanAsync();
         await flyoutViewModel.OnDisplaysChangedAsync();
     }
@@ -96,12 +94,12 @@ internal sealed class TrayController(
     }
 
     /// <summary>Confirms a shortcut on screen, unless the user turned that off or quick settings already shows it.</summary>
-    private void ShowHud(string glyph, string text)
+    private void ShowHud(ShortcutFeedback feedback)
     {
         if (settings.Current.ShowShortcutOverlay && !flyout.IsVisible)
         {
             _hud ??= new Views.HudWindow();
-            _hud.Show(glyph, text);
+            _hud.Show(feedback.Glyph, feedback.Text, feedback.Level);
         }
     }
 
@@ -120,7 +118,22 @@ internal sealed class TrayController(
     {
         var menu = new ContextMenu();
         menu.Items.Add(Item("Open Display Toolkit", mainWindow.Show, bold: true));
-        menu.Items.Add(Item("Quick settings", () => flyout.ShowFlyout(), gesture: "Ctrl+Alt+D"));
+        var quickSettingsShortcut = shortcuts.Get(ShortcutService.QuickSettings);
+        menu.Items.Add(Item("Quick settings", () => flyout.ShowFlyout(),
+            gesture: quickSettingsShortcut is null ? null : ViewModels.Automation.AutomationText.Shortcut(quickSettingsShortcut)));
+
+        // With several monitors: which one quick settings, the main window and automation control.
+        if (context.Monitors.Count > 1)
+        {
+            var monitorsItem = new MenuItem { Header = "Monitor" };
+            foreach (var monitor in context.Monitors)
+            {
+                var item = Item(context.NameOf(monitor), () => context.Select(monitor));
+                item.IsChecked = context.Current?.Session == monitor;
+                monitorsItem.Items.Add(item);
+            }
+            menu.Items.Add(monitorsItem);
+        }
 
         if (automation.Profiles.Count > 0)
         {
@@ -160,6 +173,11 @@ internal sealed class TrayController(
                 });
             }
         }
+
+        menu.Items.Add(new Separator());
+        var targetModeItem = Item("Target mode", targetMode.Toggle);
+        targetModeItem.IsChecked = targetMode.IsOn;
+        menu.Items.Add(targetModeItem);
 
         menu.Items.Add(new Separator());
         if (updates.Available is { } update)

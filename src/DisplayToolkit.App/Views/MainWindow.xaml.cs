@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using DisplayToolkit.App.Controls;
 using DisplayToolkit.App.Native;
 using DisplayToolkit.App.Services;
 using DisplayToolkit.App.ViewModels.Main;
@@ -28,6 +29,7 @@ internal sealed partial class MainWindow : Window
         DataContext = viewModel;
         theme.Changed += OnThemeChanged;
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
+        viewModel.RevealRequested += OnRevealRequested;
     }
 
     /// <summary>Shows the window, or brings it to the front if it's already open.</summary>
@@ -48,11 +50,17 @@ internal sealed partial class MainWindow : Window
         ApplyBackdrop();
     }
 
-    /// <summary>Esc closes the confirmation, then a dialog; Alt+Left goes back from a sub-page.</summary>
+    /// <summary>Esc closes the confirmation, then a dialog; Alt+Left goes back from a sub-page; Ctrl+F finds a setting.</summary>
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
         base.OnPreviewKeyDown(e);
-        if (e.Key == Key.Escape && _viewModel.Confirmation is not null)
+        if (e.Key == Key.F && Keyboard.Modifiers == ModifierKeys.Control && _viewModel.Dialog is null && _viewModel.Confirmation is null)
+        {
+            SearchBox.Focus();
+            SearchBox.SelectAll();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape && _viewModel.Confirmation is not null)
         {
             _viewModel.ConfirmCancelCommand.Execute(null);
             e.Handled = true;
@@ -86,6 +94,7 @@ internal sealed partial class MainWindow : Window
     {
         _theme.Changed -= OnThemeChanged;
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        _viewModel.RevealRequested -= OnRevealRequested;
         base.OnClosed(e);
     }
 
@@ -124,13 +133,83 @@ internal sealed partial class MainWindow : Window
 
     private void OnSettingsClick(object sender, MouseButtonEventArgs e) => _viewModel.OpenSettingsCommand.Execute(null);
 
+    // ------------------------------------------------------------------ Find a setting
+
+    /// <summary>Enter opens the best match, Down moves into the results, Esc clears the box.</summary>
+    private void OnSearchKeyDown(object sender, KeyEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case Key.Enter:
+                OpenSearchResult(null);
+                e.Handled = true;
+                break;
+            case Key.Down when _viewModel.HasSearchResults:
+                SearchResultList.SelectedIndex = 0;
+                (SearchResultList.ItemContainerGenerator.ContainerFromIndex(0) as ListBoxItem)?.Focus();
+                e.Handled = true;
+                break;
+            case Key.Escape when _viewModel.SearchText.Length > 0:
+                _viewModel.SearchText = string.Empty;
+                e.Handled = true;
+                break;
+        }
+    }
+
+    private void OnSearchResultKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            OpenSearchResult(SearchResultList.SelectedItem as SearchEntry);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape || (e.Key == Key.Up && SearchResultList.SelectedIndex <= 0))
+        {
+            SearchBox.Focus();
+            e.Handled = true;
+        }
+    }
+
+    private void OnSearchResultClick(object sender, MouseButtonEventArgs e)
+    {
+        if (e.OriginalSource is DependencyObject source && ItemsControl.ContainerFromElement(SearchResultList, source) is ListBoxItem { DataContext: SearchEntry entry })
+        {
+            OpenSearchResult(entry);
+        }
+    }
+
+    /// <summary>The results show while the box or the list has focus.</summary>
+    private void OnSearchFocusChanged(object sender, KeyboardFocusChangedEventArgs e) => UpdateSearchPopup();
+
+    private void UpdateSearchPopup() => Dispatcher.BeginInvoke(() =>
+        SearchPopup.IsOpen = (SearchBox.IsKeyboardFocusWithin || SearchResultList.IsKeyboardFocusWithin)
+            && (_viewModel.HasSearchResults || _viewModel.HasNoSearchResults));
+
+    private void OpenSearchResult(SearchEntry? entry)
+    {
+        SearchPopup.IsOpen = false;
+        _viewModel.OpenSearchResultCommand.Execute(entry);
+    }
+
+    /// <summary>The result's page is open: point at the setting once the page has been built.</summary>
+    private void OnRevealRequested(object? sender, string title) =>
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
+        {
+            SettingHighlight.Reveal(PageHost, title);
+            Keyboard.Focus(PageHost);
+        });
+
     /// <summary>
     /// A confirmation opens with Cancel focused, so Enter can't trigger the action by accident. A dialog takes the
     /// focus to its first control, and gives it back to the page when it closes.
     /// </summary>
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(MainWindowViewModel.Confirmation) && _viewModel.Confirmation is not null)
+        if (e.PropertyName is nameof(MainWindowViewModel.SearchResults) or nameof(MainWindowViewModel.HasNoSearchResults))
+        {
+            UpdateSearchPopup();
+        }
+        else if (e.PropertyName == nameof(MainWindowViewModel.Confirmation) && _viewModel.Confirmation is not null)
         {
             Dispatcher.BeginInvoke(() => Keyboard.Focus(CancelButton), System.Windows.Threading.DispatcherPriority.Input);
         }

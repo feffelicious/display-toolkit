@@ -1,11 +1,15 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DisplayToolkit.App.Services;
+using DisplayToolkit.Core.Monitors;
 
 namespace DisplayToolkit.App.ViewModels.Main;
 
 /// <summary>A navigation pane entry.</summary>
 public sealed record NavItem(string Title, string Glyph, Func<MainPageViewModel> CreatePage);
+
+/// <summary>A monitor in the pane's monitor switch.</summary>
+public sealed record MonitorChoice(string Name, MonitorSession Session);
 
 /// <summary>The main window: navigation pane, current page (or sub-page) and the in-window confirmation dialog.</summary>
 internal sealed partial class MainWindowViewModel : ObservableObject, IMainWindowHost
@@ -16,10 +20,17 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IMainWindo
     private readonly LocationService _location;
     private readonly SettingsTransfer _transfer;
     private readonly UpdateService _updates;
+    private readonly ShortcutService _shortcuts;
+    private readonly TargetMode _targetMode;
     private TaskCompletionSource<bool>? _confirmation;
+    private MonitorViewModel? _shownMonitor;
 
-    public MainWindowViewModel(MonitorContext context, AppSettings settings, AutomationService automation, LocationService location, SettingsTransfer transfer, UpdateService updates)
+    public MainWindowViewModel(
+        MonitorContext context, AppSettings settings, AutomationService automation, LocationService location, SettingsTransfer transfer,
+        UpdateService updates, ShortcutService shortcuts, TargetMode targetMode)
     {
+        _shortcuts = shortcuts;
+        _targetMode = targetMode;
         _updates = updates;
         _transfer = transfer;
         _context = context;
@@ -27,13 +38,32 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IMainWindo
         _automation = automation;
         _location = location;
         context.Changed += (_, _) => OnMonitorChanged();
-        SettingsItem = new NavItem("Settings", "", () => new SettingsPageViewModel(_settings, _location, _transfer, _updates, this, Monitor));
+        SettingsItem = new NavItem("Settings", "", () => new SettingsPageViewModel(_settings, _location, _transfer, _updates, _shortcuts, this, Monitor));
         OnMonitorChanged();
     }
 
     public MonitorViewModel? Monitor => _context.Current;
 
     public MonitorDiscoveryState State => _context.State;
+
+    /// <summary>Every connected monitor, for the switch under the monitor card (shown with two or more).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSeveralMonitors))]
+    public partial IReadOnlyList<MonitorChoice> Monitors { get; private set; } = [];
+
+    public bool HasSeveralMonitors => Monitors.Count > 1;
+
+    public MonitorChoice? SelectedMonitor
+    {
+        get => Monitors.FirstOrDefault(choice => choice.Session == Monitor?.Session);
+        set
+        {
+            if (value is not null && value.Session != Monitor?.Session)
+            {
+                _context.Select(value.Session);
+            }
+        }
+    }
 
     /// <summary>Pages for the monitor's features, top of the pane. Empty while no monitor is connected.</summary>
     [ObservableProperty]
@@ -60,6 +90,47 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IMainWindo
     public partial object? Dialog { get; private set; }
 
     public void ShowDialog(object dialog) => Dialog = dialog;
+
+    // ------------------------------------------------------------------ Find a setting
+
+    [ObservableProperty]
+    public partial string SearchText { get; set; } = string.Empty;
+
+    /// <summary>What the search box finds, best first; empty while it's empty.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSearchResults), nameof(HasNoSearchResults))]
+    public partial IReadOnlyList<SearchEntry> SearchResults { get; private set; } = [];
+
+    public bool HasSearchResults => SearchResults.Count > 0;
+
+    /// <summary>Something was typed and nothing matches.</summary>
+    public bool HasNoSearchResults => SearchResults.Count == 0 && !string.IsNullOrWhiteSpace(SearchText);
+
+    /// <summary>A search result's page is open; the window points at the setting with this title.</summary>
+    public event EventHandler<string>? RevealRequested;
+
+    partial void OnSearchTextChanged(string value)
+    {
+        SearchResults = SettingsSearch.Find(value, Monitor);
+        OnPropertyChanged(nameof(HasNoSearchResults));
+    }
+
+    /// <summary>Opens the result's page (the first result when none is given) and points at the setting.</summary>
+    [RelayCommand]
+    private void OpenSearchResult(SearchEntry? entry)
+    {
+        entry ??= SearchResults.Count > 0 ? SearchResults[0] : null;
+        if (entry is null || NavItems.Append(SettingsItem).FirstOrDefault(item => item.Title == entry.Page) is not { } item)
+        {
+            return;
+        }
+        SearchText = string.Empty;
+
+        // Open the page fresh, also when it's already showing (it may be on a sub-page, or scrolled away).
+        SelectedNavItem = null;
+        SelectedNavItem = item;
+        RevealRequested?.Invoke(this, entry.Title);
+    }
 
     [RelayCommand]
     public void CloseDialog() => Dialog = null;
@@ -128,6 +199,21 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IMainWindo
 
     private void OnMonitorChanged()
     {
+        var monitors = _context.Monitors;
+        if (!monitors.SequenceEqual(Monitors.Select(choice => choice.Session)))
+        {
+            Monitors = [.. monitors.Select(monitor => new MonitorChoice(_context.NameOf(monitor), monitor))];
+        }
+        OnPropertyChanged(nameof(SelectedMonitor));
+
+        // The context reports every rescan; rebuild the pages only when the monitor itself changed.
+        if (Monitor == _shownMonitor && SelectedNavItem is not null && NavItems.Count > 0 == (Monitor is not null))
+        {
+            OnPropertyChanged(nameof(State));
+            return;
+        }
+        _shownMonitor = Monitor;
+
         OnPropertyChanged(nameof(Monitor));
         OnPropertyChanged(nameof(State));
 
@@ -138,7 +224,7 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IMainWindo
                 new("Display", "", () => new DisplayPageViewModel(monitor, this)),
                 new("Profiles & automation", "", () => new AutomationPageViewModel(monitor, _automation, _location, this)),
                 new("OLED care", "", () => new OledCarePageViewModel(monitor, this)),
-                new("GamePlus", "", () => new GamePlusPageViewModel(monitor)),
+                new("GamePlus", "", () => new GamePlusPageViewModel(monitor, _targetMode, _settings)),
             ]
             : [];
 

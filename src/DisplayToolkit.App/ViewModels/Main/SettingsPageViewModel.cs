@@ -21,11 +21,18 @@ public sealed partial class SettingsPageViewModel : MainPageViewModel
     private readonly SettingsTransfer _transfer;
     private readonly IMainWindowHost _host;
     private readonly UpdateService _updates;
+    private readonly ShortcutService _shortcuts;
 
     internal SettingsPageViewModel(
-        AppSettings settings, LocationService location, SettingsTransfer transfer, UpdateService updates, IMainWindowHost host, MonitorViewModel? monitor)
+        AppSettings settings, LocationService location, SettingsTransfer transfer, UpdateService updates, ShortcutService shortcuts,
+        IMainWindowHost host, MonitorViewModel? monitor)
         : base("Settings")
     {
+        _shortcuts = shortcuts;
+        var actions = shortcuts.Actions;
+        Shortcuts = [.. actions.Where(action => !action.Id.StartsWith("input-", StringComparison.Ordinal)).Select(action => new ShortcutRowViewModel(action, shortcuts))];
+        InputShortcuts = [.. actions.Where(action => action.Id.StartsWith("input-", StringComparison.Ordinal)).Select(action => new ShortcutRowViewModel(action, shortcuts, isNested: true))];
+        shortcuts.Changed += OnShortcutsChanged;
         _updates = updates;
         updates.Changed += OnUpdatesChanged;
         _settings = settings;
@@ -68,7 +75,25 @@ public sealed partial class SettingsPageViewModel : MainPageViewModel
         }
     }
 
-    /// <summary>Show a small overlay when a shortcut switches a profile.</summary>
+    /// <summary>Open quick settings, brightness, picture mode, HDR and Target mode.</summary>
+    public IReadOnlyList<ShortcutRowViewModel> Shortcuts { get; }
+
+    /// <summary>One per input of the monitor; empty if it can't switch inputs.</summary>
+    public IReadOnlyList<ShortcutRowViewModel> InputShortcuts { get; }
+
+    public bool HasInputShortcuts => InputShortcuts.Count > 0;
+
+    public bool ScrollOverTrayIcon
+    {
+        get => _settings.Current.ScrollOverTrayIcon;
+        set
+        {
+            _settings.Update(current => current with { ScrollOverTrayIcon = value });
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>Show a small overlay when a shortcut switches a profile or changes a setting.</summary>
     public bool ShowShortcutOverlay
     {
         get => _settings.Current.ShowShortcutOverlay;
@@ -146,8 +171,17 @@ public sealed partial class SettingsPageViewModel : MainPageViewModel
         OnPropertyChanged(nameof(IsUpdateAvailable));
     }
 
+    private void OnShortcutsChanged(object? sender, EventArgs e)
+    {
+        foreach (var row in Shortcuts.Concat(InputShortcuts))
+        {
+            row.Refresh();
+        }
+    }
+
     public override void Close()
     {
+        _shortcuts.Changed -= OnShortcutsChanged;
         _updates.Changed -= OnUpdatesChanged;
         _location.Changed -= OnLocationChanged;
         base.Close();

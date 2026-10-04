@@ -8,8 +8,8 @@ namespace DisplayToolkit.App.Services;
 
 /// <summary>
 /// Exports and imports everything the user set up in one file: preferences, profiles and rules, and the quick settings
-/// layout, for every monitor model. Machine-specific things stay out: window position, the last Windows location
-/// and the capabilities cache.
+/// layout, for every monitor model. Machine-specific things stay out: window position, the last Windows location,
+/// the selected monitor and the capabilities cache.
 /// </summary>
 internal sealed class SettingsTransfer(AppSettings settings, AutomationStore automationStore, AutomationService automation, LayoutStore layouts)
 {
@@ -26,6 +26,7 @@ internal sealed class SettingsTransfer(AppSettings settings, AutomationStore aut
             LastUpdateCheck = null,
             DismissedUpdateVersion = null,
             NotifiedUpdateVersion = null,
+            SelectedMonitor = null,
         };
         var bundle = new JsonObject
         {
@@ -70,6 +71,7 @@ internal sealed class SettingsTransfer(AppSettings settings, AutomationStore aut
             LastUpdateCheck = current.LastUpdateCheck,
             DismissedUpdateVersion = current.DismissedUpdateVersion,
             NotifiedUpdateVersion = current.NotifiedUpdateVersion,
+            SelectedMonitor = current.SelectedMonitor,
         });
         automationStore.SetAll(automations);
         layouts.ReplaceAll(layoutData);

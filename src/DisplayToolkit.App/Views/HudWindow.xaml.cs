@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using DisplayToolkit.App.Native;
@@ -7,7 +8,7 @@ using DisplayToolkit.App.Native;
 namespace DisplayToolkit.App.Views;
 
 /// <summary>
-/// The overlay that confirms a shortcut, such as a profile switch (design spec §4.9): centered 24 px above the
+/// The overlay that confirms a shortcut, such as a profile switch or a brightness step (design spec §4.9): centered 24 px above the
 /// taskbar of the monitor under the pointer, shown for 1.5 s after the last change.
 /// </summary>
 internal sealed partial class HudWindow : Window
@@ -16,19 +17,31 @@ internal sealed partial class HudWindow : Window
     private static readonly Duration FadeDuration = TimeSpan.FromMilliseconds(150);
     private const double TaskbarGap = 24;
 
+    private static readonly FontFamily TextFont = new("Segoe UI Variable Text, Segoe UI");
+
     private readonly DispatcherTimer _hideTimer = new() { Interval = VisibleFor };
+    private readonly FontFamily _iconFont;
 
     public HudWindow()
     {
         InitializeComponent();
+        _iconFont = Glyph.FontFamily;
         _hideTimer.Tick += (_, _) => FadeOut();
         SourceInitialized += (_, _) => User32.MakeOverlay(new WindowInteropHelper(this).Handle);
     }
 
-    public void Show(string glyph, string text)
+    /// <param name="glyph">A Segoe Fluent Icons glyph, or short text such as "HDR".</param>
+    /// <param name="level">For levels such as brightness: how full the bar is, from 0 to 1.</param>
+    public void Show(string glyph, string text, double? level = null)
     {
+        var isText = glyph.Length > 1;
+        Glyph.FontFamily = isText ? TextFont : _iconFont;
+        Glyph.FontSize = isText ? 12 : 16;
+        Glyph.FontWeight = isText ? FontWeights.Bold : FontWeights.Normal;
         Glyph.Text = glyph;
         Label.Text = text;
+        LevelBar.Visibility = level is null ? Visibility.Collapsed : Visibility.Visible;
+        LevelFill.Width = LevelBar.Width * Math.Clamp(level ?? 0, 0, 1);
 
         if (!IsVisible)
         {

@@ -45,8 +45,21 @@ public sealed class ShortcutRecorder : Control
     public bool IsRecording
     {
         get => (bool)GetValue(IsRecordingProperty);
-        private set => SetValue(IsRecordingPropertyKey, value);
+        private set
+        {
+            if (value != IsRecording)
+            {
+                SetValue(IsRecordingPropertyKey, value);
+                RecordingChanged?.Invoke(this, value);
+            }
+        }
     }
+
+    /// <summary>
+    /// A recorder started (true) or stopped (false) listening. The app's own shortcuts are paused meanwhile: Windows
+    /// would deliver a registered shortcut to them instead of to the recorder.
+    /// </summary>
+    public static event EventHandler<bool>? RecordingChanged;
 
     /// <summary>
     /// Starts on the press, not the release: the recorder sits inside a settings card, which is a button and captures

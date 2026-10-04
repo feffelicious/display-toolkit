@@ -15,7 +15,10 @@ internal sealed partial class GlobalHotkeys : IDisposable
     private static readonly nint MessageOnlyParent = -3;
 
     private readonly HwndSource _window;
-    private readonly HashSet<int> _registered = [];
+
+    /// <summary>Registered shortcuts by id, as passed to <c>RegisterHotKey</c>, so they can be paused and restored.</summary>
+    private readonly Dictionary<int, (uint Flags, uint VirtualKey)> _registered = [];
+    private bool _isSuspended;
 
     public GlobalHotkeys()
     {
@@ -29,28 +32,54 @@ internal sealed partial class GlobalHotkeys : IDisposable
     /// <summary>
     /// Registers a shortcut. Returns false if Windows or another app already owns it; the caller should tell the user.
     /// </summary>
-    public bool Register(int id, ModifierKeys modifiers, Key key)
+    /// <param name="repeats">Raise <see cref="Pressed"/> again while the keys are held, for stepping a level.</param>
+    public bool Register(int id, ModifierKeys modifiers, Key key, bool repeats = false)
     {
         Unregister(id);
-        var registered = RegisterHotKey(_window.Handle, id, (uint)modifiers | ModNoRepeat, (uint)KeyInterop.VirtualKeyFromKey(key));
+        var flags = (uint)modifiers | (repeats ? 0 : ModNoRepeat);
+        var virtualKey = (uint)KeyInterop.VirtualKeyFromKey(key);
+        var registered = _isSuspended || RegisterHotKey(_window.Handle, id, flags, virtualKey);
         if (registered)
         {
-            _registered.Add(id);
+            _registered[id] = (flags, virtualKey);
         }
         return registered;
     }
 
     public void Unregister(int id)
     {
-        if (_registered.Remove(id))
+        if (_registered.Remove(id) && !_isSuspended)
         {
             UnregisterHotKey(_window.Handle, id);
         }
     }
 
+    /// <summary>
+    /// Pauses every shortcut (true) or brings them back (false), so a shortcut recorder receives the keys instead.
+    /// </summary>
+    public void SetSuspended(bool suspended)
+    {
+        if (suspended == _isSuspended)
+        {
+            return;
+        }
+        _isSuspended = suspended;
+        foreach (var (id, (flags, virtualKey)) in _registered)
+        {
+            if (suspended)
+            {
+                UnregisterHotKey(_window.Handle, id);
+            }
+            else
+            {
+                RegisterHotKey(_window.Handle, id, flags, virtualKey);
+            }
+        }
+    }
+
     public void Dispose()
     {
-        foreach (var id in _registered.ToList())
+        foreach (var id in _registered.Keys.ToList())
         {
             Unregister(id);
         }

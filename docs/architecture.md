@@ -100,12 +100,15 @@ MonitorSession          per monitor: capabilities, current values, verified writ
 
 - **Startup** (`App.xaml.cs`): single instance (a named mutex, and an event that asks the running instance to open quick
   settings), generic host, then the tray, the monitor scan, automation and the update check.
-- **Services**: `MonitorService` (sessions, rescans after display changes), `MonitorContext` (the monitor the UI shows),
+- **Services**: `MonitorService` (sessions, rescans after display changes), `MonitorContext` (the monitor the app
+  controls; with several, the user's pick, remembered),
   `AutomationService` (runs the engine against the monitor: applies profiles, samples conditions, the sun cycle, profile
-  shortcuts), `LocationService`, `UpdateService` (GitHub releases), `SettingsTransfer` (export and import), and small stores
+  shortcuts), `ShortcutService` (the app's own shortcuts), `TargetMode` (a click-through Win32 overlay with a hole
+  that follows the foreground window), `LocationService`, `UpdateService` (GitHub releases), `SettingsTransfer` (export and import), and small stores
   for settings, layouts and the capabilities cache.
 - **Tray** (`TrayIcon`, `TrayController`): `Shell_NotifyIconW` with its own message window; left click opens quick
-  settings, right click the menu; display changes and resume trigger a rescan. The icon is drawn from `IconArt`.
+  settings, right click the menu; display changes and resume trigger a rescan. While the pointer is over the icon a low-level
+  mouse hook watches the wheel for brightness. The icon is drawn from `IconArt`.
 - **Quick settings** (`Flyout/`): Acrylic, anchored by the taskbar; brightness band, profiles row and a tile grid the user
   arranges.
 - **Main window** (`Views/`): Mica, a navigation pane and settings-card pages: Display, Profiles & automation, OLED care,
@@ -122,5 +125,6 @@ MonitorSession          per monitor: capabilities, current values, verified writ
   missing values when reading files from older versions.
 - Tests cover the capabilities parser and feature catalog, `MonitorSession` behavior (coalescing, bitmask writes, locks,
   failed writes, reconnects, confirmations), the automation engine, sun maths, conditions, profile application and storage.
-- Debug builds have `--snapshot <folder>` to render every page to PNG, and `DISPLAYTOOLKIT_DATA` to run on sample data.
+- Debug builds have `--snapshot <folder>` to render every page to PNG, `DISPLAYTOOLKIT_DATA` to run on sample data, and
+  `DISPLAYTOOLKIT_DEMO_MONITOR=1` to add an in-memory second monitor.
   Runs on sample data never write to the monitor.

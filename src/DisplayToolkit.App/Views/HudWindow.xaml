@@ -15,7 +15,7 @@
         Focusable="False"
         IsHitTestVisible="False">
 
-  <!-- A pill above the taskbar: glyph and profile name. The window is click-through and never takes focus. -->
+  <!-- A pill above the taskbar: glyph and what changed (a profile name, or a level with its bar). The window is click-through and never takes focus. -->
   <Border x:Name="Pill" Width="236" Height="48" HorizontalAlignment="Center" VerticalAlignment="Center" CornerRadius="24"
           BorderThickness="1" Opacity="0"
           Background="{DynamicResource SolidBackgroundFillColorQuarternaryBrush}"
@@ -25,8 +25,14 @@
     </Border.Effect>
     <StackPanel Margin="20,0" HorizontalAlignment="Center" VerticalAlignment="Center" Orientation="Horizontal">
       <TextBlock x:Name="Glyph" Style="{StaticResource IconText}" FontSize="16" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+      <!-- For levels such as brightness: a bar, then the number. -->
+      <Grid x:Name="LevelBar" Width="100" Height="4" Margin="14,0,0,0" VerticalAlignment="Center" Visibility="Collapsed">
+        <Border CornerRadius="2" Background="{DynamicResource ControlStrongFillColorDisabledBrush}" />
+        <Border x:Name="LevelFill" HorizontalAlignment="Left" CornerRadius="2" Background="{DynamicResource AccentFillColorDefaultBrush}" />
+      </Grid>
       <TextBlock x:Name="Label" Margin="12,0,0,0" MaxWidth="170" VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold"
-                 Foreground="{DynamicResource TextFillColorPrimaryBrush}" TextTrimming="CharacterEllipsis" />
+                 Foreground="{DynamicResource TextFillColorPrimaryBrush}" TextTrimming="CharacterEllipsis"
+                 Typography.NumeralAlignment="Tabular" />
     </StackPanel>
   </Border>
 </Window>

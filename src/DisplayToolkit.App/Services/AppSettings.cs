@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using DisplayToolkit.Automation.Profiles;
 using Microsoft.Extensions.Logging;
 
 namespace DisplayToolkit.App.Services;
@@ -27,8 +28,23 @@ public sealed record AppSettingsData
 {
     public AppTheme Theme { get; set; } = AppTheme.System;
 
-    /// <summary>Show a small overlay when a shortcut switches a profile.</summary>
+    /// <summary>Show a small overlay when a shortcut switches a profile or changes a setting.</summary>
     public bool ShowShortcutOverlay { get; set; } = true;
+
+    /// <summary>
+    /// App shortcuts by action id (<see cref="ShortcutService"/>). A missing action has its default; null means the
+    /// user removed it.
+    /// </summary>
+    public Dictionary<string, Shortcut?> Shortcuts { get; set; } = [];
+
+    /// <summary>The mouse wheel over the tray icon changes brightness.</summary>
+    public bool ScrollOverTrayIcon { get; set; } = true;
+
+    /// <summary>How dark Target mode makes everything but the window in use, from 0 to 1.</summary>
+    public double TargetModeDim { get; set; } = 0.6;
+
+    /// <summary>The device path (<c>MonitorId.Instance</c>) of the monitor the app controls, when there are several.</summary>
+    public string? SelectedMonitor { get; init; }
 
     /// <summary>Use the location from Windows for sunrise and sunset; otherwise <see cref="ManualLocation"/>.</summary>
     public bool UseWindowsLocation { get; set; } = true;

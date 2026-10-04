@@ -26,13 +26,16 @@ internal sealed partial class FlyoutViewModel : ObservableObject
     private readonly MainWindowLauncher _mainWindow;
     private readonly AutomationService _automation;
     private readonly UpdateService _updates;
+    private readonly TargetMode _targetMode;
     private List<ProfileChipViewModel> _quickProfiles = [];
 
     /// <summary>The tile order when edit mode started, restored if editing is cancelled.</summary>
     private List<string>? _layoutBeforeEdit;
 
-    public FlyoutViewModel(MonitorContext context, LayoutStore layouts, MainWindowLauncher mainWindow, AutomationService automation, UpdateService updates)
+    public FlyoutViewModel(
+        MonitorContext context, LayoutStore layouts, MainWindowLauncher mainWindow, AutomationService automation, UpdateService updates, TargetMode targetMode)
     {
+        _targetMode = targetMode;
         _updates = updates;
         updates.Changed += (_, _) => OnPropertyChanged(nameof(UpdateReminder));
         _context = context;
@@ -53,6 +56,9 @@ internal sealed partial class FlyoutViewModel : ObservableObject
     public partial MonitorViewModel? Monitor { get; private set; }
 
     public FeatureState? Brightness => Monitor?[FeatureCatalog.Brightness];
+
+    /// <summary>More than one monitor answered: the header offers a switch.</summary>
+    public bool HasSeveralMonitors => _context.Monitors.Count > 1;
 
     /// <summary>
     /// The link under the monitor name, for example "DisplayPort, 240 Hz". From Windows, not the monitor's input
@@ -226,6 +232,9 @@ internal sealed partial class FlyoutViewModel : ObservableObject
     private void DismissFailure() => FailedFeature = null;
 
     [RelayCommand]
+    private void OpenMonitorsPage() => Navigate(new MonitorsPageViewModel(_context));
+
+    [RelayCommand]
     private void OpenProfilesPage() => Navigate(new ProfilesPageViewModel(_quickProfiles));
 
     [RelayCommand]
@@ -267,7 +276,7 @@ internal sealed partial class FlyoutViewModel : ObservableObject
 
     private void AddTile(TileDefinition definition)
     {
-        if (Monitor is { } monitor && definition.Create(monitor, Navigate) is { } tile)
+        if (Monitor is { } monitor && definition.Create(TileContextFor(monitor)) is { } tile)
         {
             AttachTile(tile);
             Tiles.Add(tile);
@@ -296,13 +305,15 @@ internal sealed partial class FlyoutViewModel : ObservableObject
         ClearTiles();
         foreach (var id in ids)
         {
-            if (TileCatalog.Find(id)?.Create(monitor, Navigate) is { } tile)
+            if (TileCatalog.Find(id)?.Create(TileContextFor(monitor)) is { } tile)
             {
                 AttachTile(tile);
                 Tiles.Add(tile);
             }
         }
     }
+
+    private TileContext TileContextFor(MonitorViewModel monitor) => new(monitor, Navigate, _targetMode);
 
     private void ClearTiles()
     {
@@ -377,6 +388,7 @@ internal sealed partial class FlyoutViewModel : ObservableObject
             }
         }
         OnPropertyChanged(nameof(State));
+        OnPropertyChanged(nameof(HasSeveralMonitors));
     }
 }
 

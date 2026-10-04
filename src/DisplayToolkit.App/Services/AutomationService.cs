@@ -629,4 +629,6 @@ internal sealed class AutomationService : IDisposable
 }
 
 /// <summary>What the on-screen overlay shows after a shortcut.</summary>
-public sealed record ShortcutFeedback(string Glyph, string Text);
+/// <param name="Glyph">A Segoe Fluent Icons glyph, or short text such as "HDR".</param>
+/// <param name="Level">For levels such as brightness: how full the bar is, from 0 to 1.</param>
+public sealed record ShortcutFeedback(string Glyph, string Text, double? Level = null);
