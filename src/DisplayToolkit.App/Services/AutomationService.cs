@@ -57,6 +57,7 @@ internal sealed class AutomationService : IDisposable
     private MonitorViewModel? _monitor;
     private bool _isApplying;
     private bool _isSampling;
+    private bool _locationAsked;
 
     /// <summary>The profile written last, by automation or by the user. Automation doesn't write it again.</summary>
     private Guid? _appliedProfileId;
@@ -88,7 +89,7 @@ internal sealed class AutomationService : IDisposable
         _engine.StateChanged += (_, _) => OnStateChanged();
         _wakeTimer.Tick += (_, _) => Tick();
         _conditionTimer.Tick += async (_, _) => await SampleConditionsAsync();
-        _locationTimer.Tick += async (_, _) => await _location.RefreshAsync();
+        _locationTimer.Tick += (_, _) => RefreshLocationIfNeeded(again: true);
         _hotkeys.Pressed += (_, id) => OnHotkey(id);
         _location.Changed += (_, _) => Configure();
     }
@@ -140,7 +141,23 @@ internal sealed class AutomationService : IDisposable
         _context.Changed += (_, _) => OnMonitorChanged();
         OnMonitorChanged();
         _locationTimer.Start();
-        _ = _location.RefreshAsync();
+        RefreshLocationIfNeeded();
+    }
+
+    /// <summary>Follow the sun or a sunrise or sunset rule needs to know where the user is.</summary>
+    public bool NeedsLocation => Automation.SunCycle.IsEnabled || Automation.Rules.Any(rule => rule.IsEnabled && rule.Trigger is SunTrigger);
+
+    /// <summary>
+    /// Asks Windows for the location only once something needs it (and the user chose Windows location in Settings),
+    /// so people who don't use the sun features never see Windows' location prompts. Then again every few hours.
+    /// </summary>
+    private void RefreshLocationIfNeeded(bool again = false)
+    {
+        if (NeedsLocation && (again || !_locationAsked))
+        {
+            _locationAsked = true;
+            _ = _location.RefreshAsync();
+        }
     }
 
     /// <summary>
@@ -215,6 +232,7 @@ internal sealed class AutomationService : IDisposable
             RegisterShortcuts();
             Configure();
             OnStateChanged();
+            RefreshLocationIfNeeded();
         }
     }
 
@@ -318,6 +336,7 @@ internal sealed class AutomationService : IDisposable
         RegisterShortcuts();
         Configure();
         UpdateSunCycle();
+        RefreshLocationIfNeeded();
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
