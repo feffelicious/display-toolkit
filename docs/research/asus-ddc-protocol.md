@@ -226,7 +226,8 @@ Without confirmation the prompt times out and nothing changes. Write it once and
 
 `0xE3` crosshair, "new" style set (caps contains 07+): 7 Blue Dot, 8 Green Dot, 9 Blue Mini Duplex, 10 Green Mini Duplex,
 11 Blue Heavy Duplex, 12 Green Heavy Duplex. Legacy set (1–6): red/green point, dial, crosshair. Caps also lists 13–15, which
-the monitor's menu doesn't offer. Untested.
+the monitor's menu doesn't offer. They work: 13 a blue dot, 14 a small and 15 a large crosshair whose color adapts to the
+background.
 
 ## Availability caveats (observed)
 
