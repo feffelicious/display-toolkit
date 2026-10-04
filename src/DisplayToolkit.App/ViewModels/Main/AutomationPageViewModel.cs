@@ -69,6 +69,10 @@ internal sealed partial class AutomationPageViewModel : MainPageViewModel
     [ObservableProperty]
     public partial bool IsPaused { get; private set; }
 
+    /// <summary>A profile picked by hand is in effect; "Back to automatic" ends it now.</summary>
+    [ObservableProperty]
+    public partial bool IsManual { get; private set; }
+
     public SunCycleViewModel SunCycle { get; }
 
     public ObservableCollection<RuleItemViewModel> Rules { get; } = [];
@@ -123,6 +127,9 @@ internal sealed partial class AutomationPageViewModel : MainPageViewModel
     [RelayCommand]
     private void Resume() => _automation.Resume();
 
+    [RelayCommand]
+    private Task BackToAutomatic() => _automation.ResumeAutomaticAsync();
+
     private void OpenRuleDialog(Rule? rule) =>
         _host.ShowDialog(new RuleDialogViewModel(_automation, _location, rule, _host.CloseDialog));
 
@@ -176,6 +183,7 @@ internal sealed partial class AutomationPageViewModel : MainPageViewModel
 
         Day = new DayStripViewModel(_automation.Engine, _automation.Automation, DateTimeOffset.Now);
         IsPaused = _automation.Engine.IsPaused;
+        IsManual = _automation.IsManual;
         Status = StatusLine();
         SunCycle.UpdateStatus();
     }

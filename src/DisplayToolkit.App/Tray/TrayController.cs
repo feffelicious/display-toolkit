@@ -40,7 +40,7 @@ internal sealed class TrayController(
         _icon.ContextMenuRequested += (_, _) => ShowMenu();
         _icon.DisplaysChanged += (_, _) => OnDisplaysChanged();
         monitors.Changed += (_, _) => UpdateTooltip();
-        automation.ShortcutUsed += (_, profile) => ShowHud(profile.Glyph, profile.Name);
+        automation.ShortcutUsed += (_, feedback) => ShowHud(feedback.Glyph, feedback.Text);
 
         hotkeys.Pressed += (_, id) =>
         {
@@ -119,6 +119,11 @@ internal sealed class TrayController(
                 profiles.Items.Add(item);
             }
             menu.Items.Add(profiles);
+        }
+
+        if (automation.IsManual)
+        {
+            menu.Items.Add(Item("Back to automatic", () => _ = automation.ResumeAutomaticAsync()));
         }
 
         if (automation.Rules.Count > 0)

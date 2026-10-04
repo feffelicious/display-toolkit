@@ -262,6 +262,14 @@
               </ContextMenu>
             </Button.ContextMenu>
           </Button>
+          <Button DockPanel.Dock="Right" Margin="0,0,8,0" VerticalAlignment="Top" Padding="12,5" Style="{DynamicResource AccentButtonStyle}"
+                  Command="{Binding BackToAutomaticCommand}" Visibility="{Binding IsManual, Converter={StaticResource VisibleWhenTrue}}"
+                  ToolTip="Apply what the rules want now, or the settings from before you picked a profile">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Style="{StaticResource IconText}" FontSize="12" Text="&#xE945;" />
+              <TextBlock Margin="8,0,0,0" Text="Back to automatic" />
+            </StackPanel>
+          </Button>
           <Button DockPanel.Dock="Right" VerticalAlignment="Top" Padding="12,5" Style="{DynamicResource AccentButtonStyle}"
                   Command="{Binding ResumeCommand}" Visibility="{Binding IsPaused, Converter={StaticResource VisibleWhenTrue}}">
             <StackPanel Orientation="Horizontal">

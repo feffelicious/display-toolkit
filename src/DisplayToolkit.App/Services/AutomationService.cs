@@ -67,6 +67,12 @@ internal sealed class AutomationService : IDisposable
     /// </summary>
     private Dictionary<string, uint>? _restorePoint;
 
+    /// <summary>
+    /// The values from before the user's manual choice, for <see cref="ResumeAutomaticAsync"/> when no rule applies.
+    /// Dropped when the manual choice ends by itself.
+    /// </summary>
+    private Dictionary<string, uint>? _manualRestorePoint;
+
     /// <summary>What the sun cycle last wrote; null while it isn't driving the monitor (so it writes in full next time).</summary>
     private SunCycleTarget? _sunWritten;
 
@@ -91,7 +97,7 @@ internal sealed class AutomationService : IDisposable
     public event EventHandler? Changed;
 
     /// <summary>A profile was switched with its shortcut (for the on-screen overlay).</summary>
-    public event EventHandler<Profile>? ShortcutUsed;
+    public event EventHandler<ShortcutFeedback>? ShortcutUsed;
 
     public MonitorAutomation Automation { get; private set; } = MonitorAutomation.Empty;
 
@@ -207,9 +213,45 @@ internal sealed class AutomationService : IDisposable
     /// <summary>The user picked a profile: apply it, and let automation wait for the next rule event.</summary>
     public async Task ApplyAsync(Profile profile)
     {
+        // Remember what the first manual choice replaces (and what later ones add), to undo it.
+        if (State.Reason != AutomationReason.Manual)
+        {
+            _manualRestorePoint = [];
+        }
+        if (_monitor is { } monitor && _manualRestorePoint is not null)
+        {
+            foreach (var (id, value) in MonitorProfileTarget.Capture(monitor, profile.Settings.Keys.Where(id => !_manualRestorePoint.ContainsKey(id))))
+            {
+                _manualRestorePoint[id] = value;
+            }
+        }
+
         _restorePoint = null;
         _engine.SetManual(profile.Id);
         await ApplyProfileAsync(profile, byAutomation: false);
+    }
+
+    /// <summary>A manual choice is in effect, which <see cref="ResumeAutomaticAsync"/> can end.</summary>
+    public bool IsManual => State.Reason == AutomationReason.Manual;
+
+    /// <summary>
+    /// Ends a manual choice now instead of at the next rule event: the profile the rules want is applied, or, when no
+    /// rule applies, the settings from before the manual choice come back.
+    /// </summary>
+    public async Task ResumeAutomaticAsync()
+    {
+        if (!IsManual)
+        {
+            return;
+        }
+        var previous = _manualRestorePoint;
+        _manualRestorePoint = null;
+        _appliedProfileId = null; // Apply the rules' profile even if it's the one picked by hand.
+        _engine.Resume();
+        if (State.Reason == AutomationReason.None && previous is { Count: > 0 })
+        {
+            await ApplyProfileAsync(new Profile { Id = Guid.Empty, Name = "Previous settings", Settings = previous }, byAutomation: false);
+        }
     }
 
     /// <summary>Pauses automation for <paramref name="duration"/>, or until <see cref="Resume"/> when null.</summary>
@@ -356,6 +398,10 @@ internal sealed class AutomationService : IDisposable
     private void OnStateChanged()
     {
         var state = _engine.State;
+        if (state.Reason != AutomationReason.Manual)
+        {
+            _manualRestorePoint = null;
+        }
         if (state.Reason is AutomationReason.Schedule or AutomationReason.Condition
             && state.ProfileId != _appliedProfileId
             && Automation.FindProfile(state.ProfileId!.Value) is { } profile)
@@ -541,12 +587,32 @@ internal sealed class AutomationService : IDisposable
         }
     }
 
+    /// <summary>
+    /// A profile's shortcut applies it; pressed again while that profile is the manual choice, it goes back to
+    /// automatic.
+    /// </summary>
     private async void OnHotkey(int id)
     {
-        if (_hotkeyProfiles.TryGetValue(id, out var profileId) && Automation.FindProfile(profileId) is { } profile)
+        if (!_hotkeyProfiles.TryGetValue(id, out var profileId) || Automation.FindProfile(profileId) is not { } profile)
         {
-            ShortcutUsed?.Invoke(this, profile);
-            await ApplyAsync(profile);
+            return;
         }
+
+        if (IsManual && State.ProfileId == profile.Id)
+        {
+            // The state changes at once; writing to the monitor takes longer, so confirm before waiting for it.
+            var resuming = ResumeAutomaticAsync();
+            ShortcutUsed?.Invoke(this, ActiveProfile is { } automatic
+                ? new ShortcutFeedback("\uE945", $"Automatic: {automatic.Name}")
+                : new ShortcutFeedback("\uE7A7", "Previous settings"));
+            await resuming;
+            return;
+        }
+
+        ShortcutUsed?.Invoke(this, new ShortcutFeedback(profile.Glyph, profile.Name));
+        await ApplyAsync(profile);
     }
 }
+
+/// <summary>What the on-screen overlay shows after a shortcut.</summary>
+public sealed record ShortcutFeedback(string Glyph, string Text);
