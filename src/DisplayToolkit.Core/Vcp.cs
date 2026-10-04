@@ -51,6 +51,9 @@ public static class Vcp
     public const byte AsusFpsCounter = 0xEA;
     public const byte AsusEzOsd = 0xEB;
 
+    /// <summary>Sharpening of upscaled (lower-resolution) input, 0 off to 3; ASUS calls it Smart Pixel.</summary>
+    public const byte AsusUpscalingSharpness = 0xD1;
+
     /// <summary>Aura lighting on the back: effect in the low byte, color in the high byte.</summary>
     public const byte AsusAura = 0xF2;
     public const byte AsusResetMode = 0xEC;

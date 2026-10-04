@@ -74,6 +74,7 @@ the single value is the **supported-bits mask**.
 | `0x47` | OLED motion sensitivity | |
 | `0x4B` | Triple mode | |
 | `0xC5` | OLED anti-flicker | 0/1 |
+| `0xD1` | Smart Pixel (upscaling sharpness) | 0 off, 1–3 levels. Verified by watching DWC; ASUS describes it as sharpening for upscaled lower-resolution input |
 | `0xDC` | **GameVisual mode** + color gamut | low byte = mode: 1 Cinema, 2 Scenery, 3 sRGB, 4 User ✅, 5 Racing, 6 RTS/RPG, 7 FPS, 8 MOBA, 9 Night Vision, 10 sRGB Cal. High byte = DWC's "Color Richness" (verified by watching DWC): 0 Wide Gamut, 1 Natural / sRGB, 2 Vivid / DCI-P3. Write only the low byte to change the mode. |
 | `0xE0` | Overdrive | |
 | `0xE1` | Power saving (v2) | 0/1 |

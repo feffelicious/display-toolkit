@@ -38,6 +38,7 @@ public static class ProfileSettings
         Of(FeatureCatalog.SaturationMagenta),
         Of(FeatureCatalog.VariableRefreshRate),
         Of(FeatureCatalog.FrameRateBoost),
+        Of(FeatureCatalog.UpscalingSharpness),
         Of(FeatureCatalog.Elmb),
         Of(FeatureCatalog.Crosshair),
         Of(FeatureCatalog.FpsCounter),

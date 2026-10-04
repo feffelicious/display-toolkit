@@ -59,6 +59,7 @@ public static class SettingsSearch
         new("Blue light filter", Display, "night eye care tüv low blue light", FeatureCatalog.BlueLightFilter),
         new("Shadow boost", Display, "dark black detail dynamic", FeatureCatalog.ShadowBoost),
         new("Variable refresh rate", Display, "vrr g-sync freesync adaptive-sync", FeatureCatalog.VariableRefreshRate),
+        new("Upscaling sharpness (Smart Pixel)", Display, "smart pixel upscale resolution 1080p detail", FeatureCatalog.UpscalingSharpness),
         new("Frame-rate boost", Display, "dual mode resolution refresh", FeatureCatalog.FrameRateBoost),
         new("Aura lighting", Display, "light rgb led glow back effect", FeatureCatalog.AuraEffect),
         new("Aura color", Display, "light rgb led", FeatureCatalog.AuraColor, Card: "Aura lighting"),

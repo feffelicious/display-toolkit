@@ -118,6 +118,11 @@ public sealed partial class DisplayPageViewModel : MainPageViewModel
 
     public FeatureState? Sharpness => Monitor[FeatureCatalog.Sharpness];
 
+    /// <summary>Sharpness is a standard setting; on ASUS monitors it also gets ASUS's name for it.</summary>
+    public string SharpnessTitle => Monitor.Session.Id.Model.StartsWith("AUS", StringComparison.OrdinalIgnoreCase)
+        ? "Sharpness (VividPixel)"
+        : "Sharpness";
+
     public bool HasSixAxis => Monitor[FeatureCatalog.SaturationRed] is not null;
 
     /// <summary>The monitor can put the current picture mode back to factory settings.</summary>
@@ -141,6 +146,8 @@ public sealed partial class DisplayPageViewModel : MainPageViewModel
     public FeatureState? VariableRefreshRate => Monitor[FeatureCatalog.VariableRefreshRate];
 
     public FeatureState? FrameRateBoost => Monitor[FeatureCatalog.FrameRateBoost];
+
+    public FeatureState? UpscalingSharpness => Monitor[FeatureCatalog.UpscalingSharpness];
 
     // Lighting
     public FeatureState? AuraEffect => Monitor[FeatureCatalog.AuraEffect];

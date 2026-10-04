@@ -171,7 +171,7 @@
             </StackPanel>
           </controls:SettingsCard>
 
-          <controls:SettingsCard IsNested="True" Header="Sharpness" Visibility="{Binding Sharpness, Converter={StaticResource VisibleWhenNotNull}}">
+          <controls:SettingsCard IsNested="True" Header="{Binding SharpnessTitle}" Visibility="{Binding Sharpness, Converter={StaticResource VisibleWhenNotNull}}">
             <StackPanel Orientation="Horizontal">
               <Slider Width="240" VerticalAlignment="Center" Minimum="0" Maximum="{Binding Sharpness.Maximum}" IsMoveToPointEnabled="True"
                       IsSnapToTickEnabled="True" TickFrequency="1" Value="{Binding Sharpness.SliderValue, Mode=TwoWay}" AutomationProperties.Name="Sharpness" />
@@ -212,6 +212,12 @@
     <controls:SettingsCard Header="Frame-rate boost" HeaderIcon="&#xE945;" Description="Dual mode: lower resolution for a higher refresh rate."
                            Visibility="{Binding FrameRateBoost.IsAvailable, Converter={StaticResource VisibleWhenTrue}, FallbackValue=Collapsed}">
       <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding FrameRateBoost.Toggled, Mode=TwoWay}" AutomationProperties.Name="Frame-rate boost" />
+    </controls:SettingsCard>
+
+    <controls:SettingsCard Header="Upscaling sharpness (Smart Pixel)" HeaderIcon="&#xE8B9;"
+                           Description="Sharpens the picture when the input is below the panel's resolution, for example with frame-rate boost."
+                           Visibility="{Binding UpscalingSharpness.IsAvailable, Converter={StaticResource VisibleWhenTrue}, FallbackValue=Collapsed}">
+      <ItemsControl Width="240" Style="{StaticResource SegmentedChoices}" ItemsSource="{Binding UpscalingSharpness.Choices}" />
     </controls:SettingsCard>
 
     <!-- ======================================================== Lighting -->

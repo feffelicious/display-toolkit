@@ -57,7 +57,11 @@ public static class SettingHighlight
     }
 
     private static bool IsCard(DependencyObject element, string title) =>
-        element is SettingsCard card && card.Header == title || element is SettingsExpander expander && expander.Header == title;
+        element is SettingsCard card && Matches(card.Header, title) || element is SettingsExpander expander && Matches(expander.Header, title);
+
+    /// <summary>The same title, or the title with a name in brackets after it ("Sharpness (VividPixel)").</summary>
+    private static bool Matches(string header, string title) =>
+        header == title || header.StartsWith(title + " (", StringComparison.Ordinal);
 
     private static FrameworkElement? FindVisual(DependencyObject parent, Func<DependencyObject, bool> match)
     {

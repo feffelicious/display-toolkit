@@ -109,6 +109,9 @@ public static class FeatureCatalog
     {
         Settling = WriteSettling.ModeSwitch,
     };
+    /// <summary>Sharpens the picture when the monitor scales up a lower resolution. 0 is off.</summary>
+    public static readonly RangeFeature UpscalingSharpness = new("upscaling-sharpness", "Upscaling sharpness (Smart Pixel)", Vcp.AsusUpscalingSharpness);
+
     public static readonly SwitchFeature Elmb = new("elmb", "ELMB", Vcp.AsusElmb);
 
     // GamePlus (overlays drawn by the monitor)
@@ -258,7 +261,7 @@ public static class FeatureCatalog
         Brightness, Contrast, Sharpness, Saturation, PictureMode, ColorGamut, HdrMode,
         ColorTemperature, RedGain, GreenGain, BlueGain, Gamma,
         SaturationRed, SaturationYellow, SaturationGreen, SaturationCyan, SaturationBlue, SaturationMagenta,
-        BlueLightFilter, ShadowBoost, VariableRefreshRate, FrameRateBoost, Elmb,
+        BlueLightFilter, ShadowBoost, VariableRefreshRate, FrameRateBoost, UpscalingSharpness, Elmb,
         Crosshair, FpsCounter, Timer, DisplayAlignment,
         ScreenDimming, LogoDetection, UniformBrightness, TaskbarDetection, BoundaryDetection, OuterDimming, GlobalDimming,
         PixelCleaning, OledAntiFlicker, ScreenMove, PixelCleaningReminder,
