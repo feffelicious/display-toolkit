@@ -5,6 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:controls="clr-namespace:DisplayToolkit.App.Controls"
              xmlns:main="clr-namespace:DisplayToolkit.App.ViewModels.Main"
+             xmlns:monitors="clr-namespace:DisplayToolkit.Core.Monitors;assembly=DisplayToolkit.Core"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance main:GamePlusPageViewModel}">
   <StackPanel>
@@ -30,6 +31,42 @@
     <controls:SettingsCard Header="Display alignment" HeaderIcon="&#xE80A;" Description="Alignment lines for lining up several monitors."
                            Visibility="{Binding DisplayAlignment, Converter={StaticResource VisibleWhenNotNull}}">
       <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding DisplayAlignment.Toggled, Mode=TwoWay}" AutomationProperties.Name="Display alignment" />
+    </controls:SettingsCard>
+
+    <controls:SettingsCard Header="Position" HeaderIcon="&#xE7C2;" Description="Moves the FPS counter and timer. Hold an arrow to keep going."
+                           Visibility="{Binding CanMoveOverlays, Converter={StaticResource VisibleWhenTrue}}">
+      <!-- Repeat buttons: the monitor only takes small steps, so holding an arrow sends them every 50 ms. -->
+      <Grid>
+        <Grid.Resources>
+          <Style x:Key="Step" TargetType="RepeatButton" BasedOn="{StaticResource {x:Type RepeatButton}}">
+            <Setter Property="Width" Value="40" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Margin" Value="2" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Delay" Value="300" />
+            <Setter Property="Interval" Value="50" />
+            <Setter Property="Command" Value="{Binding MoveOverlaysCommand}" />
+          </Style>
+        </Grid.Resources>
+        <Grid.RowDefinitions>
+          <RowDefinition /><RowDefinition />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition /><ColumnDefinition /><ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <RepeatButton Grid.Column="1" Style="{StaticResource Step}" CommandParameter="{x:Static monitors:OverlayDirection.Up}" AutomationProperties.Name="Move up">
+          <TextBlock Style="{StaticResource IconText}" FontSize="12" Text="&#xE70E;" />
+        </RepeatButton>
+        <RepeatButton Grid.Row="1" Style="{StaticResource Step}" CommandParameter="{x:Static monitors:OverlayDirection.Left}" AutomationProperties.Name="Move left">
+          <TextBlock Style="{StaticResource IconText}" FontSize="12" Text="&#xE76B;" />
+        </RepeatButton>
+        <RepeatButton Grid.Row="1" Grid.Column="1" Style="{StaticResource Step}" CommandParameter="{x:Static monitors:OverlayDirection.Down}" AutomationProperties.Name="Move down">
+          <TextBlock Style="{StaticResource IconText}" FontSize="12" Text="&#xE70D;" />
+        </RepeatButton>
+        <RepeatButton Grid.Row="1" Grid.Column="2" Style="{StaticResource Step}" CommandParameter="{x:Static monitors:OverlayDirection.Right}" AutomationProperties.Name="Move right">
+          <TextBlock Style="{StaticResource IconText}" FontSize="12" Text="&#xE76C;" />
+        </RepeatButton>
+      </Grid>
     </controls:SettingsCard>
 
     <!-- ======================================================== Target mode (drawn by the app, not the monitor) -->

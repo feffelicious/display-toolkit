@@ -116,6 +116,33 @@ public sealed class MonitorSession : IDisposable
         }
     });
 
+    /// <summary>The GamePlus overlays can be moved (ASUS <c>0xE8</c>, all four directions).</summary>
+    public bool CanMoveOverlays => Enum.GetValues<OverlayDirection>().All(direction => Capabilities.ValuesOf(Vcp.AsusGamePlusPosition).Contains((uint)direction));
+
+    /// <summary>
+    /// Moves the GamePlus overlays one small step. The monitor only takes steps: it can't say where the overlays are,
+    /// so nothing is read back. Returns false if the monitor didn't answer.
+    /// </summary>
+    public Task<bool> MoveOverlaysAsync(OverlayDirection direction)
+    {
+        if (!CanMoveOverlays)
+        {
+            throw new NotSupportedException("This monitor can't move its GamePlus overlays.");
+        }
+        return _worker.Enqueue(() =>
+        {
+            try
+            {
+                _channel.Set(Vcp.AsusGamePlusPosition, (uint)direction);
+                return true;
+            }
+            catch (DdcException)
+            {
+                return false;
+            }
+        });
+    }
+
     /// <summary>The monitor accepts presses of every <see cref="MenuKey"/> (ASUS EZ-OSD, <c>0xEB</c>).</summary>
     public bool CanPressMenuKeys => Enum.GetValues<MenuKey>().All(key => Capabilities.ValuesOf(Vcp.AsusEzOsd).Contains((uint)key));
 

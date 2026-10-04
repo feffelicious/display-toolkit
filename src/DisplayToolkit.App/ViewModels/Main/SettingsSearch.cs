@@ -81,6 +81,7 @@ public static class SettingsSearch
         new("Crosshair", GamePlus, "aim reticle", FeatureCatalog.Crosshair),
         new("FPS counter", GamePlus, "frame rate refresh", FeatureCatalog.FpsCounter),
         new("Timer", GamePlus, "countdown", FeatureCatalog.Timer),
+        new("Position", GamePlus, "move fps counter timer overlay gameplus position place", NeedsMonitor: true),
         new("Display alignment", GamePlus, "lines multiple monitors", FeatureCatalog.DisplayAlignment),
         new("Target mode", GamePlus, "focus dim spotlight", NeedsMonitor: true),
 

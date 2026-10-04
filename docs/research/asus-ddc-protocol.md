@@ -83,7 +83,7 @@ the single value is the **supported-bits mask**.
 | `0xE5` | Shadow Boost | 0–4 ✅. On the PG32UCWM, DWC shows 1–3 as levels and 4 as its "Dynamic Shadow Boost" switch. ASUS's reference only says 1–max. |
 | `0xE6` | Blue light filter | 0–4 ✅ |
 | `0xE7` | Display alignment | 0/1 |
-| `0xE8` | GamePlus overlay position? | PG32UCWM: never answers reads; writes nudged the FPS counter within the top left and once opened the OSD. Behaves like an input, not a setting. Don't use. |
+| `0xE8` | GamePlus overlay position | a move command, not a setting: 1 up, 2 down, 3 right, 4 left, one small step per write (DWC resends every 50 ms while an arrow is held). Never answers reads. Other advertised values (5–8) aren't directions; one opened the OSD. |
 | `0xEA` | FPS counter | 0 off, 1 number, 2 bar |
 | `0xEB` | **EZ-OSD** (press the OSD keys) | verified: 0 close, 1 open main menu, 2 up, 3 down, 4 right (into a section), 5 left (out), 6 enter (untested), 7 back, 8 input list, `0x0A` GamePlus quick menu, `0x0B` GameVisual quick menu, `0x0D` volume quick menu, `0x0E` pixel-cleaning prompt (yes/no), `0x0F` **toggles frame-rate boost at once** (resolution change, Windows re-detects the display) |
 | `0xEC` | Reset current mode | write 1: the active picture mode gets its factory settings back at once, no OSD prompt; other modes and system settings untouched (verified, User mode: brightness 80, R/G/B 100) |

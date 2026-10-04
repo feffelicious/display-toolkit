@@ -98,6 +98,17 @@ public sealed class MonitorSessionTests : IDisposable
     }
 
     [Fact]
+    public async Task Overlay_steps_are_sent_as_is()
+    {
+        var session = await OpenAsync();
+
+        Assert.True(session.CanMoveOverlays);
+        Assert.True(await session.MoveOverlaysAsync(OverlayDirection.Left));
+
+        Assert.Equal([(Vcp.AsusGamePlusPosition, 4u)], _monitor.Writes);
+    }
+
+    [Fact]
     public async Task Menu_keys_are_sent_as_is()
     {
         var session = await OpenAsync();

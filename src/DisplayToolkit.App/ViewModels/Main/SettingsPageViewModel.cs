@@ -284,7 +284,7 @@ public sealed partial class SettingsPageViewModel : MainPageViewModel
     public bool CanUseMonitorMenu => Monitor?.Session.CanPressMenuKeys == true;
 
     /// <summary>Presses one of the monitor's menu keys.</summary>
-    [RelayCommand]
+    [RelayCommand(AllowConcurrentExecutions = true)]
     private Task PressMenuKey(MenuKey key) => Monitor?.Session.PressMenuKeyAsync(key) ?? Task.CompletedTask;
 
     public string Version { get; } = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "dev";

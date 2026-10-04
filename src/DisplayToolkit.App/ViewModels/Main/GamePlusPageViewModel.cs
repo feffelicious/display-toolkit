@@ -1,5 +1,7 @@
+using CommunityToolkit.Mvvm.Input;
 using DisplayToolkit.App.Services;
 using DisplayToolkit.Core.Features;
+using DisplayToolkit.Core.Monitors;
 
 namespace DisplayToolkit.App.ViewModels.Main;
 
@@ -7,7 +9,7 @@ namespace DisplayToolkit.App.ViewModels.Main;
 /// GamePlus: overlays the monitor draws itself, so they work with any input and never show in captures. Also Target
 /// mode, the app's own focus helper.
 /// </summary>
-public sealed class GamePlusPageViewModel : MainPageViewModel
+public sealed partial class GamePlusPageViewModel : MainPageViewModel
 {
     private readonly TargetMode _targetMode;
     private readonly AppSettings _settings;
@@ -30,6 +32,13 @@ public sealed class GamePlusPageViewModel : MainPageViewModel
     public FeatureState? Timer => Monitor[FeatureCatalog.Timer];
 
     public FeatureState? DisplayAlignment => Monitor[FeatureCatalog.DisplayAlignment];
+
+    /// <summary>The FPS counter and timer can be moved around the screen.</summary>
+    public bool CanMoveOverlays => Monitor.Session.CanMoveOverlays;
+
+    /// <summary>Moves the overlays one step; the arrows repeat this while held, so steps may overlap.</summary>
+    [RelayCommand(AllowConcurrentExecutions = true)]
+    private Task<bool> MoveOverlays(OverlayDirection direction) => Monitor.Session.MoveOverlaysAsync(direction);
 
     public bool IsTargetModeOn
     {
