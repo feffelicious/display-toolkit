@@ -143,6 +143,14 @@ internal sealed class AutomationService : IDisposable
         _ = _location.RefreshAsync();
     }
 
+    /// <summary>
+    /// Whether the sun cycle can set warmth: through the RGB gains, which need the Custom color temperature when the
+    /// monitor has color temperature presets.
+    /// </summary>
+    public static bool SupportsSunWarmth(MonitorViewModel monitor) =>
+        monitor[FeatureCatalog.RedGain] is not null && monitor[FeatureCatalog.GreenGain] is not null && monitor[FeatureCatalog.BlueGain] is not null
+        && (monitor[FeatureCatalog.ColorTemperature] is not { } temperature || temperature.Options.Any(option => option.Value == CustomColorTemperature));
+
     /// <summary>The profile settings this monitor has.</summary>
     public static IEnumerable<ProfileSetting> SettingsFor(MonitorViewModel monitor) =>
         ProfileSettings.All.Where(setting => setting.Feature is null ? monitor.WindowsHdr is not null : monitor.Session.Supports(setting.Feature));
@@ -476,7 +484,7 @@ internal sealed class AutomationService : IDisposable
                 await session.WriteAsync(FeatureCatalog.Brightness, Math.Min(brightness, monitor[FeatureCatalog.Brightness]!.Maximum));
             }
 
-            if (target.Kelvin is { } kelvin && kelvin != previous?.Kelvin && session.Supports(FeatureCatalog.RedGain))
+            if (target.Kelvin is { } kelvin && kelvin != previous?.Kelvin && SupportsSunWarmth(monitor))
             {
                 if (monitor[FeatureCatalog.ColorTemperature] is { } temperature && temperature.Value != CustomColorTemperature)
                 {

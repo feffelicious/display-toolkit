@@ -122,9 +122,9 @@
     <!-- Color: SDR only. -->
     <StackPanel Visibility="{Binding IsSdr, Converter={StaticResource VisibleWhenTrue}}">
       <controls:SettingsExpander Header="Color" HeaderIcon="&#xE9CA;" Description="Temperature, gamma, saturation and sharpness for the current picture mode"
-                                 Visibility="{Binding ColorTemperature, Converter={StaticResource VisibleWhenNotNull}}">
+                                 Visibility="{Binding HasColorSettings, Converter={StaticResource VisibleWhenTrue}}">
         <StackPanel>
-          <controls:SettingsCard IsNested="True" Header="Color temperature">
+          <controls:SettingsCard IsNested="True" Header="Color temperature" Visibility="{Binding ColorTemperature, Converter={StaticResource VisibleWhenNotNull}}">
             <ComboBox MinWidth="200" ItemsSource="{Binding ColorTemperature.Options}" DisplayMemberPath="Name"
                       SelectedItem="{Binding ColorTemperature.SelectedOption, Mode=TwoWay}" AutomationProperties.Name="Color temperature" />
           </controls:SettingsCard>
@@ -188,7 +188,7 @@
     <!-- ======================================================== Gaming and comfort -->
     <TextBlock Style="{StaticResource SettingsGroupHeader}" Text="Gaming and comfort" />
 
-    <controls:SettingsCard Header="Blue light filter" HeaderIcon="&#xE708;" Description="Level 4 matches TÜV low blue light."
+    <controls:SettingsCard Header="Blue light filter" HeaderIcon="&#xE708;" Description="Higher levels filter out more blue light."
                            Visibility="{Binding BlueLight.IsAvailable, Converter={StaticResource VisibleWhenTrue}, FallbackValue=Collapsed}">
       <ItemsControl Width="300" Style="{StaticResource SegmentedChoices}" ItemsSource="{Binding BlueLight.Choices}" />
     </controls:SettingsCard>
@@ -198,7 +198,7 @@
       <ItemsControl Width="300" Style="{StaticResource SegmentedChoices}" ItemsSource="{Binding ShadowBoost.Choices}" />
     </controls:SettingsCard>
 
-    <controls:SettingsCard Header="Variable refresh rate" HeaderIcon="&#xEC4A;" Description="Adaptive-Sync / G-SYNC Compatible. The screen blinks while it switches."
+    <controls:SettingsCard Header="Variable refresh rate" HeaderIcon="&#xEC4A;" Description="Adaptive-Sync / G-SYNC Compatible. The screen may blink while it switches."
                            Visibility="{Binding VariableRefreshRate.IsAvailable, Converter={StaticResource VisibleWhenTrue}, FallbackValue=Collapsed}">
       <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding VariableRefreshRate.Toggled, Mode=TwoWay}" AutomationProperties.Name="Variable refresh rate" />
     </controls:SettingsCard>

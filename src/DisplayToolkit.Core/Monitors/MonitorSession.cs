@@ -116,8 +116,8 @@ public sealed class MonitorSession : IDisposable
         }
     });
 
-    /// <summary>The monitor accepts presses of its menu keys (ASUS EZ-OSD, <c>0xEB</c>).</summary>
-    public bool CanPressMenuKeys => Capabilities.Supports(Vcp.AsusEzOsd);
+    /// <summary>The monitor accepts presses of every <see cref="MenuKey"/> (ASUS EZ-OSD, <c>0xEB</c>).</summary>
+    public bool CanPressMenuKeys => Enum.GetValues<MenuKey>().All(key => Capabilities.ValuesOf(Vcp.AsusEzOsd).Contains((uint)key));
 
     /// <summary>
     /// Presses one of the monitor's menu keys, as if on the monitor itself. Nothing is read back: the menu isn't a

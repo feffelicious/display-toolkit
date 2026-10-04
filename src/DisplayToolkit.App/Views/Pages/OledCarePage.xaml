@@ -25,7 +25,7 @@
           <StackPanel Margin="16,0,16,0" VerticalAlignment="Center">
             <TextBlock FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="Pixel cleaning" />
             <TextBlock Style="{StaticResource CaptionText}"
-                       Text="Refreshes the panel to reduce temporary image retention. The screen goes dark for about 6 minutes." />
+                       Text="Refreshes the panel to reduce temporary image retention. The screen goes dark for several minutes." />
           </StackPanel>
         </DockPanel>
 
@@ -76,7 +76,7 @@
                            Visibility="{Binding UniformBrightness, Converter={StaticResource VisibleWhenNotNull}}">
       <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding UniformBrightness.Toggled, Mode=TwoWay}" AutomationProperties.Name="Uniform brightness" />
     </controls:SettingsCard>
-    <controls:SettingsCard Header="Anti-flicker" Description="Reduces flicker in dark scenes. The monitor switches to an HDR mode while it's on."
+    <controls:SettingsCard Header="Anti-flicker" Description="Reduces flicker in dark scenes. Some monitors limit other settings while it's on."
                            Visibility="{Binding AntiFlicker, Converter={StaticResource VisibleWhenNotNull}}">
       <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding AntiFlicker.Toggled, Mode=TwoWay}" AutomationProperties.Name="Anti-flicker" />
     </controls:SettingsCard>
@@ -101,7 +101,7 @@
           <ComboBox MinWidth="160" ItemsSource="{Binding ProximityScreenOff.Options}" DisplayMemberPath="Name"
                     SelectedItem="{Binding ProximityScreenOff.SelectedOption, Mode=TwoWay}" AutomationProperties.Name="Turn off after" />
         </controls:SettingsCard>
-        <controls:SettingsCard IsNested="True" Header="Sensitivity" Description="Change this in the monitor's menu. The monitor doesn't accept it from apps."
+        <controls:SettingsCard IsNested="True" Header="Sensitivity" Description="Change this in the monitor's menu."
                                Visibility="{Binding ProximitySensitivity, Converter={StaticResource VisibleWhenNotNull}}">
           <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding SensitivityText}" />
         </controls:SettingsCard>

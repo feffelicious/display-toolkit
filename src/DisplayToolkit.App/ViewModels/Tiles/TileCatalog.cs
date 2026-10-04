@@ -40,7 +40,7 @@ public static class TileCatalog
         Picker("color-temperature", "", FeatureCatalog.ColorTemperature, "Picture"),
 
         Levels("blue-light", "", FeatureCatalog.BlueLightFilter, "Gaming and comfort", defaultLevel: 2, "Blue light",
-            note: "Level 4 matches TÜV low blue light."),
+            note: "Higher levels filter out more blue light."),
         Levels("shadow-boost", "", FeatureCatalog.ShadowBoost, "Gaming and comfort", defaultLevel: 1),
         Switch("vrr", "", FeatureCatalog.VariableRefreshRate, "Gaming and comfort", "Variable refresh"),
         Switch("frame-rate-boost", "", FeatureCatalog.FrameRateBoost, "Gaming and comfort"),

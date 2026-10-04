@@ -392,7 +392,8 @@
                     AutomationProperties.Name="Brightness follows the sun" />
         </controls:SettingsCard>
         <controls:SettingsCard IsNested="True" Header="Warmth"
-                               Description="Cooler by day, warmer at night. Uses the Custom color temperature and replaces its red, green and blue.">
+                               Description="Cooler by day, warmer at night. Uses the Custom color temperature and replaces its red, green and blue."
+                               Visibility="{Binding CanControlWarmth, Converter={StaticResource VisibleWhenTrue}}">
           <CheckBox Style="{StaticResource ToggleSwitch}" Tag="Labeled" IsChecked="{Binding ControlsWarmth, Mode=TwoWay}"
                     AutomationProperties.Name="Warmth follows the sun" />
         </controls:SettingsCard>
@@ -405,7 +406,8 @@
               <Slider VerticalAlignment="Center" Minimum="0" Maximum="100" IsSnapToTickEnabled="True" TickFrequency="1" IsMoveToPointEnabled="True"
                       Value="{Binding DayBrightness, Mode=TwoWay}" AutomationProperties.Name="Day brightness" />
             </DockPanel>
-            <DockPanel Margin="0,8,0,0" IsEnabled="{Binding ControlsWarmth}">
+            <DockPanel Margin="0,8,0,0" IsEnabled="{Binding ControlsWarmth}"
+                       Visibility="{Binding CanControlWarmth, Converter={StaticResource VisibleWhenTrue}}">
               <TextBlock DockPanel.Dock="Right" Width="56" VerticalAlignment="Center" TextAlignment="Right"
                          Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding DayKelvinText}" />
               <TextBlock Width="80" VerticalAlignment="Center" Style="{StaticResource CaptionText}" Text="Warmth" />
@@ -423,7 +425,8 @@
               <Slider VerticalAlignment="Center" Minimum="0" Maximum="100" IsSnapToTickEnabled="True" TickFrequency="1" IsMoveToPointEnabled="True"
                       Value="{Binding NightBrightness, Mode=TwoWay}" AutomationProperties.Name="Night brightness" />
             </DockPanel>
-            <DockPanel Margin="0,8,0,0" IsEnabled="{Binding ControlsWarmth}">
+            <DockPanel Margin="0,8,0,0" IsEnabled="{Binding ControlsWarmth}"
+                       Visibility="{Binding CanControlWarmth, Converter={StaticResource VisibleWhenTrue}}">
               <TextBlock DockPanel.Dock="Right" Width="56" VerticalAlignment="Center" TextAlignment="Right"
                          Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding NightKelvinText}" />
               <TextBlock Width="80" VerticalAlignment="Center" Style="{StaticResource CaptionText}" Text="Warmth" />

@@ -9,7 +9,10 @@ namespace DisplayToolkit.App.ViewModels.Main;
 /// <summary>OLED care: pixel cleaning, panel protection and the proximity sensor.</summary>
 public sealed partial class OledCarePageViewModel : MainPageViewModel
 {
-    /// <summary>ASUS quotes about 6 minutes for a pixel-cleaning run.</summary>
+    /// <summary>
+    /// ASUS quotes about 6 minutes for a pixel-cleaning run on its OLED monitors. The monitor doesn't report when it's
+    /// done, so the progress shown is an estimate.
+    /// </summary>
     private static readonly TimeSpan CleaningDuration = TimeSpan.FromMinutes(6);
 
     private readonly IMainWindowHost _host;
@@ -101,7 +104,7 @@ public sealed partial class OledCarePageViewModel : MainPageViewModel
 
         var confirmed = await _host.ConfirmAsync(new ConfirmationViewModel(
             "Run pixel cleaning now?",
-            "The screen turns off for about 6 minutes while the panel refreshes. Leave the monitor plugged in and don't turn it off.",
+            "The screen turns off for several minutes while the panel refreshes. Leave the monitor plugged in and don't turn it off.",
             "Run pixel cleaning",
             "Display Toolkit can't change any settings until cleaning finishes."));
         if (!confirmed)

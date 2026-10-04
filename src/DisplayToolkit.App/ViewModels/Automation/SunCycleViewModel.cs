@@ -37,6 +37,9 @@ internal sealed partial class SunCycleViewModel : ObservableObject
         UpdateStatus();
     }
 
+    /// <summary>The monitor has what warmth needs (RGB gains, and a Custom color temperature).</summary>
+    public bool CanControlWarmth => _automation.Monitor is { } monitor && AutomationService.SupportsSunWarmth(monitor);
+
     public IReadOnlyList<TransitionChoice> Transitions { get; } =
     [
         new(30, "30 minutes"),

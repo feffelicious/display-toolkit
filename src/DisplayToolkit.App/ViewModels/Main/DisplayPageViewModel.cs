@@ -97,8 +97,12 @@ public sealed partial class DisplayPageViewModel : MainPageViewModel
     // Color
     public FeatureState? ColorTemperature => Monitor[FeatureCatalog.ColorTemperature];
 
-    /// <summary>Red/green/blue only apply with the Custom color temperature.</summary>
-    public bool ShowRgbGains => ColorTemperature?.Value == 11;
+    /// <summary>Red/green/blue only apply with the Custom color temperature (or always, without presets).</summary>
+    public bool ShowRgbGains => ColorTemperature is null || ColorTemperature.Value == 11;
+
+    /// <summary>The Color section has at least one setting on this monitor.</summary>
+    public bool HasColorSettings =>
+        new[] { ColorTemperature, RedGain, GreenGain, BlueGain, Gamma, Saturation, Sharpness }.Any(state => state is not null);
 
     public FeatureState? RedGain => Monitor[FeatureCatalog.RedGain];
 
@@ -146,7 +150,7 @@ public sealed partial class DisplayPageViewModel : MainPageViewModel
 
     public string AuraDescription => AuraEffect?.Value == 1
         ? "Aura Sync: ASUS's Aura software drives the light over USB. Without it, the light stays dark."
-        : "The light on the back of the monitor.";
+        : "The monitor's RGB lighting.";
 
     /// <summary>The colors as swatches, in the monitor menu's order.</summary>
     public IReadOnlyList<AuraSwatch> AuraSwatches => AuraColor is { } color
