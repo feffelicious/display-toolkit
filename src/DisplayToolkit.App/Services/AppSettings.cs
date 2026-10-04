@@ -46,8 +46,11 @@ public sealed record AppSettingsData
     /// <summary>The device path (<c>MonitorId.Instance</c>) of the monitor the app controls, when there are several.</summary>
     public string? SelectedMonitor { get; init; }
 
-    /// <summary>Use the location from Windows for sunrise and sunset; otherwise <see cref="ManualLocation"/>.</summary>
-    public bool UseWindowsLocation { get; set; } = true;
+    /// <summary>
+    /// Use the location from Windows for sunrise and sunset; otherwise <see cref="ManualLocation"/>. Off until the user
+    /// turns it on: asking Windows can show its own location prompts.
+    /// </summary>
+    public bool UseWindowsLocation { get; set; }
 
     public SavedLocation? ManualLocation { get; init; }
 

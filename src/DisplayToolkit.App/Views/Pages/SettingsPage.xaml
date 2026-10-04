@@ -100,7 +100,7 @@
                                Description="{Binding LocationSummary}">
       <StackPanel>
         <controls:SettingsCard IsNested="True" Header="Use Windows location"
-                               Description="Rounded to about a kilometer and kept on this PC.">
+                               Description="Only asked for when Follow the sun or a sunrise or sunset rule needs it. Rounded to about a kilometer and kept on this PC.">
           <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding UseWindowsLocation, Mode=TwoWay}"
                     AutomationProperties.Name="Use Windows location" />
         </controls:SettingsCard>
