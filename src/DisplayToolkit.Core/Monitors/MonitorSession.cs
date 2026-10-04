@@ -116,6 +116,33 @@ public sealed class MonitorSession : IDisposable
         }
     });
 
+    /// <summary>The monitor accepts presses of its menu keys (ASUS EZ-OSD, <c>0xEB</c>).</summary>
+    public bool CanPressMenuKeys => Capabilities.Supports(Vcp.AsusEzOsd);
+
+    /// <summary>
+    /// Presses one of the monitor's menu keys, as if on the monitor itself. Nothing is read back: the menu isn't a
+    /// setting. Returns false if the monitor didn't answer.
+    /// </summary>
+    public Task<bool> PressMenuKeyAsync(MenuKey key)
+    {
+        if (!Capabilities.ValuesOf(Vcp.AsusEzOsd).Contains((uint)key))
+        {
+            throw new NotSupportedException($"This monitor has no {key} key.");
+        }
+        return _worker.Enqueue(() =>
+        {
+            try
+            {
+                _channel.Set(Vcp.AsusEzOsd, (uint)key);
+                return true;
+            }
+            catch (DdcException)
+            {
+                return false;
+            }
+        });
+    }
+
     /// <summary>The monitor can put its active picture mode back to factory settings (ASUS <c>0xEC</c> = 1).</summary>
     public bool CanResetCurrentMode => Capabilities.ValuesOf(Vcp.AsusResetMode).Contains(1u);
 
@@ -251,7 +278,14 @@ public sealed class MonitorSession : IDisposable
         {
             try
             {
-                var register = feature.IsPartialRegister ? _channel.Get(feature.Code).Current : 0;
+                var register = feature.IsPartialRegister || feature.LeftThroughOff.Count > 0 ? _channel.Get(feature.Code).Current : 0;
+                var current = feature.Decode(new VcpReply(register, 0));
+                if (value != 0 && value != current && feature.LeftThroughOff.Contains(current))
+                {
+                    register = feature.Encode(0, register);
+                    _channel.Set(feature.Code, register);
+                    Sleep(_options.VerifyDelay);
+                }
                 var written = feature.Encode(value, register);
                 _channel.Set(feature.Code, written);
 

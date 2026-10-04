@@ -58,6 +58,42 @@ public sealed class MonitorSessionTests : IDisposable
     }
 
     [Fact]
+    public async Task Leaving_aura_sync_goes_through_off()
+    {
+        _monitor.SetRegister(Vcp.AsusAura, 0x0001, 0x0606);
+        var session = await OpenAsync();
+
+        await session.WriteAsync(FeatureCatalog.AuraEffect, 2);
+
+        Assert.Equal([(Vcp.AsusAura, 0u), (Vcp.AsusAura, 2u)], _monitor.Writes);
+        Assert.Equal(2u, session.GetValue(FeatureCatalog.AuraEffect)!.Value);
+    }
+
+    [Fact]
+    public async Task Aura_color_changes_only_its_byte()
+    {
+        _monitor.SetRegister(Vcp.AsusAura, 0x0104, 0x0606);
+        var session = await OpenAsync();
+
+        await session.WriteAsync(FeatureCatalog.AuraColor, 3);
+
+        Assert.Equal(0x0304u, _monitor.Current(Vcp.AsusAura));
+        Assert.Equal(4u, session.GetValue(FeatureCatalog.AuraEffect)!.Value);
+        Assert.Equal(3u, session.GetValue(FeatureCatalog.AuraColor)!.Value);
+    }
+
+    [Fact]
+    public async Task Menu_keys_are_sent_as_is()
+    {
+        var session = await OpenAsync();
+
+        Assert.True(session.CanPressMenuKeys);
+        Assert.True(await session.PressMenuKeyAsync(MenuKey.Down));
+
+        Assert.Equal([(Vcp.AsusEzOsd, 3u)], _monitor.Writes);
+    }
+
+    [Fact]
     public async Task Write_shows_pending_value_immediately()
     {
         var session = await OpenAsync();

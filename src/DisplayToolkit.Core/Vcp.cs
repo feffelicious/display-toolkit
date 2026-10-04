@@ -50,6 +50,9 @@ public static class Vcp
     public const byte AsusGamePlusPosition = 0xE8;
     public const byte AsusFpsCounter = 0xEA;
     public const byte AsusEzOsd = 0xEB;
+
+    /// <summary>Aura lighting on the back: effect in the low byte, color in the high byte.</summary>
+    public const byte AsusAura = 0xF2;
     public const byte AsusResetMode = 0xEC;
     public const byte AsusProximitySensor = 0xED;
     public const byte AsusElmb = 0xEE;

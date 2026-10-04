@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DisplayToolkit.App.Services;
 using DisplayToolkit.Core.Features;
+using DisplayToolkit.Core.Monitors;
 
 namespace DisplayToolkit.App.ViewModels.Main;
 
@@ -278,6 +279,13 @@ public sealed partial class SettingsPageViewModel : MainPageViewModel
     public FeatureState? PowerKeyLock => Monitor?[FeatureCatalog.PowerKeyLock];
 
     public FeatureState? InputAutoDetection => Monitor?[FeatureCatalog.InputAutoDetection];
+
+    /// <summary>The monitor's own menu can be used from here.</summary>
+    public bool CanUseMonitorMenu => Monitor?.Session.CanPressMenuKeys == true;
+
+    /// <summary>Presses one of the monitor's menu keys.</summary>
+    [RelayCommand]
+    private Task PressMenuKey(MenuKey key) => Monitor?.Session.PressMenuKeyAsync(key) ?? Task.CompletedTask;
 
     public string Version { get; } = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "dev";
 

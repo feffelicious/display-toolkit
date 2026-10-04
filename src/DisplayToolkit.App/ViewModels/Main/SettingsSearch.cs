@@ -56,6 +56,8 @@ public static class SettingsSearch
         new("Shadow boost", Display, "dark black detail", FeatureCatalog.ShadowBoost),
         new("Variable refresh rate", Display, "vrr g-sync freesync adaptive-sync", FeatureCatalog.VariableRefreshRate),
         new("Frame-rate boost", Display, "dual mode resolution refresh", FeatureCatalog.FrameRateBoost),
+        new("Aura lighting", Display, "light rgb led glow back effect", FeatureCatalog.AuraEffect),
+        new("Aura color", Display, "light rgb led", FeatureCatalog.AuraColor, Card: "Aura lighting"),
         new("Volume", Display, "sound mute speaker headphones audio", FeatureCatalog.Volume),
         new("Monitor information", Display, "firmware model diagnostics capabilities about", NeedsMonitor: true),
 
@@ -92,6 +94,7 @@ public static class SettingsSearch
         new("Power light", Settings, "led indicator", FeatureCatalog.PowerIndicator),
         new("Lock menu buttons", Settings, "key lock osd joystick", FeatureCatalog.KeyLock),
         new("Lock power button", Settings, "key lock", FeatureCatalog.PowerKeyLock),
+        new("Monitor menu", Settings, "osd on-screen remote joystick buttons keys", NeedsMonitor: true),
         new("Find input automatically", Settings, "auto input detection source", FeatureCatalog.InputAutoDetection),
         new("Check for updates", Settings, "version new release download"),
         new("Log and settings folder", Settings, "logs bug report files"),

@@ -208,6 +208,51 @@
       <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding FrameRateBoost.Toggled, Mode=TwoWay}" AutomationProperties.Name="Frame-rate boost" />
     </controls:SettingsCard>
 
+    <!-- ======================================================== Lighting -->
+    <TextBlock Style="{StaticResource SettingsGroupHeader}" Text="Lighting"
+               Visibility="{Binding AuraEffect, Converter={StaticResource VisibleWhenNotNull}}" />
+
+    <controls:SettingsCard Header="Aura lighting" HeaderIcon="&#xEA80;" Description="{Binding AuraDescription}"
+                           Visibility="{Binding AuraEffect.IsAvailable, Converter={StaticResource VisibleWhenTrue}, FallbackValue=Collapsed}">
+      <ComboBox MinWidth="200" ItemsSource="{Binding AuraEffect.Options}" DisplayMemberPath="Name"
+                SelectedItem="{Binding AuraEffect.SelectedOption, Mode=TwoWay}" AutomationProperties.Name="Aura lighting" />
+    </controls:SettingsCard>
+
+    <controls:SettingsCard Header="Aura color" HeaderIcon="&#xE790;"
+                           Visibility="{Binding HasAuraColor, Converter={StaticResource VisibleWhenTrue}}">
+      <ItemsControl ItemsSource="{Binding AuraSwatches}" Focusable="False" AutomationProperties.Name="Aura color">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <StackPanel Orientation="Horizontal" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate DataType="{x:Type main:AuraSwatch}">
+            <Button Width="32" Height="32" Margin="4,0,0,0" Cursor="Hand" Command="{Binding Choice.SelectCommand}"
+                    ToolTip="{Binding Choice.Name}" AutomationProperties.Name="{Binding Choice.Name}">
+              <Button.Template>
+                <ControlTemplate TargetType="Button">
+                  <Grid Background="Transparent">
+                    <Ellipse x:Name="Ring" Stroke="{DynamicResource TextFillColorPrimaryBrush}" StrokeThickness="0" />
+                    <Ellipse Margin="5" Fill="{Binding Color}" />
+                  </Grid>
+                  <ControlTemplate.Triggers>
+                    <DataTrigger Binding="{Binding Choice.IsSelected}" Value="True">
+                      <Setter TargetName="Ring" Property="StrokeThickness" Value="2" />
+                    </DataTrigger>
+                    <Trigger Property="IsMouseOver" Value="True">
+                      <Setter TargetName="Ring" Property="Stroke" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                      <Setter TargetName="Ring" Property="StrokeThickness" Value="1" />
+                    </Trigger>
+                  </ControlTemplate.Triggers>
+                </ControlTemplate>
+              </Button.Template>
+            </Button>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </controls:SettingsCard>
+
     <!-- ======================================================== Sound -->
     <TextBlock Style="{StaticResource SettingsGroupHeader}" Text="Sound"
                Visibility="{Binding Volume, Converter={StaticResource VisibleWhenNotNull}}" />

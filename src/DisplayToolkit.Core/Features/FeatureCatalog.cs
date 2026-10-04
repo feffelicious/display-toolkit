@@ -106,6 +106,11 @@ public static class FeatureCatalog
         new(10, "Green mini duplex"),
         new(11, "Blue heavy duplex"),
         new(12, "Green heavy duplex"),
+
+        // Not in the monitor's menu, but advertised and working (PG32UCWM).
+        new(13, "Blue dot (alternate)"),
+        new(14, "Adaptive, small"),
+        new(15, "Adaptive, large"),
     ]);
 
     public static readonly EnumFeature FpsCounter = new("fps-counter", "FPS counter", Vcp.AsusFpsCounter,
@@ -164,6 +169,32 @@ public static class FeatureCatalog
         new(8, "8 hours"),
     ]);
 
+    // Lighting
+    public static readonly ByteFieldFeature AuraEffect = new("aura-effect", "Aura lighting", Vcp.AsusAura, highByte: false,
+    [
+        new(0, "Off"),
+        new(1, "Aura Sync"),
+        new(2, "Rainbow"),
+        new(3, "Color cycle"),
+        new(4, "Static"),
+        new(5, "Breathing"),
+        new(6, "Strobing"),
+    ])
+    {
+        LeftThroughOff = new HashSet<uint> { 1 },
+    };
+
+    /// <summary>The color of the Static, Breathing and Strobing effects. Picking one of those without a color gives red.</summary>
+    public static readonly ByteFieldFeature AuraColor = new("aura-color", "Aura color", Vcp.AsusAura, highByte: true,
+    [
+        new(1, "Red"),
+        new(2, "Green"),
+        new(3, "Blue"),
+        new(4, "Cyan"),
+        new(5, "Magenta"),
+        new(6, "Yellow"),
+    ]);
+
     public static readonly ByteFieldFeature ProximityDistance = new("proximity-distance", "Proximity sensor", Vcp.AsusProximitySensor, highByte: false,
     [
         new(0, "Off"),
@@ -217,6 +248,7 @@ public static class FeatureCatalog
         ScreenDimming, LogoDetection, UniformBrightness, TaskbarDetection, BoundaryDetection, OuterDimming, GlobalDimming,
         PixelCleaning, OledAntiFlicker, ScreenMove, PixelCleaningReminder,
         ProximityDistance, ProximityScreenOff, ProximitySensitivity,
+        AuraEffect, AuraColor,
         InputSource, Volume, Mute,
         PowerIndicator, PowerKeyLock, KeyLock, InputAutoDetection,
     ];

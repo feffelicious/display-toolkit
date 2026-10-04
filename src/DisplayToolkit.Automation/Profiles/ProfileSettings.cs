@@ -42,6 +42,8 @@ public static class ProfileSettings
         Of(FeatureCatalog.FpsCounter),
         Of(FeatureCatalog.Timer),
         Of(FeatureCatalog.DisplayAlignment),
+        Of(FeatureCatalog.AuraEffect),
+        Of(FeatureCatalog.AuraColor),
         Of(FeatureCatalog.Volume),
         Of(FeatureCatalog.Mute),
     ];

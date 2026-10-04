@@ -5,6 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:controls="clr-namespace:DisplayToolkit.App.Controls"
              xmlns:main="clr-namespace:DisplayToolkit.App.ViewModels.Main"
+             xmlns:monitors="clr-namespace:DisplayToolkit.Core.Monitors;assembly=DisplayToolkit.Core"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance main:SettingsPageViewModel}">
   <UserControl.Resources>
@@ -113,6 +114,57 @@
                              Visibility="{Binding PowerKeyLock, Converter={StaticResource VisibleWhenNotNull}}">
         <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding PowerKeyLock.Toggled, Mode=TwoWay}" AutomationProperties.Name="Lock power button" />
       </controls:SettingsCard>
+      <controls:SettingsExpander Header="Monitor menu" HeaderIcon="&#xE700;"
+                                 Description="Use the monitor's own on-screen menu from here, without reaching for its buttons."
+                                 Visibility="{Binding CanUseMonitorMenu, Converter={StaticResource VisibleWhenTrue}}">
+        <StackPanel Margin="56,16,16,16" Orientation="Horizontal">
+          <!-- Joystick: arrows around Select. -->
+          <Grid>
+            <Grid.Resources>
+              <Style x:Key="Key" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                <Setter Property="Width" Value="44" />
+                <Setter Property="Height" Value="40" />
+                <Setter Property="Margin" Value="2" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Command" Value="{Binding PressMenuKeyCommand}" />
+              </Style>
+            </Grid.Resources>
+            <Grid.RowDefinitions>
+              <RowDefinition /><RowDefinition /><RowDefinition />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition /><ColumnDefinition /><ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="1" Style="{StaticResource Key}" CommandParameter="{x:Static monitors:MenuKey.Up}" AutomationProperties.Name="Up">
+              <TextBlock Style="{StaticResource IconText}" FontSize="12" Text="&#xE70E;" />
+            </Button>
+            <Button Grid.Row="1" Style="{StaticResource Key}" CommandParameter="{x:Static monitors:MenuKey.Left}" AutomationProperties.Name="Left">
+              <TextBlock Style="{StaticResource IconText}" FontSize="12" Text="&#xE76B;" />
+            </Button>
+            <Button Grid.Row="1" Grid.Column="1" Style="{StaticResource Key}" CommandParameter="{x:Static monitors:MenuKey.Enter}"
+                    Content="OK" AutomationProperties.Name="Select" ToolTip="Select" />
+            <Button Grid.Row="1" Grid.Column="2" Style="{StaticResource Key}" CommandParameter="{x:Static monitors:MenuKey.Right}" AutomationProperties.Name="Right">
+              <TextBlock Style="{StaticResource IconText}" FontSize="12" Text="&#xE76C;" />
+            </Button>
+            <Button Grid.Row="2" Grid.Column="1" Style="{StaticResource Key}" CommandParameter="{x:Static monitors:MenuKey.Down}" AutomationProperties.Name="Down">
+              <TextBlock Style="{StaticResource IconText}" FontSize="12" Text="&#xE70D;" />
+            </Button>
+          </Grid>
+
+          <StackPanel Margin="24,0,0,0" VerticalAlignment="Center">
+            <Button Padding="12,4" HorizontalAlignment="Stretch" Content="Open menu" Command="{Binding PressMenuKeyCommand}"
+                    CommandParameter="{x:Static monitors:MenuKey.Open}" />
+            <Button Margin="0,6" Padding="12,4" HorizontalAlignment="Stretch" Content="Back" Command="{Binding PressMenuKeyCommand}"
+                    CommandParameter="{x:Static monitors:MenuKey.Back}" />
+            <Button Padding="12,4" HorizontalAlignment="Stretch" Content="Close menu" Command="{Binding PressMenuKeyCommand}"
+                    CommandParameter="{x:Static monitors:MenuKey.Close}" />
+          </StackPanel>
+
+          <TextBlock Margin="24,0,0,0" MaxWidth="260" VerticalAlignment="Center" Style="{StaticResource CaptionText}" TextWrapping="Wrap"
+                     Text="Settings changed in the monitor's menu show up here the next time you open this window." />
+        </StackPanel>
+      </controls:SettingsExpander>
+
       <controls:SettingsCard Header="Find input automatically" HeaderIcon="&#xEA4E;" Description="Switches to whichever input has a signal."
                              Visibility="{Binding InputAutoDetection, Converter={StaticResource VisibleWhenNotNull}}">
         <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding InputAutoDetection.Toggled, Mode=TwoWay}" AutomationProperties.Name="Find input automatically" />

@@ -55,6 +55,8 @@ public static class TileCatalog
         Switch("uniform-brightness", "", FeatureCatalog.UniformBrightness, "OLED care"),
         Styles("screen-move", "", FeatureCatalog.ScreenMove, "OLED care"),
 
+        Picker("aura", "\uEA80", FeatureCatalog.AuraEffect, "Lighting", "Aura"),
+
         Picker("input-source", "", FeatureCatalog.InputSource, "Sound and input"),
         Switch("mute", "", FeatureCatalog.Mute, "Sound and input"),
     ];

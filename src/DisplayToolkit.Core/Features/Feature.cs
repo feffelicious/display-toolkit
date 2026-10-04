@@ -35,6 +35,12 @@ public abstract class Feature(string id, string name, byte code)
     /// </summary>
     public virtual bool IsPartialRegister => false;
 
+    /// <summary>
+    /// Choices the monitor only leaves for another one through 0 (off): changing away from them writes 0 first. Aura
+    /// Sync on the PG32UCWM ignores a direct switch to another effect.
+    /// </summary>
+    public IReadOnlySet<uint> LeftThroughOff { get; init; } = new HashSet<uint>();
+
     /// <summary>How long the monitor may take before a write reads back correctly.</summary>
     public WriteSettling Settling { get; init; } = WriteSettling.Immediate;
 

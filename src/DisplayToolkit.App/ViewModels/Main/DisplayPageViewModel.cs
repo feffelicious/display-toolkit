@@ -1,11 +1,15 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DisplayToolkit.App.ViewModels.Pages;
 using DisplayToolkit.Core.Features;
 
 namespace DisplayToolkit.App.ViewModels.Main;
 
 /// <summary>One entry of the "Switch input" menu.</summary>
 public sealed record InputChoice(string Name, IRelayCommand SwitchCommand);
+
+/// <summary>An Aura color: the choice, and the color its swatch shows.</summary>
+public sealed record AuraSwatch(OptionItemViewModel Choice, string Color);
 
 /// <summary>
 /// The Display page: the everyday picture controls first, color tuning in an expander, six-axis color on a sub-page.
@@ -37,6 +41,14 @@ public sealed partial class DisplayPageViewModel : MainPageViewModel
         if (ColorTemperature is { } colorTemperature)
         {
             Observe(colorTemperature, (_, _) => OnPropertyChanged(nameof(ShowRgbGains)));
+        }
+        if (AuraEffect is { } auraEffect)
+        {
+            Observe(auraEffect, (_, _) =>
+            {
+                OnPropertyChanged(nameof(HasAuraColor));
+                OnPropertyChanged(nameof(AuraDescription));
+            });
         }
         if (PictureMode is { } pictureMode)
         {
@@ -123,6 +135,33 @@ public sealed partial class DisplayPageViewModel : MainPageViewModel
     public FeatureState? VariableRefreshRate => Monitor[FeatureCatalog.VariableRefreshRate];
 
     public FeatureState? FrameRateBoost => Monitor[FeatureCatalog.FrameRateBoost];
+
+    // Lighting
+    public FeatureState? AuraEffect => Monitor[FeatureCatalog.AuraEffect];
+
+    public FeatureState? AuraColor => Monitor[FeatureCatalog.AuraColor];
+
+    /// <summary>Static, Breathing and Strobing have a color; the other effects don't.</summary>
+    public bool HasAuraColor => AuraColor is not null && AuraEffect?.Value is 4 or 5 or 6;
+
+    public string AuraDescription => AuraEffect?.Value == 1
+        ? "Aura Sync: ASUS's Aura software drives the light over USB. Without it, the light stays dark."
+        : "The light on the back of the monitor.";
+
+    /// <summary>The colors as swatches, in the monitor menu's order.</summary>
+    public IReadOnlyList<AuraSwatch> AuraSwatches => AuraColor is { } color
+        ? [.. color.Choices.Select(choice => new AuraSwatch(choice, SwatchColors.GetValueOrDefault(choice.Value, "#808080")))]
+        : [];
+
+    private static readonly Dictionary<uint, string> SwatchColors = new()
+    {
+        [1] = "#E5484D",
+        [2] = "#46A758",
+        [3] = "#3E63DD",
+        [4] = "#05A2C2",
+        [5] = "#D6409F",
+        [6] = "#F5D90A",
+    };
 
     // Sound and input
     public FeatureState? Volume => Monitor[FeatureCatalog.Volume];
