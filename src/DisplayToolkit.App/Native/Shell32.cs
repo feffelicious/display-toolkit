@@ -12,6 +12,7 @@ internal static unsafe partial class Shell32
     internal const uint NifMessage = 0x1;
     internal const uint NifIcon = 0x2;
     internal const uint NifTip = 0x4;
+    internal const uint NifInfo = 0x10;
     internal const uint NifShowTip = 0x80;
 
     internal const uint NotifyIconVersion4 = 4;
@@ -19,6 +20,7 @@ internal static unsafe partial class Shell32
     // Notifications delivered in LOWORD(lParam) with NOTIFYICON_VERSION_4.
     internal const int NinSelect = 0x400;
     internal const int NinKeySelect = 0x401;
+    internal const int NinBalloonUserClick = 0x405;
     internal const int WmContextMenu = 0x007B;
 
     [StructLayout(LayoutKind.Sequential)]
@@ -44,10 +46,27 @@ internal static unsafe partial class Shell32
         {
             fixed (char* tip = Tip)
             {
-                var span = new Span<char>(tip, 128);
-                span.Clear();
-                text.AsSpan(0, Math.Min(text.Length, 127)).CopyTo(span);
+                Copy(text, new Span<char>(tip, 128));
             }
+        }
+
+        /// <summary>A notification (shown as a Windows toast) with a title and a line of text.</summary>
+        public void SetInfo(string title, string text)
+        {
+            fixed (char* info = Info)
+            {
+                Copy(text, new Span<char>(info, 256));
+            }
+            fixed (char* infoTitle = InfoTitle)
+            {
+                Copy(title, new Span<char>(infoTitle, 64));
+            }
+        }
+
+        private static void Copy(string text, Span<char> destination)
+        {
+            destination.Clear();
+            text.AsSpan(0, Math.Min(text.Length, destination.Length - 1)).CopyTo(destination);
         }
     }
 

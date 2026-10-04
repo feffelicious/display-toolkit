@@ -19,6 +19,7 @@ internal sealed class TrayController(
     GlobalHotkeys hotkeys,
     AutomationService automation,
     AppSettings settings,
+    UpdateService updates,
     ILogger<TrayController> logger)
     : IDisposable
 {
@@ -41,6 +42,8 @@ internal sealed class TrayController(
         _icon.DisplaysChanged += (_, _) => OnDisplaysChanged();
         monitors.Changed += (_, _) => UpdateTooltip();
         automation.ShortcutUsed += (_, feedback) => ShowHud(feedback.Glyph, feedback.Text);
+        updates.Changed += (_, _) => NotifyAboutUpdate();
+        _icon.NotificationClicked += (_, _) => updates.OpenReleasePage();
 
         hotkeys.Pressed += (_, id) =>
         {
@@ -79,6 +82,17 @@ internal sealed class TrayController(
         logger.LogInformation("Displays changed");
         await monitors.RescanAsync();
         await flyoutViewModel.OnDisplaysChangedAsync();
+    }
+
+    /// <summary>Tells the user about a new version once, with a Windows notification from the tray icon.</summary>
+    private void NotifyAboutUpdate()
+    {
+        if (updates.Available is not { } update || settings.Current.NotifiedUpdateVersion == update.Version.ToString(3))
+        {
+            return;
+        }
+        settings.Update(current => current with { NotifiedUpdateVersion = update.Version.ToString(3) });
+        _icon?.ShowNotification($"Display Toolkit {update.Version.ToString(3)} is available", "Click to see what's new and download it.");
     }
 
     /// <summary>Confirms a shortcut on screen, unless the user turned that off or quick settings already shows it.</summary>
@@ -148,6 +162,10 @@ internal sealed class TrayController(
         }
 
         menu.Items.Add(new Separator());
+        if (updates.Available is { } update)
+        {
+            menu.Items.Add(Item($"Update available: {update.Version.ToString(3)}…", updates.OpenReleasePage));
+        }
         menu.Items.Add(Item("Exit", () => Application.Current.Shutdown()));
         return menu;
     }

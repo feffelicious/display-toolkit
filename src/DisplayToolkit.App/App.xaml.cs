@@ -53,14 +53,13 @@ public partial class App : Application
 
         await _host.Services.GetRequiredService<MonitorService>().RescanAsync();
         var automation = _host.Services.GetRequiredService<AutomationService>();
+        // Sample data and screenshots must never change the monitor, whatever their rules say.
+        automation.IsDryRun = AppPaths.IsSampleData;
 #if DEBUG
-        // Screenshots must never change the monitor, whatever the sample rules say.
-        if (DebugSnapshot.RequestedFolder(e.Args) is not null)
-        {
-            automation.IsDryRun = true;
-        }
+        automation.IsDryRun |= DebugSnapshot.RequestedFolder(e.Args) is not null;
 #endif
         automation.Start();
+        _host.Services.GetRequiredService<UpdateService>().Start();
 
 #if DEBUG
         if (DebugSnapshot.RequestedFolder(e.Args) is { } folder)
@@ -200,6 +199,7 @@ public partial class App : Application
         services.AddSingleton<LocationService>();
         services.AddSingleton<AutomationService>();
         services.AddSingleton<SettingsTransfer>();
+        services.AddSingleton<UpdateService>();
 
         return builder.Build();
     }

@@ -13,6 +13,9 @@ internal static class AppPaths
             ? custom
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DisplayToolkit")).FullName;
 
+    /// <summary>Running on sample data (<c>DISPLAYTOOLKIT_DATA</c>): its rules must never change the real monitor.</summary>
+    public static bool IsSampleData => Environment.GetEnvironmentVariable("DISPLAYTOOLKIT_DATA") is { Length: > 0 };
+
     public static string CapabilitiesCache => Path.Combine(DataDirectory, "capabilities.json");
 
     public static string LogFile => Path.Combine(DataDirectory, "display-toolkit.log");

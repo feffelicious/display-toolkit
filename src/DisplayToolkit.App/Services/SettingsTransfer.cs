@@ -19,7 +19,14 @@ internal sealed class SettingsTransfer(AppSettings settings, AutomationStore aut
 
     public void Export(string path)
     {
-        var portable = settings.Current with { MainWindowPlacement = null, LastWindowsLocation = null };
+        var portable = settings.Current with
+        {
+            MainWindowPlacement = null,
+            LastWindowsLocation = null,
+            LastUpdateCheck = null,
+            DismissedUpdateVersion = null,
+            NotifiedUpdateVersion = null,
+        };
         var bundle = new JsonObject
         {
             ["format"] = FormatVersion,
@@ -60,6 +67,9 @@ internal sealed class SettingsTransfer(AppSettings settings, AutomationStore aut
         {
             MainWindowPlacement = current.MainWindowPlacement,
             LastWindowsLocation = current.LastWindowsLocation,
+            LastUpdateCheck = current.LastUpdateCheck,
+            DismissedUpdateVersion = current.DismissedUpdateVersion,
+            NotifiedUpdateVersion = current.NotifiedUpdateVersion,
         });
         automationStore.SetAll(automations);
         layouts.ReplaceAll(layoutData);

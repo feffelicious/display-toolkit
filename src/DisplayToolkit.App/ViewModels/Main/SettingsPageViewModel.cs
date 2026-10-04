@@ -20,10 +20,14 @@ public sealed partial class SettingsPageViewModel : MainPageViewModel
     private readonly LocationService _location;
     private readonly SettingsTransfer _transfer;
     private readonly IMainWindowHost _host;
+    private readonly UpdateService _updates;
 
-    internal SettingsPageViewModel(AppSettings settings, LocationService location, SettingsTransfer transfer, IMainWindowHost host, MonitorViewModel? monitor)
+    internal SettingsPageViewModel(
+        AppSettings settings, LocationService location, SettingsTransfer transfer, UpdateService updates, IMainWindowHost host, MonitorViewModel? monitor)
         : base("Settings")
     {
+        _updates = updates;
+        updates.Changed += OnUpdatesChanged;
         _settings = settings;
         _location = location;
         _transfer = transfer;
@@ -113,8 +117,38 @@ public sealed partial class SettingsPageViewModel : MainPageViewModel
             ? "Windows didn't share a location. Turn on location for desktop apps in Windows Settings, or enter it below."
             : "Not known yet.";
 
+    public bool CheckForUpdates
+    {
+        get => _settings.Current.CheckForUpdates;
+        set
+        {
+            _settings.Update(current => current with { CheckForUpdates = value });
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>"You're up to date. Checked 10:42." or "Version 1.1.0 is available."</summary>
+    public string UpdateStatus => _updates.IsChecking
+        ? "Checking…"
+        : _updates.Status is { Length: > 0 } status ? status : "Display Toolkit looks for new versions on GitHub once a day.";
+
+    public bool IsUpdateAvailable => _updates.Available is not null;
+
+    [RelayCommand]
+    private Task CheckForUpdatesNow() => _updates.CheckNowAsync();
+
+    [RelayCommand]
+    private void DownloadUpdate() => _updates.OpenReleasePage();
+
+    private void OnUpdatesChanged(object? sender, EventArgs e)
+    {
+        OnPropertyChanged(nameof(UpdateStatus));
+        OnPropertyChanged(nameof(IsUpdateAvailable));
+    }
+
     public override void Close()
     {
+        _updates.Changed -= OnUpdatesChanged;
         _location.Changed -= OnLocationChanged;
         base.Close();
     }

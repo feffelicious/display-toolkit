@@ -25,13 +25,16 @@ internal sealed partial class FlyoutViewModel : ObservableObject
     private readonly LayoutStore _layouts;
     private readonly MainWindowLauncher _mainWindow;
     private readonly AutomationService _automation;
+    private readonly UpdateService _updates;
     private List<ProfileChipViewModel> _quickProfiles = [];
 
     /// <summary>The tile order when edit mode started, restored if editing is cancelled.</summary>
     private List<string>? _layoutBeforeEdit;
 
-    public FlyoutViewModel(MonitorContext context, LayoutStore layouts, MainWindowLauncher mainWindow, AutomationService automation)
+    public FlyoutViewModel(MonitorContext context, LayoutStore layouts, MainWindowLauncher mainWindow, AutomationService automation, UpdateService updates)
     {
+        _updates = updates;
+        updates.Changed += (_, _) => OnPropertyChanged(nameof(UpdateReminder));
         _context = context;
         _layouts = layouts;
         _mainWindow = mainWindow;
@@ -72,6 +75,9 @@ internal sealed partial class FlyoutViewModel : ObservableObject
     /// <summary>What automation is doing, for the footer: "Night since sunset, 18:21".</summary>
     [ObservableProperty]
     public partial string AutomationStatus { get; private set; } = string.Empty;
+
+    /// <summary>"Display Toolkit 1.1.0 is available", until dismissed.</summary>
+    public string? UpdateReminder => _updates.ShouldRemind ? $"Display Toolkit {_updates.Available!.Version.ToString(3)} is available" : null;
 
     /// <summary>"Night applied, except Color temperature."</summary>
     [ObservableProperty]
@@ -227,6 +233,16 @@ internal sealed partial class FlyoutViewModel : ObservableObject
 
     [RelayCommand]
     private void DismissProfileFailure() => _automation.DismissFailure();
+
+    [RelayCommand]
+    private void DownloadUpdate()
+    {
+        CloseRequested?.Invoke(this, EventArgs.Empty);
+        _updates.OpenReleasePage();
+    }
+
+    [RelayCommand]
+    private void DismissUpdate() => _updates.Dismiss();
 
     [RelayCommand]
     private void CloseConflictingApp()

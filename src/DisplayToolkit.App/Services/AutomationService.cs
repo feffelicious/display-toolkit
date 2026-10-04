@@ -115,7 +115,8 @@ internal sealed class AutomationService : IDisposable
     public MonitorViewModel? Monitor => _monitor;
 
     /// <summary>
-    /// Decide everything but write nothing to the monitor. For screenshots with sample rules (the DEBUG snapshot run).
+    /// Decide everything but write nothing to the monitor: for sample data (screenshots, tests), whose rules must not
+    /// touch the real monitor.
     /// </summary>
     public bool IsDryRun { get; set; }
 

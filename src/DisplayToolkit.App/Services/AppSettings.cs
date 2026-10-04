@@ -39,6 +39,17 @@ public sealed record AppSettingsData
     public SavedLocation? LastWindowsLocation { get; init; }
 
     public WindowPlacement? MainWindowPlacement { get; init; }
+
+    /// <summary>Look for a newer release on GitHub once a day.</summary>
+    public bool CheckForUpdates { get; set; } = true;
+
+    public DateTimeOffset? LastUpdateCheck { get; init; }
+
+    /// <summary>The version whose reminder the user closed in quick settings ("1.1.0").</summary>
+    public string? DismissedUpdateVersion { get; init; }
+
+    /// <summary>The version a Windows notification was already shown for, so it's shown once.</summary>
+    public string? NotifiedUpdateVersion { get; init; }
 }
 
 /// <summary>Loads and saves <c>%AppData%\DisplayToolkit\settings.json</c>.</summary>

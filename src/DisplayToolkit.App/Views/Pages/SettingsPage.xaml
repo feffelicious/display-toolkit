@@ -111,6 +111,15 @@
         <TextBlock Style="{StaticResource CaptionText}" Text="{Binding Version, StringFormat=Version {0}}" />
       </controls:SettingsExpander.HeaderContent>
       <StackPanel>
+        <controls:SettingsCard IsNested="True" Header="Check for updates" Description="{Binding UpdateStatus}">
+          <StackPanel Orientation="Horizontal">
+            <Button Margin="0,0,8,0" Padding="12,4" Content="Download" Style="{DynamicResource AccentButtonStyle}"
+                    Command="{Binding DownloadUpdateCommand}" Visibility="{Binding IsUpdateAvailable, Converter={StaticResource VisibleWhenTrue}}" />
+            <Button Margin="0,0,12,0" Padding="12,4" Content="Check now" Command="{Binding CheckForUpdatesNowCommand}" />
+            <CheckBox Style="{StaticResource ToggleSwitch}" Tag="Labeled" IsChecked="{Binding CheckForUpdates, Mode=TwoWay}"
+                      AutomationProperties.Name="Check for updates automatically" ToolTip="Check once a day" />
+          </StackPanel>
+        </controls:SettingsCard>
         <controls:SettingsCard IsNested="True" Header="Source code and issues" Description="Open source under the MIT license."
                                IsClickEnabled="True" Command="{Binding OpenRepositoryCommand}" />
         <controls:SettingsCard IsNested="True" Header="Log and settings folder" Description="Attach display-toolkit.log to bug reports."

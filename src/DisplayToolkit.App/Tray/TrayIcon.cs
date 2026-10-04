@@ -33,6 +33,9 @@ internal sealed class TrayIcon : IDisposable
     /// <summary>Right click or the context-menu key. The argument is the anchor point in physical screen pixels.</summary>
     public event EventHandler<User32.Point>? ContextMenuRequested;
 
+    /// <summary>The user clicked the notification shown with <see cref="ShowNotification"/>.</summary>
+    public event EventHandler? NotificationClicked;
+
     /// <summary>Monitors were added, removed or changed mode, or the PC resumed from sleep.</summary>
     public event EventHandler? DisplaysChanged;
 
@@ -59,6 +62,9 @@ internal sealed class TrayIcon : IDisposable
         }
     }
 
+    /// <summary>Shows a Windows notification from the tray icon.</summary>
+    public void ShowNotification(string title, string text) => Send(Shell32.NimModify, Shell32.NifInfo, (title, text));
+
     private void Add()
     {
         Send(Shell32.NimAdd, Shell32.NifMessage | Shell32.NifIcon | Shell32.NifTip | Shell32.NifShowTip);
@@ -67,7 +73,7 @@ internal sealed class TrayIcon : IDisposable
 
     private void Update(uint flags) => Send(Shell32.NimModify, flags);
 
-    private unsafe void Send(uint message, uint flags)
+    private unsafe void Send(uint message, uint flags, (string Title, string Text)? notification = null)
     {
         var data = new Shell32.NotifyIconData
         {
@@ -80,6 +86,10 @@ internal sealed class TrayIcon : IDisposable
             TimeoutOrVersion = Shell32.NotifyIconVersion4,
         };
         data.SetTip(_tooltip);
+        if (notification is var (title, text))
+        {
+            data.SetInfo(title, text);
+        }
         Shell32.ShellNotifyIcon(message, &data);
     }
 
@@ -109,6 +119,9 @@ internal sealed class TrayIcon : IDisposable
                 case Shell32.NinSelect:
                 case Shell32.NinKeySelect:
                     Invoked?.Invoke(this, EventArgs.Empty);
+                    break;
+                case Shell32.NinBalloonUserClick:
+                    NotificationClicked?.Invoke(this, EventArgs.Empty);
                     break;
                 case Shell32.WmContextMenu:
                     // NOTIFYICON_VERSION_4 passes the anchor point in wParam.

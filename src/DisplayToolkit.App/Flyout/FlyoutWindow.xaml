@@ -260,6 +260,16 @@
     </Grid>
 
     <!-- ======================================================== Info bars -->
+    <Border Style="{StaticResource InfoInfoBar}" Margin="0,16,0,0" Padding="12,10"
+            Visibility="{Binding UpdateReminder, Converter={StaticResource VisibleWhenNotNull}}">
+      <DockPanel>
+        <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE711;" Command="{Binding DismissUpdateCommand}"
+                AutomationProperties.Name="Dismiss" ToolTip="Don't remind me about this version" />
+        <Button DockPanel.Dock="Right" Margin="12,0,4,0" VerticalAlignment="Center" Padding="10,4" Content="Download"
+                Command="{Binding DownloadUpdateCommand}" />
+        <TextBlock VerticalAlignment="Center" Style="{StaticResource BodyStrongText}" FontSize="13" TextWrapping="Wrap" Text="{Binding UpdateReminder}" />
+      </DockPanel>
+    </Border>
     <Border Style="{StaticResource CautionInfoBar}" Margin="0,16,0,0"
             Visibility="{Binding IsConflictingAppRunning, Converter={StaticResource VisibleWhenTrue}}">
       <DockPanel>

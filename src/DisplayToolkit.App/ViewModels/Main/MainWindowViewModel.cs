@@ -15,17 +15,19 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IMainWindo
     private readonly AutomationService _automation;
     private readonly LocationService _location;
     private readonly SettingsTransfer _transfer;
+    private readonly UpdateService _updates;
     private TaskCompletionSource<bool>? _confirmation;
 
-    public MainWindowViewModel(MonitorContext context, AppSettings settings, AutomationService automation, LocationService location, SettingsTransfer transfer)
+    public MainWindowViewModel(MonitorContext context, AppSettings settings, AutomationService automation, LocationService location, SettingsTransfer transfer, UpdateService updates)
     {
+        _updates = updates;
         _transfer = transfer;
         _context = context;
         _settings = settings;
         _automation = automation;
         _location = location;
         context.Changed += (_, _) => OnMonitorChanged();
-        SettingsItem = new NavItem("Settings", "", () => new SettingsPageViewModel(_settings, _location, _transfer, this, Monitor));
+        SettingsItem = new NavItem("Settings", "", () => new SettingsPageViewModel(_settings, _location, _transfer, _updates, this, Monitor));
         OnMonitorChanged();
     }
 
