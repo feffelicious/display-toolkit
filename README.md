@@ -22,6 +22,8 @@ brightness and warmth that follow the sun.
 - **Shortcuts** for brightness, the next picture mode, HDR, Target mode and each input, all changeable in Settings,
   with a small on-screen confirmation.
 - **Target mode** dims every screen except the window you're using.
+- **Aura lighting** effects and colors, a **monitor menu** keypad, and GamePlus overlay position, on monitors that
+  support them.
 - **The full set of monitor settings** in the main window: picture and color (including six-axis saturation), OLED
   care (pixel cleaning, panel protection, proximity sensor), GamePlus, and the monitor's own system options.
 - **Profiles**: a named set of settings, applied in the right order (HDR, then picture mode, then color, then the
