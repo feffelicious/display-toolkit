@@ -16,6 +16,9 @@ public interface IMainWindowHost
     void ShowDialog(object dialog);
 
     void CloseDialog();
+
+    /// <summary>Opens another page of the pane and points at one of its settings, as search does.</summary>
+    void ShowSetting(SearchEntry setting);
 }
 
 /// <summary>

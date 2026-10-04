@@ -113,5 +113,13 @@
       <TextBlock Style="{StaticResource CaptionText}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" TextWrapping="Wrap"
                  Text="Confirm Tailored in your monitor's menu. It then measures how far away you sit, which takes a few seconds." />
     </Border>
+
+    <!-- ======================================================== Related -->
+    <StackPanel Visibility="{Binding HasPanelCare, Converter={StaticResource VisibleWhenTrue}}">
+      <TextBlock Style="{StaticResource SettingsGroupHeader}" Text="Related" />
+      <controls:SettingsCard Header="Target mode" HeaderIcon="&#xE7C4;"
+                             Description="Also reduces wear by dimming the screens around the window you're using."
+                             IsClickEnabled="True" Command="{Binding OpenTargetModeCommand}" />
+    </StackPanel>
   </StackPanel>
 </UserControl>

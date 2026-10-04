@@ -67,6 +67,13 @@ public sealed partial class OledCarePageViewModel : MainPageViewModel
 
     public FeatureState? ProximitySensitivity => Monitor[FeatureCatalog.ProximitySensitivity];
 
+    /// <summary>The monitor has panel care of its own, so the link to Target mode is relevant.</summary>
+    public bool HasPanelCare => new[] { PixelCleaning, ScreenDimming, LogoDetection, TaskbarDetection, BoundaryDetection, ScreenMove }
+        .Any(feature => feature is not null);
+
+    [RelayCommand]
+    private void OpenTargetMode() => _host.ShowSetting(SettingsSearch.TargetMode);
+
     /// <summary>The menu offers levels 1–5; 0 is what the monitor reports after an app tried to change it.</summary>
     public string SensitivityText => ProximitySensitivity?.Value is { } level and > 0
         ? string.Create(CultureInfo.CurrentCulture, $"Level {level}")

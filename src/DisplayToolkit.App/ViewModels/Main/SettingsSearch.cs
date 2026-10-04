@@ -30,6 +30,9 @@ public static class SettingsSearch
     /// <summary>The Display page's six-axis color sub-page.</summary>
     public const string SixAxis = "six-axis";
 
+    /// <summary>Target mode in Settings, also linked from OLED care.</summary>
+    public static SearchEntry TargetMode { get; } = new("Target mode", Settings, "focus dim spotlight");
+
     public static IReadOnlyList<SearchEntry> All { get; } =
     [
         new("Brightness", Display, "backlight dim", FeatureCatalog.Brightness),
@@ -83,7 +86,7 @@ public static class SettingsSearch
         new("Timer", GamePlus, "countdown", FeatureCatalog.Timer),
         new("Position", GamePlus, "move fps counter timer overlay gameplus position place", NeedsMonitor: true),
         new("Display alignment", GamePlus, "lines multiple monitors", FeatureCatalog.DisplayAlignment),
-        new("Target mode", Settings, "focus dim spotlight"),
+        TargetMode,
 
         new("Start with Windows", Settings, "startup login boot autostart"),
         new("App theme", Settings, "dark light mode"),

@@ -141,7 +141,19 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IMainWindo
             return;
         }
         SearchText = string.Empty;
+        ShowSetting(entry, item);
+    }
 
+    public void ShowSetting(SearchEntry setting)
+    {
+        if (NavItems.Append(SettingsItem).FirstOrDefault(item => item.Title == setting.Page) is { } item)
+        {
+            ShowSetting(setting, item);
+        }
+    }
+
+    private void ShowSetting(SearchEntry entry, NavItem item)
+    {
         // Open the page fresh, also when it's already showing (it may be on a sub-page, or scrolled away).
         SelectedNavItem = null;
         SelectedNavItem = item;
