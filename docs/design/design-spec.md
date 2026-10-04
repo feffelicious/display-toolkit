@@ -2,9 +2,10 @@
 
 Status: the original v1 design, 2026-10-03. Target: .NET 10 WPF, built-in Fluent theme, Windows 11.
 
-> The app follows this spec closely, with some differences: Target mode, the setting search, tray-wheel brightness and
-> multi-monitor switching aren't built yet; rules are reordered from their menu rather than dragged; the location is
-> entered as coordinates; and Follow the sun (brightness and warmth that follow the sun) was added later. The decisions in
+> The app follows this spec closely, with some differences: rules are reordered from their menu rather than dragged; the
+> location is entered as coordinates; Target mode lives in Settings; and several things were added later (Follow the
+> sun, Aura lighting, color gamut, upscaling sharpness, the monitor menu keypad, overlay position, picture mode reset).
+> Wording in the app is generic where this spec quotes one monitor (for example the blue light note). The decisions in
 > §13 win over the rest.
 Mockups: [`mockups/index.html`](mockups/index.html) (open in Edge or Chrome on Windows 11 at 100% zoom; they use the locally installed Segoe UI Variable and Segoe Fluent Icons).
 The mockups are generated from `mockups/_src/*.mjs` (`node mockups/_src/build.mjs`). Edit the sources, not the HTML.

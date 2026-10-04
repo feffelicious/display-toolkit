@@ -67,14 +67,17 @@ MonitorSession          per monitor: capabilities, current values, verified writ
   back; how long to wait depends on the feature (`WriteSettling`): picture-mode-like switches make Windows re-detect the
   monitor and need patience.
 - **Features** are declared once, as data, in `FeatureCatalog`: `RangeFeature`, `EnumFeature`, `SwitchFeature`,
-  `FlagFeature` (one bit of a bitmask register), `ByteFieldFeature` (one byte of a two-setting register) and
-  `HdrModeFeature`. A feature exists for a monitor only if its capabilities say so. Everything above Core refers to
+  `FlagFeature` (one bit of a bitmask register), `ByteFieldFeature` (one byte of a two-setting register, such as
+  picture mode and color gamut, or Aura effect and color) and `HdrModeFeature`. A feature can list choices the monitor
+  only leaves through off (`LeftThroughOff`, for Aura Sync). A feature exists for a monitor only if its capabilities say so. Everything above Core refers to
   features by **stable string id**, never by VCP code. `Vcp` names every code; it's the only place raw numbers appear.
 - **`CapabilitiesParser`** turns the MCCS capabilities string into `MonitorCapabilities` (codes, allowed values, supported
   bits). It's pure and tested against the real PG32UCWM string.
 - **Discovery** (`Win32MonitorEnumerator`) joins the physical monitors with the display configuration (CCD) API for the
   friendly name, EDID model and device path. `MonitorId` (model + instance) keys caches, layouts and profiles. Built-in
   laptop panels are skipped.
+- **Commands** that aren't settings go straight to the worker without a read-back: resetting the picture mode,
+  pressing the monitor's menu keys (`MenuKey`) and moving the GamePlus overlays (`OverlayDirection`).
 - **`WindowsHdr`** reads and switches Windows HDR for one display; **`DisplayLink`** reports how it's connected
   ("DisplayPort, 240 Hz").
 
@@ -109,10 +112,11 @@ MonitorSession          per monitor: capabilities, current values, verified writ
 - **Tray** (`TrayIcon`, `TrayController`): `Shell_NotifyIconW` with its own message window; left click opens quick
   settings, right click the menu; display changes and resume trigger a rescan. While the pointer is over the icon a low-level
   mouse hook watches the wheel for brightness. The icon is drawn from `IconArt`.
-- **Quick settings** (`Flyout/`): Acrylic, anchored by the taskbar; brightness band, profiles row and a tile grid the user
-  arranges.
-- **Main window** (`Views/`): Mica, a navigation pane and settings-card pages: Display, Profiles & automation, OLED care,
-  GamePlus, Settings.
+- **Quick settings** (`Flyout/`): Acrylic with a theme tint like Windows' own panel, anchored by the taskbar; brightness
+  band, profiles row and a tile grid the user arranges.
+- **Main window** (`Views/`): Mica, a navigation pane with "Find a setting" (`SettingsSearch`, a hand-kept index of card
+  titles; `SettingHighlight` opens collapsed sections and points at the card), and settings-card pages: Display,
+  Profiles & automation, OLED care, GamePlus, Settings (app features such as Target mode and shortcuts live there).
 - **ViewModels** wrap each feature in a `FeatureState` that the controls bind to; nothing in the UI talks to DDC directly.
 - **Controls** (`Controls/`, themes in `Themes/`): brightness band, tiles, settings cards and expanders, focus ring,
   shortcut recorder, and the panel behind the day strip.

@@ -22,10 +22,11 @@ brightness and warmth that follow the sun.
 - **Shortcuts** for brightness, the next picture mode, HDR, Target mode and each input, all changeable in Settings,
   with a small on-screen confirmation.
 - **Target mode** dims every screen except the window you're using.
-- **Aura lighting** effects and colors, a **monitor menu** keypad, and GamePlus overlay position, on monitors that
-  support them.
-- **The full set of monitor settings** in the main window: picture and color (including six-axis saturation), OLED
-  care (pixel cleaning, panel protection, proximity sensor), GamePlus, and the monitor's own system options.
+- **A keypad for the monitor's own menu**, so you don't have to reach for its buttons.
+- **The full set of monitor settings** in the main window: picture and color (color gamut, six-axis saturation),
+  upscaling sharpness, OLED care (pixel cleaning, panel protection, proximity sensor), GamePlus (including the overlay
+  position), Aura lighting, and the monitor's own system options. A button resets the current picture mode to its
+  factory settings.
 - **Profiles**: a named set of settings, applied in the right order (HDR, then picture mode, then color, then the
   rest). Pick one in quick settings or the tray menu, or give it a shortcut; press the shortcut again to go back to
   automatic.
@@ -34,6 +35,9 @@ brightness and warmth that follow the sun.
 - **Follow the sun**: brightness and warmth fade between day and night values around sunrise and sunset.
 - **Find a setting** (Ctrl+F) in the main window, and a monitor switch when several monitors are connected.
 - **Export and import** everything to move to a new PC.
+- **Update reminders** when a new version is out (once a day, from GitHub; can be turned off).
+
+Settings only appear when the monitor reports them, so every model shows what it actually has.
 
 ## Screenshots
 
@@ -54,6 +58,9 @@ Download from [Releases](../../releases):
 
 Either way it's one self-contained app: no .NET or anything else to install. To start it with Windows, turn that on
 in Settings.
+
+The app isn't code-signed yet, so the first time you run it Windows SmartScreen may say "Windows protected your PC".
+Choose **More info**, then **Run anyway**. The source and the build that made the release are both on GitHub.
 
 Requirements:
 
