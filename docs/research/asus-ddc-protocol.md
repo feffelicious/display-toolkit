@@ -257,3 +257,4 @@ background.
 - Dolby Vision presets (`0xE2` group 2): need a Dolby Vision signal to test.
 - When pixel cleaning (`0xFD` bit 4) finishes: the bit doesn't clear reliably, so the app uses the ~6 minute duration.
 - `0xFC` bits 7 and 11.
+- Crop mode (24.5" on the PG27UCWM): code unknown, see `docs/todo.md`.

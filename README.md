@@ -93,12 +93,12 @@ Requires the .NET 10 SDK. The solution is `DisplayToolkit.slnx`:
 | `DisplayToolkit.Core` | Monitor discovery, capabilities, DDC/CI sessions. No UI. |
 | `DisplayToolkit.Automation` | Profiles, rules, sunrise and sunset, and the engine that decides which profile applies. No UI. |
 | `DisplayToolkit.App` | WPF tray app, flyout and main window. |
-| `tools/DisplayToolkit.Probe` | Console tool that dumps what a monitor reports. Handy for bug reports and new models. |
+| `tools/DisplayToolkit.Probe` | Console tool that dumps what a monitor reports. Handy for bug reports and new models. `--all` reads every code the monitor advertises; `--watch` lists the codes that change when you change a setting in the monitor's menu. |
 
 `./build/publish.ps1` builds the release zip and the installer (WiX, restored from NuGet) into `artifacts/`. Pushing a tag like `v0.2.0` makes GitHub Actions
 build, test and publish a release.
 
-See [docs/architecture.md](docs/architecture.md) for the design and [docs/design](docs/design/design-spec.md) for the UI spec.
+See [docs/architecture.md](docs/architecture.md) for the design and [docs/design](docs/design/design-spec.md) for the UI spec. Planned work is in [docs/todo.md](docs/todo.md).
 
 ## License
 
