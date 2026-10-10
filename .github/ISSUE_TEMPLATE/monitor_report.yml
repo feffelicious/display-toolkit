@@ -36,6 +36,8 @@ body:
       description: |
         In Display Toolkit, open **Display › Monitor information**, use **Copy diagnostics**, then paste here.
         If the app doesn't find your monitor, say so; make sure DDC/CI is turned on in the monitor's menu first.
+        For a setting the app is missing, the output of `DisplayToolkit.Probe.exe --watch` helps most: see
+        [Helping add a monitor or a setting](https://github.com/feffelicious/display-toolkit#helping-add-a-monitor-or-a-setting).
       render: text
     validations:
       required: true

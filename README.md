@@ -72,6 +72,33 @@ ASUS app while you use this one.
 
 Settings, profiles and the log live in `%AppData%\DisplayToolkit`. Delete that folder to start fresh.
 
+## Helping add a monitor or a setting
+
+Both downloads include **`DisplayToolkit.Probe.exe`**, a small tool that only reads from the monitor and never changes
+anything. Its output tells us what your monitor supports, and its `--watch` mode finds the code behind a setting the
+app doesn't have yet. To find one:
+
+1. Update Display Toolkit to the latest version (1.4.2 or newer), which installs the probe next to the app.
+2. Quit Display Toolkit (right-click the tray icon, then **Exit**) and close ASUS DisplayWidget Center, so nothing
+   else talks to the monitor while the probe runs.
+3. Open **Terminal** (press the Windows key, type `Terminal`, press Enter).
+4. Paste this and press Enter:
+
+   ```powershell
+   & "$env:LOCALAPPDATA\Programs\Display Toolkit\DisplayToolkit.Probe.exe" --watch
+   ```
+
+   With the portable zip, run `.\DisplayToolkit.Probe.exe --watch` from the folder you unzipped it to instead.
+5. Wait until it says **Change one setting with the monitor's own buttons**. Reading everything takes up to a minute.
+6. Use the monitor's own buttons to change the setting (for example, turn crop mode on). Close the monitor's menu,
+   then press **Enter** in Terminal. The probe lists the codes that changed.
+7. Change the setting back (crop mode off) and press **Enter** again. Doing both directions confirms the code.
+8. Type `q` and press Enter to quit.
+9. Copy everything in the window (**Ctrl+Shift+A** selects it all, then **Ctrl+C**) and paste it into an
+   [issue](../../issues/new/choose), with the name of the setting you changed each time.
+
+Without `--watch`, the probe just prints what the monitor supports, which is useful for any bug report.
+
 ## How it works
 
 Everything goes over **DDC/CI**, the standard monitor-control channel that Windows exposes through `dxva2.dll`.
@@ -93,7 +120,7 @@ Requires the .NET 10 SDK. The solution is `DisplayToolkit.slnx`:
 | `DisplayToolkit.Core` | Monitor discovery, capabilities, DDC/CI sessions. No UI. |
 | `DisplayToolkit.Automation` | Profiles, rules, sunrise and sunset, and the engine that decides which profile applies. No UI. |
 | `DisplayToolkit.App` | WPF tray app, flyout and main window. |
-| `tools/DisplayToolkit.Probe` | Console tool that dumps what a monitor reports. Handy for bug reports and new models. `--all` reads every code the monitor advertises; `--watch` lists the codes that change when you change a setting in the monitor's menu. |
+| `tools/DisplayToolkit.Probe` | Console tool that dumps what a monitor reports, shipped next to the app. Handy for bug reports and new models. `--all` reads every code the monitor advertises; `--watch` lists the codes that change when you change a setting in the monitor's menu. |
 
 `./build/publish.ps1` builds the release zip and the installer (WiX, restored from NuGet) into `artifacts/`. Pushing a tag like `v0.2.0` makes GitHub Actions
 build, test and publish a release.
