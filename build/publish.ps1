@@ -1,6 +1,7 @@
 <#
 .SYNOPSIS
-    Builds the release: a self-contained, single-file DisplayToolkit.exe, zipped with the license, and the installer.
+    Builds the release: a self-contained, single-file DisplayToolkit.exe and DisplayToolkit.Probe.exe, zipped with the
+    license, and the installer.
 
 .DESCRIPTION
     Output goes to artifacts/: the zip (DisplayToolkit-<version>-win-x64.zip), the installer
@@ -35,10 +36,21 @@ if ($LASTEXITCODE -ne 0) {
     throw "dotnet publish failed ($LASTEXITCODE)"
 }
 
+# The probe ships next to the app, so users can run it for bug reports and new monitor models.
+$probePublish = Join-Path $artifacts 'probe'
+dotnet publish (Join-Path $root 'tools/DisplayToolkit.Probe/DisplayToolkit.Probe.csproj') `
+    --configuration Release `
+    --output $probePublish `
+    -p:Version=$Version
+if ($LASTEXITCODE -ne 0) {
+    throw "dotnet publish of the probe failed ($LASTEXITCODE)"
+}
+Copy-Item (Join-Path $probePublish 'DisplayToolkit.Probe.exe') $publish
+
 Copy-Item (Join-Path $root 'LICENSE') (Join-Path $publish 'LICENSE.txt')
 
 $zip = Join-Path $artifacts "DisplayToolkit-$Version-win-x64.zip"
-Compress-Archive -Path (Join-Path $publish 'DisplayToolkit.exe'), (Join-Path $publish 'LICENSE.txt') -DestinationPath $zip -Force
+Compress-Archive -Path (Join-Path $publish 'DisplayToolkit.exe'), (Join-Path $publish 'DisplayToolkit.Probe.exe'), (Join-Path $publish 'LICENSE.txt') -DestinationPath $zip -Force
 
 # The installer packs the exe published above.
 $installerOutput = Join-Path $artifacts 'installer'

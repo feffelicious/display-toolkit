@@ -5,6 +5,18 @@
     <RootNamespace>DisplayToolkit.Probe</RootNamespace>
   </PropertyGroup>
 
+  <!--
+    Shipped next to DisplayToolkit.exe so users can run it for bug reports: one self-contained exe, trimmed to keep the
+    release small (Core uses source-generated interop and no reflection, so trimming is safe).
+  -->
+  <PropertyGroup Label="Publish">
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishTrimmed>true</PublishTrimmed>
+    <DebugType Condition="'$(Configuration)' == 'Release'">embedded</DebugType>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\src\DisplayToolkit.Core\DisplayToolkit.Core.csproj" />
   </ItemGroup>
