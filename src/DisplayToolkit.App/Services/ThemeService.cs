@@ -54,7 +54,8 @@ internal sealed class ThemeService
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    private static bool IsSystemDark()
+    /// <summary>Windows' app mode is dark. Also for windows shown before settings are loaded.</summary>
+    public static bool IsSystemDark()
     {
         using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
         return key?.GetValue("AppsUseLightTheme") is 0;

@@ -21,7 +21,7 @@ UI see the [design spec](design/design-spec.md).
 | Hosting | **Microsoft.Extensions.Hosting** | Dependency injection, logging and lifetime in the standard way |
 | Logging | Microsoft.Extensions.Logging with a small file logger of our own | One log file to attach to bug reports |
 | Interop | `LibraryImport` source-generated P/Invoke | No runtime marshalling surprises |
-| Storage | System.Text.Json with source-generated contexts, files in `%AppData%\DisplayToolkit` (or a `data` folder next to the exe: portable mode) | Readable, diffable JSON |
+| Storage | System.Text.Json with source-generated contexts, files in `%AppData%\DisplayToolkit`, or a `data` folder next to the exe (portable mode, offered on the zip's first start) | Readable, diffable JSON |
 | Tests | **xUnit v3** on Microsoft.Testing.Platform, hand-written fakes | A simulated monitor is clearer than mocks |
 | Release | Self-contained single-file exe, zip and **WiX** MSI (WiX from NuGet) | Nothing to install for users or for the build |
 

@@ -1,0 +1,58 @@
+<Window x:Class="DisplayToolkit.App.Views.StorageChoiceWindow"
+        x:ClassModifier="internal"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Display Toolkit"
+        Icon="/Assets/DisplayToolkit.ico"
+        Width="520"
+        SizeToContent="Height"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource SolidBackgroundFillColorBaseBrush}">
+
+  <Window.Resources>
+    <!-- A choice, like the trigger cards in the Add rule dialog. -->
+    <Style x:Key="ChoiceCard" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+      <Setter Property="Margin" Value="0,0,0,8" />
+      <Setter Property="Padding" Value="16,12" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    </Style>
+  </Window.Resources>
+
+  <!-- The first start of the zip: where settings go, before anything is written. -->
+  <StackPanel Margin="24">
+    <TextBlock FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+               Text="Where should Display Toolkit keep its settings?" />
+    <TextBlock Margin="0,4,0,16" Style="{StaticResource CaptionText}"
+               Text="Profiles, rules, the quick settings layout, preferences and the log." />
+
+    <Button x:Name="PortableChoice" Style="{StaticResource ChoiceCard}" Click="OnPortableClick" AutomationProperties.Name="Next to the app">
+      <DockPanel>
+        <TextBlock Style="{StaticResource IconText}" VerticalAlignment="Top" Margin="0,2,0,0" FontSize="20"
+                   Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Text="&#xE88E;" />
+        <StackPanel Margin="14,0,0,0">
+          <TextBlock FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="Next to the app" />
+          <TextBlock Style="{StaticResource CaptionText}"
+                     Text="In a data folder beside DisplayToolkit.exe. They go wherever the app goes, such as an external drive." />
+        </StackPanel>
+      </DockPanel>
+    </Button>
+
+    <Button Style="{StaticResource ChoiceCard}" Click="OnThisPcClick" AutomationProperties.Name="On this PC">
+      <DockPanel>
+        <TextBlock Style="{StaticResource IconText}" VerticalAlignment="Top" Margin="0,2,0,0" FontSize="20"
+                   Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Text="&#xE977;" />
+        <StackPanel Margin="14,0,0,0">
+          <TextBlock FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="On this PC" />
+          <TextBlock Style="{StaticResource CaptionText}"
+                     Text="In your Windows user profile (%AppData%\DisplayToolkit), like the installed app." />
+        </StackPanel>
+      </DockPanel>
+    </Button>
+
+    <TextBlock x:Name="ErrorText" Margin="0,8,0,0" TextWrapping="Wrap" Visibility="Collapsed"
+               Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+               Text="Display Toolkit can't create a folder here. Move it to a folder you can change, or keep the settings on this PC." />
+  </StackPanel>
+</Window>
