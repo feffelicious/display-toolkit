@@ -208,7 +208,7 @@
         </controls:SettingsCard>
         <controls:SettingsCard IsNested="True" Header="Source code and issues" Description="Open source under the MIT license."
                                IsClickEnabled="True" Command="{Binding OpenRepositoryCommand}" />
-        <controls:SettingsCard IsNested="True" Header="Log and settings folder" Description="Attach display-toolkit.log to bug reports."
+        <controls:SettingsCard IsNested="True" Header="Log and settings folder" Description="{Binding DataFolderDescription}"
                                IsClickEnabled="True" Command="{Binding OpenLogFolderCommand}" />
         <controls:SettingsCard IsNested="True" Header="Not affiliated with ASUS"
                                Description="ASUS, ROG and GameVisual are trademarks of ASUSTeK Computer Inc." />

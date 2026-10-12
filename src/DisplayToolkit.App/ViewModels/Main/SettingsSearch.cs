@@ -103,7 +103,7 @@ public static class SettingsSearch
         new("Monitor menu", Settings, "osd on-screen remote joystick buttons keys", NeedsMonitor: true),
         new("Find input automatically", Settings, "auto input detection source", FeatureCatalog.InputAutoDetection),
         new("Check for updates", Settings, "version new release download"),
-        new("Log and settings folder", Settings, "logs bug report files"),
+        new("Log and settings folder", Settings, "logs bug report files portable data appdata"),
     ];
 
     /// <summary>

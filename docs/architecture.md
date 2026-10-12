@@ -21,7 +21,7 @@ UI see the [design spec](design/design-spec.md).
 | Hosting | **Microsoft.Extensions.Hosting** | Dependency injection, logging and lifetime in the standard way |
 | Logging | Microsoft.Extensions.Logging with a small file logger of our own | One log file to attach to bug reports |
 | Interop | `LibraryImport` source-generated P/Invoke | No runtime marshalling surprises |
-| Storage | System.Text.Json with source-generated contexts, files in `%AppData%\DisplayToolkit` | Readable, diffable JSON |
+| Storage | System.Text.Json with source-generated contexts, files in `%AppData%\DisplayToolkit`, or a `data` folder next to the exe (portable mode, offered on the zip's first start) | Readable, diffable JSON |
 | Tests | **xUnit v3** on Microsoft.Testing.Platform, hand-written fakes | A simulated monitor is clearer than mocks |
 | Release | Self-contained single-file exe, zip and **WiX** MSI (WiX from NuGet) | Nothing to install for users or for the build |
 
@@ -65,7 +65,8 @@ MonitorSession          per monitor: capabilities, current values, verified writ
   becomes `Confirmed`, `Failed` (with the last confirmed value back) or `AwaitingConfirmation` (the monitor asks the user to
   confirm in its menu). `Locked` means the monitor reports `0xFE`, or the setting is ignored while HDR is on. Writes are read
   back; how long to wait depends on the feature (`WriteSettling`): picture-mode-like switches make Windows re-detect the
-  monitor and need patience.
+  monitor and need patience. Failed reads and writes (with what the monitor read back) and settings the monitor locks
+  go to the log, so the log attached to a bug report shows what a monitor we don't have did.
 - **Features** are declared once, as data, in `FeatureCatalog`: `RangeFeature`, `EnumFeature`, `SwitchFeature`,
   `FlagFeature` (one bit of a bitmask register), `ByteFieldFeature` (one byte of a two-setting register, such as
   picture mode and color gamut, or Aura effect and color) and `HdrModeFeature`. A feature can list choices the monitor

@@ -54,7 +54,8 @@ Download from [Releases](../../releases):
 
 - **`DisplayToolkit-<version>-win-x64.msi`**: the installer. It installs for your account only (no admin rights),
   adds Display Toolkit to the Start menu and to Installed apps, and updates an older version in place.
-- **`DisplayToolkit-<version>-win-x64.zip`**: the portable version. Unzip it anywhere and run `DisplayToolkit.exe`.
+- **`DisplayToolkit-<version>-win-x64.zip`**: the portable version. Unzip it anywhere and run `DisplayToolkit.exe`. The
+  first time, it asks whether to keep its settings next to the app or on this PC.
 
 Either way it's one self-contained app: no .NET or anything else to install. To start it with Windows, turn that on
 in Settings.
@@ -71,6 +72,10 @@ Display Toolkit and ASUS DisplayWidget Center both talk to the monitor and can g
 ASUS app while you use this one.
 
 Settings, profiles and the log live in `%AppData%\DisplayToolkit`. Delete that folder to start fresh.
+
+With the zip they can live next to the app instead, for example on an external drive: that's portable mode, a `data`
+folder beside `DisplayToolkit.exe`, and the zip offers it the first time it starts. To switch an existing setup, export
+it in **Settings › Back up settings**, create (or delete) the `data` folder, then start the app and import.
 
 ## Helping add a monitor or a setting
 

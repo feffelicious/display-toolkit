@@ -22,6 +22,14 @@ Found in the ASUS CLI reference. It names the settings but not their VCP codes, 
 - **OSD transparency** and **OSD timeout**.
 - **Dynamic dimming** and **ASCR** (ASUS Smart Contrast Ratio). Probably not on OLED models.
 
+## Automation
+
+- **App rules that apply only while the app is in front.** Requested in
+  [#2](https://github.com/feffelicious/display-toolkit/issues/2): a game's profile while you play, your normal settings
+  as soon as you switch to the desktop. App rules apply while the app runs (and the full-screen game rule while a game
+  fills the screen), so a game left open in the background keeps its profile. `SystemSampler` already looks at the
+  foreground window for full-screen games; an option on app rules could do the same.
+
 ## Open protocol questions
 
 See [Open questions](research/asus-ddc-protocol.md#open-questions) in the protocol notes.

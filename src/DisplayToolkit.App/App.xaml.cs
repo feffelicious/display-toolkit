@@ -40,6 +40,13 @@ public partial class App : Application
             return;
         }
 
+        // The zip's first start asks where settings go. Nothing may touch AppPaths.DataDirectory before this.
+        if (AppPaths.IsFirstPortableStart && new Views.StorageChoiceWindow().ShowDialog() != true)
+        {
+            Shutdown();
+            return;
+        }
+
         _host = CreateHost(Dispatcher);
         var logger = _host.Services.GetRequiredService<ILogger<App>>();
         DispatcherUnhandledException += (_, args) => logger.LogError(args.Exception, "Unhandled exception");
