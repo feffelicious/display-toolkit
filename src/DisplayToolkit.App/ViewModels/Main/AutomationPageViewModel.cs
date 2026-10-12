@@ -49,6 +49,14 @@ internal sealed partial class AutomationPageViewModel : MainPageViewModel
 
     public bool HasProfiles => Profiles.Count > 0;
 
+    /// <summary>Why Add rule is disabled: a rule switches to a profile, so it needs one to exist.</summary>
+    public string? AddRuleHint => HasProfiles ? null : "Make a profile first: a rule switches to one.";
+
+    /// <summary>The text under Rules while there are none.</summary>
+    public string NoRulesText => HasProfiles
+        ? "No rules yet. Rules switch profiles at a time of day, at sunrise or sunset, or while an app or game runs."
+        : "No rules yet. Rules switch to a profile at a time of day, at sunrise or sunset, or while an app or game runs, so make a profile above first.";
+
     [ObservableProperty]
     public partial ProfileListItem? SelectedProfile { get; set; }
 
@@ -173,6 +181,8 @@ internal sealed partial class AutomationPageViewModel : MainPageViewModel
             SelectedProfile = Profiles.FirstOrDefault();
         }
         OnPropertyChanged(nameof(HasProfiles));
+        OnPropertyChanged(nameof(AddRuleHint));
+        OnPropertyChanged(nameof(NoRulesText));
 
         Rules.Clear();
         for (var i = 0; i < _automation.Rules.Count; i++)
@@ -196,6 +206,7 @@ internal sealed partial class AutomationPageViewModel : MainPageViewModel
         {
             AutomationReason.Schedule => $"{profile} is active, set by the {RuleName(state.Rule!)} at {AutomationText.Time(state.Since!.Value)}",
             AutomationReason.Condition => $"{profile} is active: {AutomationText.Title(state.Rule!.Trigger).ToLower(System.Globalization.CultureInfo.CurrentCulture)}",
+            AutomationReason.None when !HasProfiles => "Make a profile, then add a rule to switch to it automatically.",
             AutomationReason.None when !HasRules => "Add a rule to switch profiles automatically.",
             AutomationReason.None => "No rule applies right now.",
             _ => AutomationText.Status(_automation.Engine, _automation.Automation),

@@ -450,7 +450,8 @@
 
     <!-- ======================================================== Rules -->
     <DockPanel Margin="0,26,0,8">
-      <Button DockPanel.Dock="Right" Padding="12,5" Command="{Binding AddRuleCommand}" IsEnabled="{Binding HasProfiles}">
+      <Button DockPanel.Dock="Right" Padding="12,5" Command="{Binding AddRuleCommand}" IsEnabled="{Binding HasProfiles}"
+              ToolTip="{Binding AddRuleHint}" ToolTipService.ShowOnDisabled="True">
         <StackPanel Orientation="Horizontal">
           <TextBlock Style="{StaticResource IconText}" FontSize="12" Text="&#xE710;" />
           <TextBlock Margin="8,0,0,0" Text="Add rule" />
@@ -464,7 +465,7 @@
 
     <TextBlock Margin="0,4,0,0" Style="{StaticResource CaptionText}"
                Visibility="{Binding HasRules, Converter={StaticResource VisibleWhenFalse}}"
-               Text="No rules yet. Rules switch profiles at a time of day, at sunrise or sunset, or while an app or game runs." />
+               Text="{Binding NoRulesText}" />
 
     <ItemsControl ItemsSource="{Binding Rules}" Focusable="False">
       <ItemsControl.ItemTemplate>
