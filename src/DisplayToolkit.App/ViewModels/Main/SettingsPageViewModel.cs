@@ -311,6 +311,10 @@ public sealed partial class SettingsPageViewModel : MainPageViewModel
 
     public string Version { get; } = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "dev";
 
+    public string DataFolderDescription { get; } = AppPaths.IsPortable
+        ? "Portable: everything is in the data folder next to the app. Attach display-toolkit.log to bug reports."
+        : "Attach display-toolkit.log to bug reports.";
+
     public override Task OnShownAsync() => Monitor?.RefreshAsync(
         [FeatureCatalog.PowerIndicator, FeatureCatalog.KeyLock, FeatureCatalog.PowerKeyLock, FeatureCatalog.InputAutoDetection])
         ?? Task.CompletedTask;

@@ -72,6 +72,10 @@ ASUS app while you use this one.
 
 Settings, profiles and the log live in `%AppData%\DisplayToolkit`. Delete that folder to start fresh.
 
+To keep everything next to the app instead, for example on an external drive, create a folder named `data` next to
+`DisplayToolkit.exe` (portable mode). Display Toolkit then starts fresh in that folder; to bring your current settings
+along, use **Settings › Back up settings** to export them first and import them afterwards.
+
 ## Helping add a monitor or a setting
 
 Both downloads include **`DisplayToolkit.Probe.exe`**, a small tool that only reads from the monitor and never changes
