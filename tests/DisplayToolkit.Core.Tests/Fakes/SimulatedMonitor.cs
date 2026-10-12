@@ -26,6 +26,7 @@ internal sealed class SimulatedMonitor
     private readonly Dictionary<byte, int> _staleReadsAfterWrite = [];
     private readonly Dictionary<byte, int> _staleReadsRemaining = [];
     private readonly HashSet<byte> _ignoredWrites = [];
+    private readonly HashSet<byte> _unanswered = [];
     private readonly HashSet<byte> _reconnectAfterWrite = [];
     private int _generation;
 
@@ -117,6 +118,15 @@ internal sealed class SimulatedMonitor
         }
     }
 
+    /// <summary>Reads of <paramref name="code"/> fail, however often they're retried.</summary>
+    public void StopAnswering(byte code)
+    {
+        lock (_gate)
+        {
+            _unanswered.Add(code);
+        }
+    }
+
     public IDdcChannel OpenChannel()
     {
         lock (_gate)
@@ -132,6 +142,10 @@ internal sealed class SimulatedMonitor
         lock (_gate)
         {
             ThrowIfStale(generation);
+            if (_unanswered.Contains(code))
+            {
+                throw new DdcException($"Read 0x{code:X2}", unchecked((int)0xC0262582));
+            }
             if (!_registers.TryGetValue(code, out var reply))
             {
                 reply = new VcpReply(0, 100);

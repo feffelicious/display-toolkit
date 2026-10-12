@@ -1,6 +1,7 @@
 using DisplayToolkit.Core.Features;
 using DisplayToolkit.Core.Monitors;
 using DisplayToolkit.Core.Tests.Fakes;
+using Microsoft.Extensions.Logging;
 
 namespace DisplayToolkit.Core.Tests.Monitors;
 
@@ -9,6 +10,7 @@ public sealed class MonitorSessionTests : IDisposable
     private static readonly MonitorId Id = new("AUS32B1", @"\\?\DISPLAY#AUS32B1#test");
 
     private readonly SimulatedMonitor _monitor = SimulatedMonitor.Pg32ucwm();
+    private readonly RecordingLogger _log = new();
     private MonitorSession? _session;
 
     public void Dispose() => _session?.Dispose();
@@ -182,6 +184,29 @@ public sealed class MonitorSessionTests : IDisposable
     }
 
     [Fact]
+    public async Task A_locked_hdr_mode_is_not_hdr()
+    {
+        // 0xFE means the HDR mode can't be chosen right now: there's no HDR signal.
+        _monitor.SetRegister(Vcp.AsusHdrMode, 0xFE, 0xFE);
+
+        var session = await OpenAsync();
+
+        Assert.Equal(FeatureStatus.Locked, session.GetValue(FeatureCatalog.HdrMode)!.Status);
+        Assert.Equal(new FeatureValue(FeatureCatalog.Brightness, 70, 100, FeatureStatus.Confirmed), session.GetValue(FeatureCatalog.Brightness));
+    }
+
+    [Fact]
+    public async Task Entering_hdr_is_logged()
+    {
+        var session = await OpenAsync();
+
+        _monitor.SetRegister(Vcp.AsusHdrMode, 0x0102, 0x0207);
+        await session.RefreshAsync([FeatureCatalog.HdrMode]);
+
+        Assert.Contains(_log.Entries, entry => entry.Message.StartsWith("The monitor reports HDR (0x0102): locked Brightness", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task Write_that_does_not_take_effect_fails_and_reverts()
     {
         var session = await OpenAsync();
@@ -192,6 +217,32 @@ public sealed class MonitorSessionTests : IDisposable
         Assert.Equal(FeatureStatus.Failed, result.Status);
         Assert.Equal(70u, result.Value);
         Assert.Equal(result, session.GetValue(FeatureCatalog.Brightness));
+    }
+
+    [Fact]
+    public async Task Failed_writes_are_logged_with_what_the_monitor_reads_back()
+    {
+        var session = await OpenAsync();
+        _monitor.IgnoreWrites(Vcp.Brightness);
+
+        await session.WriteAsync(FeatureCatalog.Brightness, 40);
+
+        var entry = Assert.Single(_log.Entries, entry => entry.Level == LogLevel.Warning);
+        Assert.Equal("Writing 40 to Brightness didn't work after 3 tries: the monitor reads back 70", entry.Message);
+    }
+
+    [Fact]
+    public async Task Registers_that_do_not_answer_are_logged_once_per_refresh()
+    {
+        var session = await OpenAsync();
+        _monitor.StopAnswering(Vcp.Brightness);
+        _monitor.StopAnswering(Vcp.Contrast);
+
+        await session.RefreshAsync([FeatureCatalog.Brightness, FeatureCatalog.Contrast, FeatureCatalog.Sharpness]);
+
+        var entry = Assert.Single(_log.Entries, entry => entry.Level == LogLevel.Warning);
+        Assert.Equal("Couldn't read 0x10 (Brightness), 0x12 (Contrast): Read 0x10 failed (Win32 error 0xC0262582).", entry.Message);
+        Assert.Equal(FeatureStatus.Confirmed, session.GetValue(FeatureCatalog.Brightness)!.Status);
     }
 
     [Fact]
@@ -374,7 +425,7 @@ public sealed class MonitorSessionTests : IDisposable
     private async Task<MonitorSession> OpenAsync()
     {
         var connection = new MonitorConnection(Id, "PG32UCWM", _monitor.OpenChannel());
-        _session = await MonitorSession.OpenAsync(connection, _monitor.Enumerator(Id), MonitorSessionOptions.Instant);
+        _session = await MonitorSession.OpenAsync(connection, _monitor.Enumerator(Id), MonitorSessionOptions.Instant, logger: _log);
         return _session;
     }
 }

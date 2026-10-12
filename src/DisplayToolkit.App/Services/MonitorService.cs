@@ -17,7 +17,8 @@ public enum MonitorDiscoveryState
 /// Finds controllable monitors and keeps one <see cref="MonitorSession"/> per monitor. Call it from the UI thread;
 /// events are raised there too.
 /// </summary>
-internal sealed class MonitorService(IMonitorEnumerator enumerator, CapabilitiesCache capabilitiesCache, ILogger<MonitorService> logger)
+internal sealed class MonitorService(
+    IMonitorEnumerator enumerator, CapabilitiesCache capabilitiesCache, ILoggerFactory loggerFactory, ILogger<MonitorService> logger)
     : IDisposable
 {
     /// <summary>
@@ -123,10 +124,20 @@ internal sealed class MonitorService(IMonitorEnumerator enumerator, Capabilities
                 continue;
             }
 
+            if (IsConflictingAppRunning())
+            {
+                logger.LogWarning("ASUS DisplayWidget Center is running: it talks to the monitor too, which can make reads and writes fail");
+            }
+
             try
             {
                 var cached = capabilitiesCache.Get(connection.Id.Model);
-                var session = await MonitorSession.OpenAsync(connection, enumerator, knownCapabilities: cached);
+                var session = await MonitorSession.OpenAsync(
+                    connection, enumerator, knownCapabilities: cached, logger: loggerFactory.CreateLogger<MonitorSession>());
+                if (cached is null)
+                {
+                    logger.LogInformation("Read the capabilities of {Model}: {Capabilities}", connection.Id.Model, session.Capabilities.Raw);
+                }
                 capabilitiesCache.Set(connection.Id.Model, session.Capabilities);
                 _sessions.Add(session);
                 logger.LogInformation("Connected to {Name} ({Id}), {Count} features", session.Name, session.Id, session.Features.Count);

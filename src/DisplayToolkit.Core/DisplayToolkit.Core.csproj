@@ -10,4 +10,9 @@
     <InternalsVisibleTo Include="DisplayToolkit.Core.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- DDC/CI trouble goes to the app's log, which users attach to bug reports. -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
 </Project>

@@ -1,6 +1,8 @@
 using DisplayToolkit.Core.Capabilities;
 using DisplayToolkit.Core.Ddc;
 using DisplayToolkit.Core.Features;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace DisplayToolkit.Core.Monitors;
 
@@ -10,13 +12,15 @@ namespace DisplayToolkit.Core.Monitors;
 /// </summary>
 /// <remarks>
 /// All DDC/CI traffic runs on a per-monitor worker thread. <see cref="ValueChanged"/> is raised on that thread, so
-/// UI code must marshal to its dispatcher.
+/// UI code must marshal to its dispatcher. Reads and writes that fail, and settings the monitor locks, are logged: the
+/// log is how a bug report shows what a monitor we don't have did.
 /// </remarks>
 public sealed class MonitorSession : IDisposable
 {
     private readonly ResilientChannel _channel;
     private readonly DdcWorker _worker;
     private readonly MonitorSessionOptions _options;
+    private readonly ILogger _logger;
 
     // State, guarded by _stateGate. _confirmed holds what the monitor last reported; _visible is what the UI should show
     // (the optimistic value while a write is pending). _latestWrite tracks the newest write per feature so that an
@@ -30,11 +34,12 @@ public sealed class MonitorSession : IDisposable
     /// <summary>True while the monitor reports an HDR preset, which disables some settings (see <see cref="Feature.AvailableInHdr"/>).</summary>
     private bool _isHdr;
 
-    private MonitorSession(MonitorConnection connection, IMonitorEnumerator enumerator, MonitorSessionOptions options)
+    private MonitorSession(MonitorConnection connection, IMonitorEnumerator enumerator, MonitorSessionOptions options, ILogger logger)
     {
         Id = connection.Id;
         Name = connection.Name;
         _options = options;
+        _logger = logger;
         _channel = new ResilientChannel(connection, enumerator, options);
         _worker = new DdcWorker(connection.Name);
     }
@@ -59,9 +64,10 @@ public sealed class MonitorSession : IDisposable
         MonitorConnection connection,
         IMonitorEnumerator enumerator,
         MonitorSessionOptions? options = null,
-        MonitorCapabilities? knownCapabilities = null)
+        MonitorCapabilities? knownCapabilities = null,
+        ILogger? logger = null)
     {
-        var session = new MonitorSession(connection, enumerator, options ?? MonitorSessionOptions.Default);
+        var session = new MonitorSession(connection, enumerator, options ?? MonitorSessionOptions.Default, logger ?? NullLogger.Instance);
         try
         {
             var capabilities = knownCapabilities ?? await session._worker.Enqueue(session.ReadCapabilities);
@@ -94,10 +100,11 @@ public sealed class MonitorSession : IDisposable
     /// Re-reads the given features (default: all supported), one DDC read per register. Use it when the window opens:
     /// the monitor doesn't report changes made from its own menu.
     /// </summary>
-    public Task RefreshAsync(IEnumerable<Feature>? features = null)
+    public async Task RefreshAsync(IEnumerable<Feature>? features = null)
     {
-        var codes = (features ?? Features).Where(Supports).Select(feature => feature.Code).Distinct();
-        return Task.WhenAll(codes.Select(ReadRegisterAsync));
+        var codes = (features ?? Features).Where(Supports).Select(feature => feature.Code).Distinct().ToList();
+        var errors = await Task.WhenAll(codes.Select(ReadRegisterAsync));
+        LogUnreadable([.. codes.Zip(errors).Where(read => read.Second is not null).Select(read => (read.First, read.Second!))]);
     }
 
     /// <summary>
@@ -208,7 +215,10 @@ public sealed class MonitorSession : IDisposable
     public async Task<FeatureValue?> ReadAsync(Feature feature)
     {
         EnsureSupported(feature);
-        await ReadRegisterAsync(feature.Code);
+        if (await ReadRegisterAsync(feature.Code) is { } error)
+        {
+            LogUnreadable([(feature.Code, error)]);
+        }
         return GetValue(feature);
     }
 
@@ -249,19 +259,32 @@ public sealed class MonitorSession : IDisposable
         _channel.Dispose();
     }
 
-    /// <summary>Reads one register. A register that doesn't answer keeps its last known value and returns false.</summary>
-    private Task<bool> ReadRegisterAsync(byte code) => _worker.Enqueue(() =>
+    /// <summary>
+    /// Reads one register. A register that doesn't answer keeps its last known value and returns the error; null means
+    /// the read worked.
+    /// </summary>
+    private Task<DdcException?> ReadRegisterAsync(byte code) => _worker.Enqueue<DdcException?>(() =>
     {
         try
         {
             Publish(code, _channel.Get(code), completedWrite: null);
-            return true;
+            return null;
         }
-        catch (DdcException)
+        catch (DdcException exception)
         {
-            return false;
+            return exception;
         }
     }, $"read:{code:X2}");
+
+    /// <summary>One log line for the registers a refresh couldn't read.</summary>
+    private void LogUnreadable(IReadOnlyList<(byte Code, DdcException Error)> failures)
+    {
+        if (failures.Count > 0)
+        {
+            _logger.LogWarning("Couldn't read {Registers}: {Error}",
+                string.Join(", ", failures.Select(failure => Describe(failure.Code))), failures[0].Error.Message);
+        }
+    }
 
     /// <summary>
     /// The capabilities reply is a long multi-packet transfer and fails far more often than a single read, especially
@@ -301,6 +324,7 @@ public sealed class MonitorSession : IDisposable
             return ExecuteConfirmedWrite(feature, value, sequence);
         }
 
+        var problem = string.Empty;
         for (var attempt = 0; attempt <= _options.Retries; attempt++)
         {
             try
@@ -328,18 +352,28 @@ public sealed class MonitorSession : IDisposable
                     return new FeatureValue(feature, value, feature.DecodeMaximum(assumed), FeatureStatus.Confirmed);
                 }
 
-                if (Verify(feature, value) is { } reply)
+                var reply = ReadBack(feature, value);
+                if (reply is { } confirmed && feature.Decode(confirmed) == value)
                 {
-                    Publish(feature.Code, reply, (feature, sequence));
-                    return new FeatureValue(feature, feature.Decode(reply), feature.DecodeMaximum(reply), FeatureStatus.Confirmed);
+                    Publish(feature.Code, confirmed, (feature, sequence));
+                    return new FeatureValue(feature, feature.Decode(confirmed), feature.DecodeMaximum(confirmed), FeatureStatus.Confirmed);
                 }
+                problem = reply switch
+                {
+                    { IsLocked: true } => "the monitor reports it as locked (0xFE)",
+                    { } other => $"the monitor reads back {feature.Decode(other)}",
+                    null => "the monitor didn't answer the read-back",
+                };
             }
-            catch (DdcException)
+            catch (DdcException exception)
             {
                 // The channel has already retried and tried reconnecting; retry the whole write.
+                problem = exception.Message;
             }
             Sleep(_options.RetryDelay);
         }
+        _logger.LogWarning("Writing {Value} to {Feature} didn't work after {Attempts} tries: {Problem}",
+            value, feature.Name, _options.Retries + 1, problem);
         return Fail(feature, sequence);
     }
 
@@ -355,8 +389,9 @@ public sealed class MonitorSession : IDisposable
             var register = feature.IsPartialRegister ? _channel.Get(feature.Code).Current : 0;
             _channel.Set(feature.Code, feature.Encode(value, register));
         }
-        catch (DdcException)
+        catch (DdcException exception)
         {
+            _logger.LogWarning("Sending {Value} to {Feature} didn't work: {Problem}", value, feature.Name, exception.Message);
             return Fail(feature, sequence);
         }
 
@@ -435,16 +470,18 @@ public sealed class MonitorSession : IDisposable
         return false;
     }
 
-    /// <summary>Reads the register back until it shows <paramref name="value"/>. Returns the matching reply, or null.</summary>
-    private VcpReply? Verify(Feature feature, uint value)
+    /// <summary>
+    /// Reads the register back until it shows <paramref name="value"/>. Returns the matching reply, otherwise the last
+    /// one read (for the log), or null if the monitor didn't answer.
+    /// </summary>
+    private VcpReply? ReadBack(Feature feature, uint value)
     {
         if (feature.Settling == WriteSettling.Immediate)
         {
             Sleep(_options.VerifyDelay);
             try
             {
-                var reply = _channel.Get(feature.Code);
-                return feature.Decode(reply) == value ? reply : null;
+                return _channel.Get(feature.Code);
             }
             catch (DdcException)
             {
@@ -458,20 +495,21 @@ public sealed class MonitorSession : IDisposable
 
     /// <summary>
     /// Mode switches: the monitor may disappear and come back (the channel reconnects), and reports stale values in
-    /// the meantime. Polls until the value shows or the timeout passes.
+    /// the meantime. Polls until the value shows or the timeout passes. Returns like <see cref="ReadBack"/>.
     /// </summary>
     private VcpReply? WaitForSettledValue(Feature feature, uint value)
     {
+        VcpReply? last = null;
         var deadline = DateTime.UtcNow + _options.ModeSwitchTimeout;
         do
         {
             Sleep(_options.ModeSwitchPollInterval);
             try
             {
-                var reply = _channel.Get(feature.Code);
-                if (feature.Decode(reply) == value)
+                last = _channel.Get(feature.Code);
+                if (feature.Decode(last.Value) == value)
                 {
-                    return reply;
+                    return last;
                 }
             }
             catch (DdcException)
@@ -480,7 +518,7 @@ public sealed class MonitorSession : IDisposable
             }
         }
         while (DateTime.UtcNow < deadline);
-        return null;
+        return last;
     }
 
     private FeatureValue Fail(Feature feature, long sequence)
@@ -510,6 +548,8 @@ public sealed class MonitorSession : IDisposable
     private void Publish(byte code, VcpReply reply, (Feature Feature, long Sequence)? completedWrite)
     {
         var changed = new List<FeatureValue>();
+        var lockChanged = false;
+        bool? hdrChanged = null;
         lock (_stateGate)
         {
             if (completedWrite is var (written, sequence) && IsLatestWrite(written, sequence))
@@ -520,22 +560,46 @@ public sealed class MonitorSession : IDisposable
             foreach (var feature in Features.Where(feature => feature.Code == code))
             {
                 var status = reply.IsLocked ? FeatureStatus.Locked : FeatureStatus.Confirmed;
+                var previous = _confirmed.GetValueOrDefault(feature.Id);
+                lockChanged |= previous is null ? reply.IsLocked : (previous.Status == FeatureStatus.Locked) != reply.IsLocked;
                 _confirmed[feature.Id] = new FeatureValue(feature, feature.Decode(reply), feature.DecodeMaximum(reply), status);
                 UpdateVisible(feature, changed);
             }
 
-            // Entering or leaving HDR changes which other settings are usable.
-            if (code == Vcp.AsusHdrMode && (reply.Current != 0) != _isHdr)
+            // Entering or leaving HDR changes which other settings are usable. A locked register (0xFE) isn't an HDR
+            // preset: the HDR mode can't be chosen right now, which means there's no HDR signal.
+            var isHdr = reply.Current != 0 && !reply.IsLocked;
+            if (code == Vcp.AsusHdrMode && isHdr != _isHdr)
             {
-                _isHdr = reply.Current != 0;
+                _isHdr = isHdr;
+                hdrChanged = isHdr;
                 foreach (var feature in Features.Where(feature => !feature.AvailableInHdr))
                 {
                     UpdateVisible(feature, changed);
                 }
             }
         }
+
+        if (lockChanged)
+        {
+            _logger.LogInformation("The monitor reports {Register} {State}", Describe(code), reply.IsLocked ? "locked (0xFE)" : "available again");
+        }
+        if (hdrChanged == true)
+        {
+            _logger.LogInformation("The monitor reports HDR (0x{Value:X4}): locked {Settings}", reply.Current, HdrOnlyNames());
+        }
+        else if (hdrChanged == false)
+        {
+            _logger.LogInformation("The monitor reports no HDR: unlocked {Settings}", HdrOnlyNames());
+        }
         RaiseChanged(changed);
     }
+
+    /// <summary>A register and the settings in it, for the log: "0x10 (Brightness)".</summary>
+    private string Describe(byte code) =>
+        $"0x{code:X2} ({string.Join(", ", Features.Where(feature => feature.Code == code).Select(feature => feature.Name))})";
+
+    private string HdrOnlyNames() => string.Join(", ", Features.Where(feature => !feature.AvailableInHdr).Select(feature => feature.Name));
 
     /// <summary>
     /// Derives the visible value from the confirmed one, unless a write for the feature is still in flight (then the
