@@ -4,7 +4,9 @@
 //   --all    also reads every VCP code the monitor advertises, including ones Display Toolkit doesn't know yet.
 //   --watch  like --all, then waits: change one setting in the monitor's own menu, press Enter, and the probe lists
 //            the codes whose value changed. That's how a new setting's code is found.
+//   --read=E3,DC  also reads the given VCP codes (hex), even when the monitor doesn't advertise them. Read-only.
 
+using System.Globalization;
 using DisplayToolkit.Core;
 using DisplayToolkit.Core.Ddc;
 using DisplayToolkit.Core.Features;
@@ -12,6 +14,12 @@ using DisplayToolkit.Core.Monitors;
 
 var watch = args.Contains("--watch");
 var all = watch || args.Contains("--all");
+
+if (!TryParseReadCodes(args, out var extraCodes, out var readError))
+{
+    Console.Error.WriteLine(readError);
+    return 2;
+}
 
 var enumerator = new Win32MonitorEnumerator();
 var connections = enumerator.Enumerate();
@@ -57,11 +65,11 @@ foreach (var connection in connections)
         Console.WriteLine($"  Not supported: {string.Join(", ", unsupported)}");
     }
 
-    if (all)
+    if (all || extraCodes.Count > 0)
     {
         Console.WriteLine();
-        Console.WriteLine("  Every advertised code:");
-        var snapshot = await ReadAllAsync(session);
+        Console.WriteLine(all ? "  Every advertised code:" : "  Requested codes:");
+        var snapshot = await ReadAllAsync(session, all, extraCodes);
         snapshots[session] = snapshot;
         foreach (var (code, reply) in snapshot)
         {
@@ -79,7 +87,7 @@ if (watch && sessions.Count > 0)
         foreach (var session in sessions)
         {
             var before = snapshots[session];
-            var after = await ReadAllAsync(session);
+            var after = await ReadAllAsync(session, all, extraCodes);
             var changed = after.Where(entry => before.GetValueOrDefault(entry.Key) != entry.Value).ToList();
 
             Console.WriteLine($"=== {session.Name}: {(changed.Count == 0 ? "nothing changed" : $"{changed.Count} code(s) changed")}");
@@ -101,17 +109,42 @@ foreach (var session in sessions)
     session.Dispose();
 }
 
-static async Task<Dictionary<byte, VcpReply?>> ReadAllAsync(MonitorSession session)
+return 0;
+
+static async Task<Dictionary<byte, VcpReply?>> ReadAllAsync(MonitorSession session, bool includeAdvertised, IReadOnlyList<byte> extraCodes)
 {
     var replies = new Dictionary<byte, VcpReply?>();
 
     // 0xE8 (GamePlus overlay position) is a move command that never answers reads; asking only costs retries.
-    foreach (var code in session.Capabilities.VcpCodes.Where(code => code != Vcp.AsusGamePlusPosition))
+    IEnumerable<byte> advertised = includeAdvertised
+        ? session.Capabilities.VcpCodes.Where(code => code != Vcp.AsusGamePlusPosition)
+        : [];
+    foreach (var code in advertised.Concat(extraCodes).Distinct())
     {
         replies[code] = await session.ReadRawAsync(code);
     }
 
     return replies;
+}
+
+static bool TryParseReadCodes(string[] arguments, out List<byte> codes, out string? error)
+{
+    codes = [];
+    error = null;
+    foreach (var argument in arguments.Where(argument => argument.StartsWith("--read=", StringComparison.OrdinalIgnoreCase)))
+    {
+        foreach (var part in argument["--read=".Length..].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var digits = part.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? part[2..] : part;
+            if (!byte.TryParse(digits, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var code))
+            {
+                error = $"'{part}' isn't a VCP code. Use hex, for example --read=E3,DC.";
+                return false;
+            }
+            codes.Add(code);
+        }
+    }
+    return true;
 }
 
 static string DescribeRaw(VcpReply? reply) => reply is { } value
