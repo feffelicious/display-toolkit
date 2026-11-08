@@ -548,7 +548,8 @@ public sealed class MonitorSession : IDisposable
     private void Publish(byte code, VcpReply reply, (Feature Feature, long Sequence)? completedWrite)
     {
         var changed = new List<FeatureValue>();
-        var lockChanged = false;
+        var nowLocked = new List<Feature>();
+        var nowUnlocked = new List<Feature>();
         bool? hdrChanged = null;
         lock (_stateGate)
         {
@@ -559,9 +560,13 @@ public sealed class MonitorSession : IDisposable
 
             foreach (var feature in Features.Where(feature => feature.Code == code))
             {
-                var status = reply.IsLocked ? FeatureStatus.Locked : FeatureStatus.Confirmed;
-                var previous = _confirmed.GetValueOrDefault(feature.Id);
-                lockChanged |= previous is null ? reply.IsLocked : (previous.Status == FeatureStatus.Locked) != reply.IsLocked;
+                var isLocked = feature.IsUnavailable(reply);
+                var status = isLocked ? FeatureStatus.Locked : FeatureStatus.Confirmed;
+                var wasLocked = _confirmed.GetValueOrDefault(feature.Id)?.Status == FeatureStatus.Locked;
+                if (isLocked != wasLocked)
+                {
+                    (isLocked ? nowLocked : nowUnlocked).Add(feature);
+                }
                 _confirmed[feature.Id] = new FeatureValue(feature, feature.Decode(reply), feature.DecodeMaximum(reply), status);
                 UpdateVisible(feature, changed);
             }
@@ -580,9 +585,15 @@ public sealed class MonitorSession : IDisposable
             }
         }
 
-        if (lockChanged)
+        if (nowLocked.Count > 0)
         {
-            _logger.LogInformation("The monitor reports {Register} {State}", Describe(code), reply.IsLocked ? "locked (0xFE)" : "available again");
+            _logger.LogInformation("The monitor reports 0x{Code:X2} ({Settings}) unavailable: {Reply}",
+                code, string.Join(", ", nowLocked.Select(feature => feature.Name)), reply.IsLocked ? "locked (0xFE)" : $"maximum 0x{reply.Maximum:X}");
+        }
+        if (nowUnlocked.Count > 0)
+        {
+            _logger.LogInformation("The monitor reports 0x{Code:X2} ({Settings}) available again",
+                code, string.Join(", ", nowUnlocked.Select(feature => feature.Name)));
         }
         if (hdrChanged == true)
         {
