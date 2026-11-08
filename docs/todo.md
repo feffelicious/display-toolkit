@@ -17,8 +17,6 @@ Requests and ideas that aren't built yet, with what's missing to build them.
 Found in the ASUS CLI reference. It names the settings but not their VCP codes, so each one needs
 `DisplayToolkit.Probe --watch` on a monitor that has it (most should be on the PG32UCWM).
 
-- **Power indicator** (power LED on/off).
-- **Key lock** and **power key lock**.
 - **OSD transparency** and **OSD timeout**.
 - **Dynamic dimming** and **ASCR** (ASUS Smart Contrast Ratio). Probably not on OLED models.
 

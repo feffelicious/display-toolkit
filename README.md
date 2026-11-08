@@ -11,7 +11,8 @@ brightness and warmth that follow the sun.
   <img src="docs/images/quick-settings.png" width="360" alt="Quick settings from the tray: brightness, profiles and tiles">
 </p>
 
-> **Supported monitors:** built and tested on the ROG Swift PG32UCWM. Other ASUS gaming and OLED monitors that speak
+> **Supported monitors:** built and tested on the ROG Swift PG32UCWM, and reported working on the PG27UCWM
+> ([#5](../../issues/5)). Other ASUS gaming and OLED monitors that speak
 > the same protocol should mostly work, because the app only shows what the monitor reports it supports.
 
 ## Features

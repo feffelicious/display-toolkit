@@ -252,9 +252,22 @@ background.
   anti-flicker read Off again. It likely needs HDR; this isn't confirmed whether the switch-off was automatic.
 - In HDR, brightness reads a normal value (100) but writes have no effect. Unlike Shadow Boost it doesn't report `0xFE`.
 
+## PG27UCWM
+
+Reported in [#5](https://github.com/feffelicious/display-toolkit/issues/5) (firmware 101, ASUS VCP 2.17, over HDMI):
+the capabilities string matches the PG32UCWM's except that `C5` has no value list, and `0xFC` advertises the same
+mask `0x089F`. The owner saw every setting they tried working. Toggling one setting in the menu flipped `0xFC` bit 0,
+which is the power indicator. A few registers read a maximum of 0:
+
+- `0xE6` blue light filter: 0 of 0, where the PG32UCWM reports 0–4. The app hides a level with nothing to set until
+  the monitor reports a maximum again. Why it's 0 isn't known; the monitor was in User mode with the native gamut.
+- `0xEE` ELMB and `0xC5` OLED anti-flicker, both off. VRR was on, which ELMB usually can't be used with, but it's not
+  confirmed that a maximum of 0 means unavailable for these on/off settings, so the app still shows them.
+
 ## Open questions
 
 - Dolby Vision presets (`0xE2` group 2): need a Dolby Vision signal to test.
 - When pixel cleaning (`0xFD` bit 4) finishes: the bit doesn't clear reliably, so the app uses the ~6 minute duration.
 - `0xFC` bits 7 and 11.
+- Whether a maximum of 0 on an on/off register (`0xEE`, `0xC5` on the PG27UCWM) means the setting is unavailable.
 - Crop mode (24.5" on the PG27UCWM): code unknown, see `docs/todo.md`.
