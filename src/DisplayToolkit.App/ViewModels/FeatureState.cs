@@ -147,6 +147,13 @@ public sealed partial class FeatureState : ObservableObject
         IsKnown = true;
     }
 
+    // A level that was greyed out (0 of 0) gets its segments once the monitor reports a maximum.
+    partial void OnMaximumChanged(uint value)
+    {
+        _choices = null;
+        OnPropertyChanged(nameof(Choices));
+    }
+
     partial void OnValueChanged(uint value)
     {
         foreach (var choice in _choices ?? [])

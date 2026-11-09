@@ -259,11 +259,13 @@ the capabilities string matches the PG32UCWM's except that `C5` has no value lis
 mask `0x089F`. The owner saw every setting they tried working. Toggling one setting in the menu flipped `0xFC` bit 0,
 which is the power indicator.
 
-**A maximum of 0 means greyed out in the menu.** In User mode the owner's menu greys out blue light filter and OLED
-anti-flicker, and `0xE6` and `0xC5` both read a maximum of 0. ELMB (`0xEE`) reads a maximum of 0 too unless blue light
-filter, HDR and VRR are off and the refresh rate is 120 Hz. ASUS's usable on/off registers read a maximum of 1 (`0xE1`,
-`0xE7`, `0xB2`). The app hides a level whose maximum is 0, and the ASUS on/off settings (ELMB, anti-flicker, display
-alignment) when theirs is. It doesn't do that for standard switches like mute, whose maximum MCCS leaves undefined.
+**A maximum of 0 can mean greyed out in the menu.** In User mode the owner's menu greys out blue light filter and OLED
+anti-flicker, and `0xE6` and `0xC5` both read a maximum of 0. In Racing mode `0xE6` came back as 2 of 4, so for levels
+it holds; the app hides a level whose maximum is 0. `0xC5` read 0 of 0 in Racing too, though, and there's no reading of
+it while usable, so it may never report a maximum: the app keeps showing anti-flicker. ELMB (`0xEE`) is greyed out
+unless blue light filter, HDR and VRR are off at 120 Hz, and read a maximum of 0 in both dumps where it was greyed
+out; the app hides it then (it has no ELMB control, so this only affects the log). Usable ASUS on/off registers read a
+maximum of 1 (`0xE1`, `0xE7`). Standard switches like mute are left alone: MCCS leaves their maximum undefined.
 
 **Aspect control has no register we can read.** The owner switched between 16:9 Full, the 24.5" simulation, pixel by
 pixel and Square (Full, Equivalent, pixel by pixel). Switching between Square's own modes changed no advertised code.
@@ -284,4 +286,5 @@ aspect setting either. The only way left to change it would be pressing the menu
 - When pixel cleaning (`0xFD` bit 4) finishes: the bit doesn't clear reliably, so the app uses the ~6 minute duration.
 - `0xFC` bits 7 and 11.
 - Crop mode (24.5" on the PG27UCWM): no advertised code holds it, see [PG27UCWM](#pg27ucwm).
+- `0xC5` (OLED anti-flicker) and `0xEE` (ELMB) on the PG27UCWM: the maximum while each is usable.
 - `0xE2` reading `0x0205` (Dolby Vision Bright) in the PG27UCWM's 24.5" and Square modes without an HDR signal.

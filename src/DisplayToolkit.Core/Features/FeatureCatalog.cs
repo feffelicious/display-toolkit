@@ -149,10 +149,7 @@ public static class FeatureCatalog
         new(5, "90 s"),
     ]);
 
-    public static readonly SwitchFeature DisplayAlignment = new("display-alignment", "Display alignment", Vcp.AsusDisplayAlignment)
-    {
-        UnavailableAtZeroMaximum = true,
-    };
+    public static readonly SwitchFeature DisplayAlignment = new("display-alignment", "Display alignment", Vcp.AsusDisplayAlignment);
 
     // OLED care
     public static readonly FlagFeature ScreenDimming = new("screen-dimming", "Screen dimming control", Vcp.AsusToggles2, bit: 3);
@@ -173,7 +170,6 @@ public static class FeatureCatalog
     public static readonly SwitchFeature OledAntiFlicker = new("oled-anti-flicker", "OLED anti-flicker", Vcp.AsusOledAntiFlicker)
     {
         Settling = WriteSettling.ModeSwitch,
-        UnavailableAtZeroMaximum = true,
     };
 
     public static readonly EnumFeature ScreenMove = new("screen-move", "Screen move", Vcp.AsusScreenMove,

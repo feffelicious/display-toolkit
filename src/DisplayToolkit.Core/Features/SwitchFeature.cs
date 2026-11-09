@@ -13,8 +13,8 @@ public sealed class SwitchFeature(string id, string name, byte code, uint offVal
     public bool IsOn(uint value) => value == OnValue;
 
     /// <summary>
-    /// True when the monitor reports a maximum of 0 while the setting is greyed out in its menu, as ASUS does (ELMB and
-    /// OLED anti-flicker on the PG27UCWM). Off for standard switches, whose maximum MCCS leaves undefined.
+    /// True when the monitor reports a maximum of 0 while the setting is greyed out in its menu (ELMB on the PG27UCWM).
+    /// Off by default: MCCS leaves a switch's maximum undefined, and some ASUS switches may read 0 even when usable.
     /// </summary>
     public bool UnavailableAtZeroMaximum { get; init; }
 
