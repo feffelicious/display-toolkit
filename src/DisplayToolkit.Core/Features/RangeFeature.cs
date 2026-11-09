@@ -17,8 +17,8 @@ public sealed class RangeFeature(string id, string name, byte code) : Feature(id
     public override uint DecodeMaximum(VcpReply reply) => reply.Maximum & 0xFFFF;
 
     /// <summary>
-    /// A maximum of 0 leaves nothing to set. The PG27UCWM reports its blue light filter that way while it can't be
-    /// used, instead of as locked.
+    /// A maximum of 0 leaves nothing to set. The PG27UCWM reports its blue light filter and Smart Pixel that way while
+    /// they're greyed out in its menu, instead of as locked.
     /// </summary>
     public override bool IsUnavailable(VcpReply reply) => base.IsUnavailable(reply) || DecodeMaximum(reply) == 0;
 }

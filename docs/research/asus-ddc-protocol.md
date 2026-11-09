@@ -257,17 +257,31 @@ background.
 Reported in [#5](https://github.com/feffelicious/display-toolkit/issues/5) (firmware 101, ASUS VCP 2.17, over HDMI):
 the capabilities string matches the PG32UCWM's except that `C5` has no value list, and `0xFC` advertises the same
 mask `0x089F`. The owner saw every setting they tried working. Toggling one setting in the menu flipped `0xFC` bit 0,
-which is the power indicator. A few registers read a maximum of 0:
+which is the power indicator.
 
-- `0xE6` blue light filter: 0 of 0, where the PG32UCWM reports 0–4. The app hides a level with nothing to set until
-  the monitor reports a maximum again. Why it's 0 isn't known; the monitor was in User mode with the native gamut.
-- `0xEE` ELMB and `0xC5` OLED anti-flicker, both off. VRR was on, which ELMB usually can't be used with, but it's not
-  confirmed that a maximum of 0 means unavailable for these on/off settings, so the app still shows them.
+**A maximum of 0 means greyed out in the menu.** In User mode the owner's menu greys out blue light filter and OLED
+anti-flicker, and `0xE6` and `0xC5` both read a maximum of 0. ELMB (`0xEE`) reads a maximum of 0 too unless blue light
+filter, HDR and VRR are off and the refresh rate is 120 Hz. ASUS's usable on/off registers read a maximum of 1 (`0xE1`,
+`0xE7`, `0xB2`). The app hides a level whose maximum is 0, and the ASUS on/off settings (ELMB, anti-flicker, display
+alignment) when theirs is. It doesn't do that for standard switches like mute, whose maximum MCCS leaves undefined.
+
+**Aspect control has no register we can read.** The owner switched between 16:9 Full, the 24.5" simulation, pixel by
+pixel and Square (Full, Equivalent, pixel by pixel). Switching between Square's own modes changed no advertised code.
+Every switch into or out of the 24.5" and Square modes changed the same 12 codes, all side effects:
+
+- The signal went from 120 to 240 Hz (`0xAC` horizontal and `0xAE` vertical frequency).
+- Brightness (`0x10`), color temperature (`0x14`) and the gains (`0x16`–`0x1A`) switched to another set of values.
+- Smart Pixel (`0xD1`) and blue light filter (`0xE6`) read 0 of 0; shadow boost (`0xE5`) and PiP (`0xF4`) read locked.
+- `0xE2` HDR mode read `0x0205` (Dolby Vision Bright) with Windows HDR off. The app takes that for HDR and hides the
+  settings HDR locks. Whether brightness really can't be changed in those modes isn't known.
+
+The probe reads only the codes the monitor advertises, so an unadvertised code isn't ruled out, but ASUS's CLI has no
+aspect setting either. The only way left to change it would be pressing the menu keys through `0xEB`.
 
 ## Open questions
 
 - Dolby Vision presets (`0xE2` group 2): need a Dolby Vision signal to test.
 - When pixel cleaning (`0xFD` bit 4) finishes: the bit doesn't clear reliably, so the app uses the ~6 minute duration.
 - `0xFC` bits 7 and 11.
-- Whether a maximum of 0 on an on/off register (`0xEE`, `0xC5` on the PG27UCWM) means the setting is unavailable.
-- Crop mode (24.5" on the PG27UCWM): code unknown, see `docs/todo.md`.
+- Crop mode (24.5" on the PG27UCWM): no advertised code holds it, see [PG27UCWM](#pg27ucwm).
+- `0xE2` reading `0x0205` (Dolby Vision Bright) in the PG27UCWM's 24.5" and Square modes without an HDR signal.

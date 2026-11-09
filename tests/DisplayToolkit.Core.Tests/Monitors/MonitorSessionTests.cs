@@ -175,6 +175,23 @@ public sealed class MonitorSessionTests : IDisposable
     }
 
     [Fact]
+    public async Task Asus_switches_with_a_maximum_of_zero_are_locked()
+    {
+        // The PG27UCWM reports ELMB this way while VRR or the blue light filter is on.
+        _monitor.SetRegister(Vcp.AsusElmb, 0, 0);
+        _monitor.SetRegister(Vcp.AudioMute, 2, 0);
+        var session = await OpenAsync();
+
+        Assert.Equal(FeatureStatus.Locked, session.GetValue(FeatureCatalog.Elmb)!.Status);
+        Assert.Equal(FeatureStatus.Confirmed, session.GetValue(FeatureCatalog.Mute)!.Status);
+
+        _monitor.SetRegister(Vcp.AsusElmb, 0, 1);
+        await session.RefreshAsync([FeatureCatalog.Elmb]);
+
+        Assert.Equal(FeatureStatus.Confirmed, session.GetValue(FeatureCatalog.Elmb)!.Status);
+    }
+
+    [Fact]
     public async Task Settings_unavailable_in_hdr_are_locked_while_an_hdr_preset_is_active()
     {
         // In HDR the PG32UCWM still reports brightness normally, but ignores writes to it.

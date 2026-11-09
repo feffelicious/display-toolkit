@@ -112,7 +112,8 @@ public static class FeatureCatalog
     /// <summary>Sharpens the picture when the monitor scales up a lower resolution. 0 is off.</summary>
     public static readonly RangeFeature UpscalingSharpness = new("upscaling-sharpness", "Upscaling sharpness (Smart Pixel)", Vcp.AsusUpscalingSharpness);
 
-    public static readonly SwitchFeature Elmb = new("elmb", "ELMB", Vcp.AsusElmb);
+    /// <summary>Greyed out unless blue light filter, HDR and VRR are off (PG27UCWM at 120 Hz).</summary>
+    public static readonly SwitchFeature Elmb = new("elmb", "ELMB", Vcp.AsusElmb) { UnavailableAtZeroMaximum = true };
 
     // GamePlus (overlays drawn by the monitor)
     public static readonly EnumFeature Crosshair = new("crosshair", "Crosshair", Vcp.AsusCrosshair,
@@ -148,7 +149,10 @@ public static class FeatureCatalog
         new(5, "90 s"),
     ]);
 
-    public static readonly SwitchFeature DisplayAlignment = new("display-alignment", "Display alignment", Vcp.AsusDisplayAlignment);
+    public static readonly SwitchFeature DisplayAlignment = new("display-alignment", "Display alignment", Vcp.AsusDisplayAlignment)
+    {
+        UnavailableAtZeroMaximum = true,
+    };
 
     // OLED care
     public static readonly FlagFeature ScreenDimming = new("screen-dimming", "Screen dimming control", Vcp.AsusToggles2, bit: 3);
@@ -169,6 +173,7 @@ public static class FeatureCatalog
     public static readonly SwitchFeature OledAntiFlicker = new("oled-anti-flicker", "OLED anti-flicker", Vcp.AsusOledAntiFlicker)
     {
         Settling = WriteSettling.ModeSwitch,
+        UnavailableAtZeroMaximum = true,
     };
 
     public static readonly EnumFeature ScreenMove = new("screen-move", "Screen move", Vcp.AsusScreenMove,
