@@ -112,7 +112,8 @@ public static class FeatureCatalog
     /// <summary>Sharpens the picture when the monitor scales up a lower resolution. 0 is off.</summary>
     public static readonly RangeFeature UpscalingSharpness = new("upscaling-sharpness", "Upscaling sharpness (Smart Pixel)", Vcp.AsusUpscalingSharpness);
 
-    public static readonly SwitchFeature Elmb = new("elmb", "ELMB", Vcp.AsusElmb);
+    /// <summary>Greyed out unless blue light filter, HDR and VRR are off (PG27UCWM at 120 Hz).</summary>
+    public static readonly SwitchFeature Elmb = new("elmb", "ELMB", Vcp.AsusElmb) { UnavailableAtZeroMaximum = true };
 
     // GamePlus (overlays drawn by the monitor)
     public static readonly EnumFeature Crosshair = new("crosshair", "Crosshair", Vcp.AsusCrosshair,

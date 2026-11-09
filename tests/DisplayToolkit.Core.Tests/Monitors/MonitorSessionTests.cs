@@ -158,6 +158,40 @@ public sealed class MonitorSessionTests : IDisposable
     }
 
     [Fact]
+    public async Task Levels_with_a_maximum_of_zero_are_locked_until_the_maximum_returns()
+    {
+        // The PG27UCWM reports its blue light filter as 0 of 0 instead of locked.
+        _monitor.SetRegister(Vcp.AsusBlueLightFilter, 0, 0);
+        var session = await OpenAsync();
+
+        Assert.Equal(FeatureStatus.Locked, session.GetValue(FeatureCatalog.BlueLightFilter)!.Status);
+        Assert.Contains(_log.Entries, entry => entry.Message.Contains("(Blue light filter) unavailable: maximum 0x0", StringComparison.Ordinal));
+
+        _monitor.SetRegister(Vcp.AsusBlueLightFilter, 0, 4);
+        await session.RefreshAsync([FeatureCatalog.BlueLightFilter]);
+
+        Assert.Equal(new FeatureValue(FeatureCatalog.BlueLightFilter, 0, 4, FeatureStatus.Confirmed), session.GetValue(FeatureCatalog.BlueLightFilter));
+        Assert.Contains(_log.Entries, entry => entry.Message.Contains("(Blue light filter) available again", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Asus_switches_with_a_maximum_of_zero_are_locked()
+    {
+        // The PG27UCWM reports ELMB this way while VRR or the blue light filter is on.
+        _monitor.SetRegister(Vcp.AsusElmb, 0, 0);
+        _monitor.SetRegister(Vcp.AudioMute, 2, 0);
+        var session = await OpenAsync();
+
+        Assert.Equal(FeatureStatus.Locked, session.GetValue(FeatureCatalog.Elmb)!.Status);
+        Assert.Equal(FeatureStatus.Confirmed, session.GetValue(FeatureCatalog.Mute)!.Status);
+
+        _monitor.SetRegister(Vcp.AsusElmb, 0, 1);
+        await session.RefreshAsync([FeatureCatalog.Elmb]);
+
+        Assert.Equal(FeatureStatus.Confirmed, session.GetValue(FeatureCatalog.Elmb)!.Status);
+    }
+
+    [Fact]
     public async Task Settings_unavailable_in_hdr_are_locked_while_an_hdr_preset_is_active()
     {
         // In HDR the PG32UCWM still reports brightness normally, but ignores writes to it.

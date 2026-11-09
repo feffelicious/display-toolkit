@@ -56,6 +56,12 @@ public abstract class Feature(string id, string name, byte code)
     public virtual uint DecodeMaximum(VcpReply reply) => reply.Maximum;
 
     /// <summary>
+    /// True when the reply says the setting can't be changed in the monitor's current mode. The monitor reports most of
+    /// these as locked (<c>0xFE</c>).
+    /// </summary>
+    public virtual bool IsUnavailable(VcpReply reply) => reply.IsLocked;
+
+    /// <summary>
     /// Produces the register value to write. <paramref name="register"/> is the current register value, and is only
     /// meaningful when <see cref="IsPartialRegister"/> is true.
     /// </summary>
