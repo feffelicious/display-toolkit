@@ -259,13 +259,23 @@ the capabilities string matches the PG32UCWM's except that `C5` has no value lis
 mask `0x089F`. The owner saw every setting they tried working. Toggling one setting in the menu flipped `0xFC` bit 0,
 which is the power indicator.
 
-**A maximum of 0 can mean greyed out in the menu.** In User mode the owner's menu greys out blue light filter and OLED
-anti-flicker, and `0xE6` and `0xC5` both read a maximum of 0. In Racing mode `0xE6` came back as 2 of 4, so for levels
-it holds; the app hides a level whose maximum is 0. `0xC5` read 0 of 0 in Racing too, though, and there's no reading of
-it while usable, so it may never report a maximum: the app keeps showing anti-flicker. ELMB (`0xEE`) is greyed out
-unless blue light filter, HDR and VRR are off at 120 Hz, and read a maximum of 0 in both dumps where it was greyed
-out; the app hides it then (it has no ELMB control, so this only affects the log). Usable ASUS on/off registers read a
-maximum of 1 (`0xE1`, `0xE7`). Standard switches like mute are left alone: MCCS leaves their maximum undefined.
+**A maximum of 0 can mean greyed out in the menu.** In the first dump the owner's menu greyed out blue light filter
+and OLED anti-flicker, and `0xE6` and `0xC5` both read a maximum of 0. Uniform brightness (`0xFD` bit 6) was on there;
+in the second dump it was off and `0xE6` read 2 of 4. So for levels it holds, and the app hides a level whose maximum
+is 0. `0xC5` read 0 of 0 in both dumps, and there's no reading of it while usable, so it may never report a maximum:
+the app keeps showing anti-flicker. ELMB (`0xEE`) read a maximum of 0 in both dumps, each time while it was greyed out
+(VRR on, then blue light filter on); the app hides it then (it has no ELMB control, so this only affects the log).
+Usable ASUS on/off registers read a maximum of 1 (`0xE1`, `0xE7`). Standard switches like mute are left alone: MCCS
+leaves their maximum undefined.
+
+**What greys out what.** From the PG27UCWM's own menu messages (photos in [#5](https://github.com/feffelicious/display-toolkit/issues/5)) and the owner's notes:
+
+- Uniform brightness on disables ELMB and blue light filter.
+- ELMB on disables VRR, uniform brightness, aspect control, blue light filter, PiP/PbP, auto logo brightness, HDR
+  settings and Sniper. ELMB itself needs blue light filter, HDR and VRR off, at 120 Hz.
+
+Which of these the registers report as locked or as a maximum of 0 is only known for blue light filter and ELMB. An
+ELMB-on dump would show the rest.
 
 **Aspect control has no register we can read.** The owner switched between 16:9 Full, the 24.5" simulation, pixel by
 pixel and Square (Full, Equivalent, pixel by pixel). Switching between Square's own modes changed no advertised code.
