@@ -178,7 +178,7 @@ public sealed class BrightnessBand : RangeBase
         protected override AutomationControlType GetAutomationControlTypeCore() => AutomationControlType.Slider;
 
         protected override string GetHelpTextCore() => owner.HasFailed
-            ? "Didn't change. The monitor didn't respond."
+            ? "Didn't change. The monitor didn't apply it."
             : owner.IsPending ? "Sending to monitor" : base.GetHelpTextCore();
     }
 }

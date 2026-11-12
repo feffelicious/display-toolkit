@@ -178,11 +178,14 @@ public sealed class MonitorSessionTests : IDisposable
     public async Task Asus_switches_with_a_maximum_of_zero_are_locked()
     {
         // The PG27UCWM reports ELMB this way while VRR or the blue light filter is on.
+        // OLED anti-flicker reads 0 of 0 over HDMI, where it's always greyed out.
         _monitor.SetRegister(Vcp.AsusElmb, 0, 0);
+        _monitor.SetRegister(Vcp.AsusOledAntiFlicker, 0, 0);
         _monitor.SetRegister(Vcp.AudioMute, 2, 0);
         var session = await OpenAsync();
 
         Assert.Equal(FeatureStatus.Locked, session.GetValue(FeatureCatalog.Elmb)!.Status);
+        Assert.Equal(FeatureStatus.Locked, session.GetValue(FeatureCatalog.OledAntiFlicker)!.Status);
         Assert.Equal(FeatureStatus.Confirmed, session.GetValue(FeatureCatalog.Mute)!.Status);
 
         _monitor.SetRegister(Vcp.AsusElmb, 0, 1);

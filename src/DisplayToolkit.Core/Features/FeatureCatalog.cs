@@ -166,10 +166,12 @@ public static class FeatureCatalog
         Settling = WriteSettling.Unverified,
     };
 
-    // Changes the panel timing: Windows drops and re-detects the monitor (verified on a PG32UCWM).
+    // Changes the panel timing: Windows drops and re-detects the monitor (verified on a PG32UCWM). Only usable over
+    // DisplayPort or USB-C with VRR on, at 4K 240 Hz or FHD 480 Hz (PG27UCWM, #7); greyed out it reads 0 of 0.
     public static readonly SwitchFeature OledAntiFlicker = new("oled-anti-flicker", "OLED anti-flicker", Vcp.AsusOledAntiFlicker)
     {
         Settling = WriteSettling.ModeSwitch,
+        UnavailableAtZeroMaximum = true,
     };
 
     public static readonly EnumFeature ScreenMove = new("screen-move", "Screen move", Vcp.AsusScreenMove,
