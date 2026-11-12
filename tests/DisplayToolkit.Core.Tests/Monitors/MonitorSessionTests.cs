@@ -192,6 +192,24 @@ public sealed class MonitorSessionTests : IDisposable
         await session.RefreshAsync([FeatureCatalog.Elmb]);
 
         Assert.Equal(FeatureStatus.Confirmed, session.GetValue(FeatureCatalog.Elmb)!.Status);
+
+        _monitor.SetRegister(Vcp.AsusOledAntiFlicker, 0, 1);
+        await session.RefreshAsync([FeatureCatalog.OledAntiFlicker]);
+
+        Assert.Equal(new FeatureValue(FeatureCatalog.OledAntiFlicker, 0, 1, FeatureStatus.Confirmed), session.GetValue(FeatureCatalog.OledAntiFlicker));
+    }
+
+    [Fact]
+    public async Task Turning_oled_anti_flicker_off_keeps_it_available()
+    {
+        // Where it's usable, the PG32UCWM reads 1 of 1 on and 0 of 1 off.
+        _monitor.SetRegister(Vcp.AsusOledAntiFlicker, 1, 1);
+        var session = await OpenAsync();
+        _monitor.ReconnectAfterWrite(Vcp.AsusOledAntiFlicker);
+
+        var result = await session.WriteAsync(FeatureCatalog.OledAntiFlicker, 0);
+
+        Assert.Equal(new FeatureValue(FeatureCatalog.OledAntiFlicker, 0, 1, FeatureStatus.Confirmed), result);
     }
 
     [Fact]

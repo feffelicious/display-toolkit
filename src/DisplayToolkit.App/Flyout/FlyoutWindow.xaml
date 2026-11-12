@@ -318,7 +318,7 @@
           <TextBlock Style="{StaticResource BodyStrongText}" FontSize="13" TextWrapping="Wrap">
             <Run Text="{Binding FailedFeature.Feature.Name, Mode=OneWay}" /> didn't change
           </TextBlock>
-          <TextBlock Style="{StaticResource CaptionText}" Text="The monitor didn't apply it." />
+          <TextBlock Style="{StaticResource CaptionText}" Text="Couldn't change it on the monitor." />
         </StackPanel>
       </DockPanel>
     </Border>

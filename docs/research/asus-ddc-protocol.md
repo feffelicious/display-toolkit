@@ -262,10 +262,11 @@ which is the power indicator.
 **A maximum of 0 can mean greyed out in the menu.** In the first dump the owner's menu greyed out blue light filter
 and OLED anti-flicker, and `0xE6` and `0xC5` both read a maximum of 0. Uniform brightness (`0xFD` bit 6) was on there;
 in the second dump it was off and `0xE6` read 2 of 4. So for levels it holds, and the app hides a level whose maximum
-is 0. `0xC5` read 0 of 0 in both dumps because both were over HDMI: OLED anti-flicker only works over DisplayPort or
-USB-C with VRR on, at 4K 240 Hz or FHD 480 Hz ([#7](https://github.com/feffelicious/display-toolkit/issues/7)). On
-a PG32UCWM over DisplayPort at 240 Hz with VRR on, where it's usable, `0xC5` reads 1 of 1. The app hides anti-flicker
-at 0. ELMB (`0xEE`) read a maximum of 0 in both dumps, each time while it was greyed out
+is 0. `0xC5` read 0 of 0 in both dumps, while it was greyed out. Both were over HDMI, and the second was at 120 Hz with
+VRR off; OLED anti-flicker only works over DisplayPort or USB-C with VRR on, at 4K 240 Hz or FHD 480 Hz
+([#7](https://github.com/feffelicious/display-toolkit/issues/7)). On a PG32UCWM over DisplayPort at 240 Hz with VRR
+on, where it's usable, `0xC5` reads 1 of 1 while on and 0 of 1 while off, so the maximum doesn't follow the value. The
+app hides anti-flicker at a maximum of 0. ELMB (`0xEE`) read a maximum of 0 in both dumps, each time while it was greyed out
 (VRR on, then blue light filter on); the app hides it then (it has no ELMB control, so this only affects the log).
 Usable ASUS on/off registers read a maximum of 1 (`0xE1`, `0xE7`). Standard switches like mute are left alone: MCCS
 leaves their maximum undefined.

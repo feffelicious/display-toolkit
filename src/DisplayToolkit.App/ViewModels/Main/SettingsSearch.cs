@@ -128,7 +128,7 @@ public static class SettingsSearch
     }
 
     private static bool IsAvailable(SearchEntry entry, MonitorViewModel? monitor) =>
-        entry.Feature is { } feature ? monitor?[feature] is not null
+        entry.Feature is { } feature ? monitor?[feature] is { IsAvailable: true }
         : !entry.NeedsMonitor || monitor is not null;
 
     /// <summary>0: the title starts with the query; 1: all words in the title; 2: with the keywords; -1: no match.</summary>

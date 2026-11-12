@@ -201,7 +201,7 @@ Opened from a chevron or picker tile. The body slides (see §12); the footer sta
 | **Cached open** (normal) | Any open after the first read | Last known values instantly. Background re-read of brightness, picture/HDR mode, blue light, shadow boost (~6 reads). Changed values cross-fade (83 ms). Never overwrite a control the user is touching. |
 | **First read** | No cache for this monitor | Header meta `Reading settings…`; skeleton blocks (`SubtleFillColorSecondary`, no shimmer) in the exact layout. Capabilities string read (~1–2 s) then values. |
 | **Pending** | A write is unconfirmed for >300 ms | 6 px accent dot left of the band value / top-right inside a tile. Pulses opacity 1↔0.25 at 1.2 s; static at 60% with reduced motion. |
-| **Write failed** | Write + 2 retries failed, or read-back mismatch | Control animates back to the last confirmed value (250 ms). Tile gets a 20 px caution badge (`E7BA` on `SystemFillColorCautionBackground`) at its top-right. Caution InfoBar at the bottom of the body: title "*Shadow boost* didn't change", body "The monitor didn't apply it.", button `Retry`. Auto-dismiss after 8 s or on success; badge clears on next success. |
+| **Write failed** | Write + 2 retries failed, or read-back mismatch | Control animates back to the last confirmed value (250 ms). Tile gets a 20 px caution badge (`E7BA` on `SystemFillColorCautionBackground`) at its top-right. Caution InfoBar at the bottom of the body: title "*Shadow boost* didn't change", body "Couldn't change it on the monitor.", button `Retry`. Auto-dismiss after 8 s or on success; badge clears on next success. |
 | **Not responding** | 3 consecutive read failures, or monitor removed | Header meta `Not responding`. Body replaced by empty state: 56 px plate with monitor glyph + caution sub-badge, title "Can't reach the monitor", body "Turn the monitor on, or check that DDC/CI is turned on in its on-screen menu.", `Try again` (accent) + `Get help` (opens docs). Footer keeps only the gear. Auto-recovers on `WM_DISPLAYCHANGE` / device arrival. |
 | **No DDC/CI** | Monitor never answered a capability request | Same empty state, title "This monitor can't be controlled", body "It doesn't support DDC/CI, or the feature is turned off.", button `Open Windows display settings`. |
 | **Pixel cleaning** | Started from the app | Body replaced: sparkle glyph plate, "Pixel cleaning", "About 4 minutes left. The screen is dark until it finishes.", determinate `ProgressBar` (time-based). Everything else hidden. |
@@ -365,7 +365,7 @@ Standard Fluent focus order. `Ctrl+F` focuses search. `Alt+Left` back from sub-p
 
 ### 7.3 UIA
 
-- Band: `Slider` pattern, name "Brightness", value in percent; pending/failed exposed via `HelpText` ("Sending to monitor", "Didn't change. The monitor didn't apply it.").
+- Band: `Slider` pattern, name "Brightness", value in percent; pending/failed exposed via `HelpText` ("Sending to monitor", "Didn't change. Couldn't change it on the monitor.").
 - Tiles: `Toggle` pattern (toggle/split main), `Invoke` (picker, chevron); name = feature name, plus value for pickers ("Picture mode, Scenery"). Chevron name "*Feature* options".
 - Profiles row: `SelectionPattern` (radio group).
 - Edit-mode moves and InfoBars: `LiveSetting=Polite`.

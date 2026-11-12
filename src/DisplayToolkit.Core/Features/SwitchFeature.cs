@@ -14,7 +14,8 @@ public sealed class SwitchFeature(string id, string name, byte code, uint offVal
 
     /// <summary>
     /// True when the monitor reports a maximum of 0 while the setting is greyed out in its menu, and 1 while it's usable
-    /// (ELMB and OLED anti-flicker; anti-flicker read 1 of 1 on a PG32UCWM over DisplayPort, 0 of 0 on a PG27UCWM over HDMI).
+    /// (ELMB and OLED anti-flicker; on a PG32UCWM where it's usable, anti-flicker reads 1 of 1 on and 0 of 1 off, and on a
+    /// PG27UCWM where it was greyed out, 0 of 0).
     /// Off by default: MCCS leaves a switch's maximum undefined, and some ASUS switches may read 0 even when usable.
     /// </summary>
     public bool UnavailableAtZeroMaximum { get; init; }
