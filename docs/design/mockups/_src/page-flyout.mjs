@@ -135,7 +135,7 @@ const fBlue = fly(`${subHead('Blue light filter')}
 
 const fPending = fly(`${head()}${band(62, { pending: true })}${profiles(P, 'Night', { auto: false })}
 ${defaultTiles({ warn: true })}
-<div class="infobar caution" style="margin-top:18px">${I(G.warn, 'lead')}<div style="flex:1"><div class="strong">Shadow boost didn't change</div><div class="caption t2" style="margin-top:2px">The monitor didn't respond.</div></div><span class="btn" style="height:28px">Retry</span></div>`,
+<div class="infobar caution" style="margin-top:18px">${I(G.warn, 'lead')}<div style="flex:1"><div class="strong">Shadow boost didn't change</div><div class="caption t2" style="margin-top:2px">The monitor didn't apply it.</div></div><span class="btn" style="height:28px">Retry</span></div>`,
 { foot: footDefault('Manual: automation resumes at sunrise') });
 
 const fDisconnected = fly(`${head({ meta: 'Not responding' })}

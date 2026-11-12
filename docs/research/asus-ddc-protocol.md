@@ -262,8 +262,10 @@ which is the power indicator.
 **A maximum of 0 can mean greyed out in the menu.** In the first dump the owner's menu greyed out blue light filter
 and OLED anti-flicker, and `0xE6` and `0xC5` both read a maximum of 0. Uniform brightness (`0xFD` bit 6) was on there;
 in the second dump it was off and `0xE6` read 2 of 4. So for levels it holds, and the app hides a level whose maximum
-is 0. `0xC5` read 0 of 0 in both dumps, and there's no reading of it while usable, so it may never report a maximum:
-the app keeps showing anti-flicker. ELMB (`0xEE`) read a maximum of 0 in both dumps, each time while it was greyed out
+is 0. `0xC5` read 0 of 0 in both dumps because both were over HDMI: OLED anti-flicker only works over DisplayPort or
+USB-C with VRR on, at 4K 240 Hz or FHD 480 Hz ([#7](https://github.com/feffelicious/display-toolkit/issues/7)). On
+a PG32UCWM over DisplayPort at 240 Hz with VRR on, where it's usable, `0xC5` reads 1 of 1. The app hides anti-flicker
+at 0. ELMB (`0xEE`) read a maximum of 0 in both dumps, each time while it was greyed out
 (VRR on, then blue light filter on); the app hides it then (it has no ELMB control, so this only affects the log).
 Usable ASUS on/off registers read a maximum of 1 (`0xE1`, `0xE7`). Standard switches like mute are left alone: MCCS
 leaves their maximum undefined.
@@ -296,5 +298,5 @@ aspect setting either. The only way left to change it would be pressing the menu
 - When pixel cleaning (`0xFD` bit 4) finishes: the bit doesn't clear reliably, so the app uses the ~6 minute duration.
 - `0xFC` bits 7 and 11.
 - Crop mode (24.5" on the PG27UCWM): no advertised code holds it, see [PG27UCWM](#pg27ucwm).
-- `0xC5` (OLED anti-flicker) and `0xEE` (ELMB) on the PG27UCWM: the maximum while each is usable.
+- `0xEE` (ELMB): the maximum while it's usable. It reads 0 of 0 while greyed out (VRR on, on both monitors).
 - `0xE2` reading `0x0205` (Dolby Vision Bright) in the PG27UCWM's 24.5" and Square modes without an HDR signal.
