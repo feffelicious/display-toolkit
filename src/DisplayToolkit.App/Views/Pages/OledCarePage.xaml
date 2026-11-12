@@ -77,7 +77,7 @@
       <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding UniformBrightness.Toggled, Mode=TwoWay}" AutomationProperties.Name="Uniform brightness" />
     </controls:SettingsCard>
     <controls:SettingsCard Header="Anti-flicker" Description="Reduces flicker in dark scenes. Some monitors limit other settings while it's on."
-                           Visibility="{Binding AntiFlicker, Converter={StaticResource VisibleWhenNotNull}}">
+                           Visibility="{Binding AntiFlicker.IsAvailable, Converter={StaticResource VisibleWhenTrue}, FallbackValue=Collapsed}">
       <CheckBox Style="{StaticResource SettingsToggle}" IsChecked="{Binding AntiFlicker.Toggled, Mode=TwoWay}" AutomationProperties.Name="Anti-flicker" />
     </controls:SettingsCard>
     <controls:SettingsCard Header="Screen move" Description="Shifts the picture slightly over time to prevent image retention."
