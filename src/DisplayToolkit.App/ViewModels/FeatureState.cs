@@ -116,7 +116,15 @@ public sealed partial class FeatureState : ObservableObject
         {
             return;
         }
+        Send(value);
+    }
 
+    /// <summary>
+    /// Writes even when the value matches the cached one. For actions like switching input, where the cached value
+    /// can be stale because the monitor was changed behind our back.
+    /// </summary>
+    public void Send(uint value)
+    {
         // Optimistic: the session also reports Pending, but updating here keeps a dragged slider glued to the pointer.
         _lastRequested = value;
         Value = value;
