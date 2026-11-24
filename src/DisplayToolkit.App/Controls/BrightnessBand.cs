@@ -64,7 +64,7 @@ public sealed class BrightnessBand : RangeBase
     {
         base.OnApplyTemplate();
         _fill = GetTemplateChild(FillPartName) as FrameworkElement;
-        UpdateFill();
+        InvalidateArrange();
     }
 
     protected override AutomationPeer OnCreateAutomationPeer() => new BrightnessBandAutomationPeer(this);
@@ -72,19 +72,35 @@ public sealed class BrightnessBand : RangeBase
     protected override void OnValueChanged(double oldValue, double newValue)
     {
         base.OnValueChanged(oldValue, newValue);
-        UpdateFill();
+        InvalidateArrange();
+    }
+
+    protected override void OnMinimumChanged(double oldMinimum, double newMinimum)
+    {
+        base.OnMinimumChanged(oldMinimum, newMinimum);
+        InvalidateArrange();
     }
 
     protected override void OnMaximumChanged(double oldMaximum, double newMaximum)
     {
         base.OnMaximumChanged(oldMaximum, newMaximum);
-        UpdateFill();
+        InvalidateArrange();
     }
 
-    protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+    /// <summary>
+    /// Sizes the fill during arrange, where the width is known. Doing it on value changes instead misses changes made
+    /// while the band is collapsed (locked in HDR): its width reads 0 then, and it comes back at the same size, so no
+    /// size change follows to correct the fill.
+    /// </summary>
+    protected override Size ArrangeOverride(Size arrangeBounds)
     {
-        base.OnRenderSizeChanged(sizeInfo);
-        UpdateFill();
+        if (_fill is not null)
+        {
+            var range = Maximum - Minimum;
+            var fraction = range > 0 ? (Value - Minimum) / range : 0;
+            _fill.Width = Math.Max(MinimumFillWidth, fraction * arrangeBounds.Width);
+        }
+        return base.ArrangeOverride(arrangeBounds);
     }
 
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
@@ -158,17 +174,6 @@ public sealed class BrightnessBand : RangeBase
         }
         var fraction = Math.Clamp(e.GetPosition(this).X / ActualWidth, 0, 1);
         Value = Math.Round(Minimum + (fraction * (Maximum - Minimum)));
-    }
-
-    private void UpdateFill()
-    {
-        if (_fill is null || ActualWidth <= 0)
-        {
-            return;
-        }
-        var range = Maximum - Minimum;
-        var fraction = range > 0 ? (Value - Minimum) / range : 0;
-        _fill.Width = Math.Max(MinimumFillWidth, fraction * ActualWidth);
     }
 
     private sealed class BrightnessBandAutomationPeer(BrightnessBand owner) : RangeBaseAutomationPeer(owner)
