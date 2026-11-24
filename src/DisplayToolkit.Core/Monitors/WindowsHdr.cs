@@ -16,11 +16,19 @@ public static class WindowsHdr
 
     public static HdrState? GetState(MonitorId id)
     {
-        if (DisplayConfig.FindPath(id.Instance) is not { } path || DisplayConfig.GetAdvancedColorInfo(path) is not { } info)
+        if (DisplayConfig.FindPath(id.Instance) is not { } path)
         {
             return null;
         }
-        return new HdrState(info.IsSupported, info.IsEnabled);
+
+        // On 24H2+ the legacy "advanced color enabled" bit is also set by Auto Color Management (wide color in SDR),
+        // so it would report HDR as on when it is off. Ask for the HDR-specific state instead.
+        if (HasHdrStateApi && DisplayConfig.GetAdvancedColorInfo2(path) is { } info2)
+        {
+            return new HdrState(info2.IsHdrSupported, info2.IsHdrUserEnabled);
+        }
+
+        return DisplayConfig.GetAdvancedColorInfo(path) is { } info ? new HdrState(info.IsSupported, info.IsEnabled) : null;
     }
 
     /// <summary>Turns Windows HDR on or off. The screen blanks for a second or two while the mode changes.</summary>

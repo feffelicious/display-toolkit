@@ -17,6 +17,7 @@ internal static unsafe partial class DisplayConfig
         GetTargetName = 2,
         GetAdvancedColorInfo = 9,
         SetAdvancedColorState = 10,
+        GetAdvancedColorInfo2 = 15,
         SetHdrState = 16,
     }
 
@@ -133,6 +134,23 @@ internal static unsafe partial class DisplayConfig
         public readonly bool IsEnabled => (Value & 0x2) != 0;
     }
 
+    /// <summary>
+    /// <c>DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO_2</c> (Windows 11 24H2+). Unlike <see cref="AdvancedColorInfo"/>, it
+    /// separates HDR from wide color gamut: with Auto Color Management on, advanced color is active in SDR too.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct AdvancedColorInfo2
+    {
+        public DeviceInfoHeader Header;
+        public uint Value;
+        public uint ColorEncoding;
+        public uint BitsPerColorChannel;
+        public uint ActiveColorMode;
+
+        public readonly bool IsHdrSupported => (Value & 0x10) != 0;
+        public readonly bool IsHdrUserEnabled => (Value & 0x20) != 0;
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     internal struct SetState
     {
@@ -216,6 +234,15 @@ internal static unsafe partial class DisplayConfig
         var request = new AdvancedColorInfo
         {
             Header = Header(DeviceInfoType.GetAdvancedColorInfo, (uint)sizeof(AdvancedColorInfo), path.Target.AdapterId, path.Target.Id),
+        };
+        return DisplayConfigGetDeviceInfo(&request.Header) == ErrorSuccess ? request : null;
+    }
+
+    internal static AdvancedColorInfo2? GetAdvancedColorInfo2(in PathInfo path)
+    {
+        var request = new AdvancedColorInfo2
+        {
+            Header = Header(DeviceInfoType.GetAdvancedColorInfo2, (uint)sizeof(AdvancedColorInfo2), path.Target.AdapterId, path.Target.Id),
         };
         return DisplayConfigGetDeviceInfo(&request.Header) == ErrorSuccess ? request : null;
     }
