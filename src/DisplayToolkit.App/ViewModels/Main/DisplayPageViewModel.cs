@@ -60,7 +60,7 @@ public sealed partial class DisplayPageViewModel : MainPageViewModel
         }
 
         InputChoices = [.. monitor.OptionsOf(FeatureCatalog.InputSource)
-            .Select(option => new InputChoice(option.Name, new RelayCommand(() => InputSource?.Write(option.Value))))];
+            .Select(option => new InputChoice(option.Name, new RelayCommand(() => InputSource?.Send(option.Value))))];
     }
 
     public MonitorViewModel Monitor { get; }
