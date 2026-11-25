@@ -105,6 +105,9 @@ app doesn't have yet. To find one:
 
 Without `--watch`, the probe just prints what the monitor supports, which is useful for any bug report.
 
+Some monitors answer codes they don't advertise. To read those too, add them in hex, for example `--read=E3,DC`
+(1.5.5 or newer). It works with or without `--watch`, and still only reads.
+
 ## How it works
 
 Everything goes over **DDC/CI**, the standard monitor-control channel that Windows exposes through `dxva2.dll`.
