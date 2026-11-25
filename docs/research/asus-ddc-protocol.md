@@ -140,6 +140,25 @@ PG32UCWM: current `0x6829`, supported `0x6979`. All bits marked ✅ match the OL
 These meanings are for the gaming/OLED line. Other ASUS product lines (ProArt, portable monitors) may use some codes
 differently; they aren't covered here yet.
 
+## ProArt presets (from ASUS's own software, not yet confirmed on a ProArt monitor)
+
+Facts taken from the installed DisplayWidget Center (its VCP call sites and its built-in ProArt capability sample).
+They're recorded here as protocol facts only; no code from the application is copied into this repo.
+
+- **Preset selector: VCP `0xE3` (decimal 227) on ProArt models.** Other product lines use `0xE3` for crosshair, so the
+  meaning depends on the product line. Writes send `(mode << 8) | 0xFF`. A read returns the mode in the high byte.
+- **Mode numbers** (high byte): 1 Native, 5 sRGB, 8 Adobe RGB, 9 Rec.2020, 10 DCI-P3, 11 DICOM, 14 Rec.709,
+  22 User 1, 23 User 2, 30 User 3. HDR values use fixed codes (`0x1100`, `0x11FF`, `0x1200`, ...), not the pattern above.
+- **Color temperature** is `0x14` and **gamma** is `0x72`, both as in the rest of this file.
+- **Gaming presets** (GameVisual) are `0xDC`, as on the PG32UCWM.
+- DisplayWidget Center's built-in ProArt capability sample advertises `E3(01 05 08 09 0A 0B 0E 0F 10 11 12 16 17 1E)`.
+- **The AUS3269 (PA32UCG-K) doesn't advertise `0xE3` in its capabilities string.** Before 1.5.5 the probe
+  only read advertised codes, so it never read `0xE3`. Whether the monitor accepts or answers `0xE3` without advertising
+  it is untested. Test: `DisplayToolkit.Probe.exe --watch --read=E3`, change presets in the monitor's menu, and press
+  Enter after each.
+- ASUS's public CLI reference names the ProArt settings `ProArtPreset` (the list above), `SelfCalTarget` and `InputRange`.
+  It gives no VCP codes.
+
 ## Public reference
 
 ASUS publishes an Apache-2.0 **property reference** (not source) for its `dwc.exe` command-line tool:
