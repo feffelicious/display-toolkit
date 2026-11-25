@@ -68,7 +68,12 @@ foreach (var connection in connections)
     if (all || extraCodes.Count > 0)
     {
         Console.WriteLine();
-        Console.WriteLine(all ? "  Every advertised code:" : "  Requested codes:");
+        Console.WriteLine((all, extraCodes.Count > 0) switch
+        {
+            (true, true) => "  Every advertised code, plus the requested ones:",
+            (true, false) => "  Every advertised code:",
+            _ => "  Requested codes:",
+        });
         var snapshot = await ReadAllAsync(session, all, extraCodes);
         snapshots[session] = snapshot;
         foreach (var (code, reply) in snapshot)
@@ -131,6 +136,14 @@ static bool TryParseReadCodes(string[] arguments, out List<byte> codes, out stri
 {
     codes = [];
     error = null;
+
+    // "--read E3" would otherwise read nothing without saying so.
+    if (arguments.Any(argument => argument.Equals("--read", StringComparison.OrdinalIgnoreCase)))
+    {
+        error = "--read needs '=' and the codes, for example --read=E3,DC.";
+        return false;
+    }
+
     foreach (var argument in arguments.Where(argument => argument.StartsWith("--read=", StringComparison.OrdinalIgnoreCase)))
     {
         foreach (var part in argument["--read=".Length..].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))

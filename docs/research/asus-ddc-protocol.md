@@ -152,9 +152,10 @@ They're recorded here as protocol facts only; no code from the application is co
 - **Color temperature** is `0x14` and **gamma** is `0x72`, both as in the rest of this file.
 - **Gaming presets** (GameVisual) are `0xDC`, as on the PG32UCWM.
 - DisplayWidget Center's built-in ProArt capability sample advertises `E3(01 05 08 09 0A 0B 0E 0F 10 11 12 16 17 1E)`.
-- **The AUS3269 (PA32UCG-K) doesn't advertise `0xE3` in its capabilities string.** Our probe only reads advertised codes,
-  so it never reads `0xE3`. Whether the monitor accepts or answers `0xE3` without advertising it is untested. Test:
-  read `0xE3` directly, change presets in the monitor's menu, and read again.
+- **The AUS3269 (PA32UCG-K) doesn't advertise `0xE3` in its capabilities string.** Before 1.5.5 the probe
+  only read advertised codes, so it never read `0xE3`. Whether the monitor accepts or answers `0xE3` without advertising
+  it is untested. Test: `DisplayToolkit.Probe.exe --watch --read=E3`, change presets in the monitor's menu, and press
+  Enter after each.
 - ASUS's public CLI reference names the ProArt settings `ProArtPreset` (the list above), `SelfCalTarget` and `InputRange`.
   It gives no VCP codes.
 
